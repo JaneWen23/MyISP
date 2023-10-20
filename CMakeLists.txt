@@ -1,0 +1,2 @@
+ PROJECT(MYISP)
+ ADD_EXECUTABLE(MyIspApp "top.cpp")
