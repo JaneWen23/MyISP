@@ -1,3 +1,6 @@
+#ifndef _ImgDef_H
+#define _ImgDef_H
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -20,3 +23,5 @@ typedef enum{
 
 IMG_RTN_CODE allocate_img(Img_t);
 IMG_RTN_CODE destruct_img(Img_t);
+
+#endif
