@@ -4,7 +4,23 @@
 #include "ImgDef.hpp"
 
 
-IMG_RTN_CODE allocate_img(Img_t* pImg){
+Img_t* init_img(){
+    // allocate memory
+    Img_t* pImg = NULL;
+    pImg =(Img_t*)malloc(sizeof(Img_t*));
+    if (pImg == NULL){
+        std::cout<<"fail to allocate Img_t object\n";
+        return NULL;
+    }
+    return pImg;
+}
+
+IMG_RTN_CODE construct_img(Img_t* pImg){
+    // takes in args to set up the properties of the img type.
+    if (pImg == NULL){
+        return ALLOCATION_FAIL;
+    }
+
     return SUCCEED;
 }
 
@@ -17,7 +33,7 @@ void test_img_def(){
     Img_t* pMyImg = NULL; // initialze
     pMyImg =(Img_t*)malloc(sizeof(Img_t*));
     if (pMyImg == NULL){
-        std::cout<<"fail to allocat Img_t object\n";
+        std::cout<<"fail to allocate Img_t object\n";
         return;
     }
     pMyImg->bitDepth = 10;
