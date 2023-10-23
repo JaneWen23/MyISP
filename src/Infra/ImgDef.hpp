@@ -24,4 +24,6 @@ typedef enum{
 IMG_RTN_CODE allocate_img(Img_t);
 IMG_RTN_CODE destruct_img(Img_t);
 
+void test_img_def();
+
 #endif
