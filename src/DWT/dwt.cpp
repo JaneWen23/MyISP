@@ -22,10 +22,10 @@ void test_dwt(){
     pMyImg->height = 30;
     pMyImg->width = 50;
     pMyImg->nComp = 3;
-    pMyImg->stride[0] = 100; // 50 * 2(bytes)
-    pMyImg->stride[1] = 100;
-    pMyImg->stride[2] = 100;
-    pMyImg->stride[3] = 0; // because we only have 3 channels
+    pMyImg->strides[0] = 100; // 50 * 2(bytes)
+    pMyImg->strides[1] = 100;
+    pMyImg->strides[2] = 100;
+    pMyImg->strides[3] = 0; // because we only have 3 channels
     
     int* pImgData = NULL;
     pImgData = (int*)malloc(pMyImg->width * pMyImg->height * ((pMyImg->bitDepth+7)/8));
