@@ -142,7 +142,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
 }
 
 
-IMG_RTN_CODE allocate_img_data(Img_t* pImg){
+IMG_RTN_CODE allocate_image_data(Img_t* pImg, const bool set_zero){
     // allocate memory for image data
     if (pImg == NULL){
         std::cout<<"the input arg pImg is null\n";
@@ -158,6 +158,9 @@ IMG_RTN_CODE allocate_img_data(Img_t* pImg){
             if (pImg->pImageData[0] == NULL){
                 return ALLOCATION_FAIL;
             }
+            if (set_zero){
+                memset(pImg->pImageData[0], '0', pImg->height * pImg->strides[0]); // because image data is interpreted as char
+            }
             break;
         }
         case RGB:{
@@ -166,11 +169,24 @@ IMG_RTN_CODE allocate_img_data(Img_t* pImg){
                 if (pImg->pImageData[c] == NULL){
                     return ALLOCATION_FAIL;
                 }
+                if (set_zero){
+                    memset(pImg->pImageData[c], '0', pImg->height * pImg->strides[c]); // because image data is interpreted as char
+                }
             }
             break;
         }
         default:
             return ALLOCATION_FAIL;
+    }
+    return SUCCEED;
+}
+
+
+IMG_RTN_CODE zero_out_image(Img_t* pImg){
+    for (int c = 0; c < MAX_NUM_P; c++){
+        if (pImg->pImageData[c] != NULL){
+
+        }
     }
     return SUCCEED;
 }
@@ -198,18 +214,14 @@ IMG_RTN_CODE destruct_img(Img_t** ptr_pImg){
     return SUCCEED; // always succeed?
 }
 
-// TODO: add func: crop_image(), not to copy and paset, but only to read original image with different offset
+// TODO: crop_image(), not to copy and paset, but only to read original image with different offset
 // addr_next_sart = offset(starting byte) + bytes_per_line
 
-// IMG_RTN_CODE crop_image(Img_t* pImg, ){
 
-// }
-
-
-//TODO: initialize_image_data(Img_t* pImg, TYPE option); option can be "set to zero", or "set to random", with configurable range and distribution
+//TODO: RandImageGenerator.cpp, with configurable range and distribution, and fit with image format (bit depth, height, width)
 
 
-//TODO: padding_scheme()
+//TODO: SlidingWindow.cpp, padding_scheme()
 
 
 void test_img_def(){
@@ -228,15 +240,18 @@ void test_img_def(){
                 alignment) == SUCCEED) {
         std::cout<<"ok\n";
     }
-    allocate_img_data(pMyImg);
+    allocate_image_data(pMyImg, true);
+
+    for (int i = 0; i < 10; i++){
+        std::cout<<"    "<< (*(pMyImg->pImageData[0] + i));
+    }
+    std::cout<<'\n';
+    
+
+
     view_img_properties(pMyImg);
     destruct_img(&pMyImg);
-    view_img_properties(pMyImg);
-
-
-    size_t x = 50;
-    size_t m = 16;
-    size_t q = 0;
-    std::cout<< get_next_multiple(x, m) <<'\n';
+    
+    
 
  }
