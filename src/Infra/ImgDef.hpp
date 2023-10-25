@@ -19,8 +19,7 @@ typedef struct{
     IMAGE_FMT imageFormat;
     size_t width; // image width in pixels; if there are different widths for different panels, take the max.
     size_t height; // image height of images; if there are different heights for different panels, take the max.
-    size_t nComp; // numer of panels, not always components
-    size_t bitDepth;
+    size_t bitDepth; // recommend to set to the bit depth used in COMPUTER, for example 8, 16, 32; not the sensor output bit depth.
     size_t alignment; // the number of bytes for a line is a multiple of number of alignment, in bytes; if no specific alignment, set this to 1.
     size_t strides[MAX_NUM_P]; // in bytes
     uint8_t* pImageData[MAX_NUM_P]; // the pointers to all components of the image

@@ -21,7 +21,6 @@ void test_dwt(){
     pMyImg->bitDepth = 10;
     pMyImg->height = 30;
     pMyImg->width = 50;
-    pMyImg->nComp = 3;
     pMyImg->strides[0] = 100; // 50 * 2(bytes)
     pMyImg->strides[1] = 100;
     pMyImg->strides[2] = 100;
