@@ -46,6 +46,10 @@ const char* get_image_format_name(const IMAGE_FMT imageFormat){
             return "RAW_BGGR";
             break;
         }
+        case YUV420:{
+            return "YUV420";
+            break;
+        }
         default:{
             return "Unknown";
             break;
@@ -69,7 +73,7 @@ void view_img_properties(const Img_t* pImg){
         std::cout<<pImg->strides[c]<<"; ";
     }
     std::cout<<"\n";
-    std::cout<<"addr. of pImageData = ";
+    std::cout<<"addr of pImageData = ";
     for (int c = 0 ; c < MAX_NUM_P; c++){
         if (pImg->pImageData[c] != NULL){
             std::cout<< static_cast<const void*>(pImg->pImageData[c]) <<"; ";
@@ -209,8 +213,17 @@ IMG_RTN_CODE destruct_img(Img_t** ptr_pImg){
 
 //TODO: SlidingWindow.cpp, padding_scheme(), and maybe crop_image() addr_next_sart = offset(starting byte) + bytes_per_line
 
+template <typename T>
+void my_print(int a){
+    T n;
+    n = a * 0.845;
+    std::cout<<"the value is: "<< n <<"\n";
+}
 
 void test_img_def(){
+    void (*funcPtr)(int) = &my_print<float>;
+    funcPtr(9);
+
     Img_t* pMyImg = NULL; // initialze
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB;

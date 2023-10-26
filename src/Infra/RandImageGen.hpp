@@ -5,6 +5,14 @@
 #include <stddef.h>
 #include "ImgDef.hpp"
 
+typedef struct{
+    bool isSigned;
+    int constant;
+    // uniform distri
+    // gaussian distri
+} Val_t;
 
+
+void test_rand_image_gen();
 
 #endif

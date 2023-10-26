@@ -12,7 +12,8 @@ typedef enum{
     RAW_RGGB,
     RAW_GRGB,
     RAW_GBGR,
-    RAW_BGGR
+    RAW_BGGR,
+    YUV420
 } IMAGE_FMT;
 
 typedef struct{
