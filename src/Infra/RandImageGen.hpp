@@ -10,7 +10,7 @@ typedef struct{
     int constant;
     // uniform distri
     // gaussian distri
-} Val_t;
+} ValCfg_t;
 
 
 void test_rand_image_gen();

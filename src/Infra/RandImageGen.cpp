@@ -3,56 +3,37 @@
 #include "RandImageGen.hpp"
 
 
-// image format is one aspect; bit depth is another aspect.
-// according to bitdepth (and format), determine signed or unsigned, data type, and number of panels
-// such as int16, or uint16
-// then create the image pointer
-// then convert the original imagedata pointer this this type
 
-
-// then set values to the image (take care of number of panels, and different width and height for different panels)
-// after everything is finished, destruct pImg
-// DO NOT FORGET to set to the image pointer to NULL as well.
-
-
-int val_generated(const Val_t& sVal){
+// random, uniformly distributed, with range configurable
+// random, guassian distributed, with mean and deviation configurable
+int val_generated(const ValCfg_t& sValCfg){
     // how to deal with the range, mean, std dev?
-    // make option as a struct. can pass by reference, since it cannot be null.
-    return sVal.constant;
+    
+    return sValCfg.constant; // should return a function expression, maybe.
 }
 
-// to be removed:
-// to be made into template
-// void set_value_u8(Img_t* pImg, const int option, const int panel, const int h, const int w){
-//     uint8_t* pTmp = pImg->pImageData[panel];
-//     for (int i = 0; i < h; ++i){
-//         for (int j = 0; j < w; ++j){
-//             *(pTmp + i * (pImg->strides[panel]) + j) = (uint8_t)val_generated(option);
-//         }
-//     }
-// }
 
 template<typename T>
-void set_value_by_panel(Img_t* pImg, const Val_t& sVal, const int panel, const int h, const int w){
+void set_value_by_panel(Img_t* pImg, const ValCfg_t& sValCfg, const int panel, const int h, const int w){
     T* pTmp = (T*)(pImg->pImageData[panel]);
     for (int i = 0; i < h; ++i){
         for (int j = 0; j < w; ++j){
-            *(pTmp + i * (pImg->strides[panel]) + j) = (T)val_generated(sVal);
+            *(pTmp + i * (pImg->strides[panel]) + j) = (T)val_generated(sValCfg);
         }
     }
 }
 
-typedef void (*FP)(Img_t*, const Val_t&, const int, const int, const int);
+typedef void (*FP)(Img_t*, const ValCfg_t&, const int, const int, const int);
 
-void set_value(Img_t* pImg, Val_t& sVal){
+void set_value(Img_t* pImg, ValCfg_t& sValCfg){
     assert(pImg != NULL);
-    // void (*funcPtrU8)(Img_t*, const Val_t&, const int, const int, const int) = &set_value_by_panel<uint8_t>;
-    // void (*funcPtrU16)(Img_t*, const Val_t&, const int, const int, const int) = &set_value_by_panel<uint16_t>;
-    // void (*funcPtrU32)(Img_t*, const Val_t&, const int, const int, const int) = &set_value_by_panel<uint32_t>;
+    // void (*funcPtrU8)(Img_t*, const ValCfg_t&, const int, const int, const int) = &set_value_by_panel<uint8_t>;
+    // void (*funcPtrU16)(Img_t*, const ValCfg_t&, const int, const int, const int) = &set_value_by_panel<uint16_t>;
+    // void (*funcPtrU32)(Img_t*, const ValCfg_t&, const int, const int, const int) = &set_value_by_panel<uint32_t>;
 
     FP f = NULL;
 
-    if (sVal.isSigned == false){
+    if (sValCfg.isSigned == false){
         if (pImg->bitDepth <= 8){
             f = set_value_by_panel<uint8_t>;
         }
@@ -64,21 +45,18 @@ void set_value(Img_t* pImg, Val_t& sVal){
         }
     }
     else {
-        // to be finished...
+        f = set_value_by_panel<int>;
     }
 
     // if not YUV:
     for (int c = 0; c < MAX_NUM_P; c++){
         if (pImg->pImageData[c] != NULL){
-            f(pImg, sVal, c, pImg->height, pImg->width);
+            f(pImg, sValCfg, c, pImg->height, pImg->width);
         }
     }
     // YUV: different panels may have different height and width
 }
 
-// random, uniformly distributed, with range configurable
-
-// random, guassian distributed, with mean and deviation configurable
 
 void test_rand_image_gen(){
     Img_t* pMyImg = NULL; // initialze
@@ -100,9 +78,9 @@ void test_rand_image_gen(){
 
     view_img_properties(pMyImg);
 
-    Val_t sVal = {false, 2};
+    ValCfg_t sValCfg = {false, 2};
 
-    set_value(pMyImg, sVal);
+    set_value(pMyImg, sValCfg);
 
 
     for (int i = 0; i < 12; i++){
