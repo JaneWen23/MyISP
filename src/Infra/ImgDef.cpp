@@ -69,7 +69,7 @@ void view_img_properties(const Img_t* pImg){
         std::cout<<pImg->strides[c]<<"; ";
     }
     std::cout<<"\n";
-    std::cout<<"address of pImageData = ";
+    std::cout<<"addr. of pImageData = ";
     for (int c = 0 ; c < MAX_NUM_P; c++){
         if (pImg->pImageData[c] != NULL){
             std::cout<< static_cast<const void*>(pImg->pImageData[c]) <<"; ";
@@ -112,12 +112,48 @@ void set_strides(Img_t* pImg){
 }   
 
 
+IMG_RTN_CODE allocate_image_data(Img_t* pImg){
+    // allocate memory for image data
+    if (pImg == NULL){
+        std::cout<<"the input arg pImg is null\n";
+        return INVALID_INPUT;
+    }
+    switch(pImg->imageFormat){
+        case MONO:
+        case RAW_RGGB:
+        case RAW_GRGB:
+        case RAW_GBGR:
+        case RAW_BGGR:{
+            assert(pImg->pImageData[0] == NULL); // because we set it to NULL in construct_img().
+            pImg->pImageData[0] = (uint8_t*)malloc(pImg->height * pImg->strides[0]);
+            if (pImg->pImageData[0] == NULL){
+                return ALLOCATION_FAIL;
+            }
+            break;
+        }
+        case RGB:{
+            for (int c = 0; c < 3; c++){
+                assert(pImg->pImageData[c] == NULL); // because we set it to NULL in construct_img().
+                pImg->pImageData[c] = (uint8_t*)malloc(pImg->height * pImg->strides[c]);
+                if (pImg->pImageData[c] == NULL){
+                    return ALLOCATION_FAIL;
+                }
+            }
+            break;
+        }
+        default:
+            return ALLOCATION_FAIL;
+    }
+    return SUCCEED;
+}
+
 IMG_RTN_CODE construct_img( Img_t* pImg, 
                             IMAGE_FMT imageFormat,
                             size_t width,
                             size_t height,
                             size_t bitDepth,
-                            size_t alignment){
+                            size_t alignment,
+                            bool allocateImage){
     // takes in args to set up the properties of the img type; 
     if (pImg == NULL){
         std::cout<<"Img_t object is not allocated.\n";
@@ -137,60 +173,14 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
     for (int c = 0; c < MAX_NUM_P; c++){
         pImg->pImageData[c] = NULL;
     }  
-     
-    return SUCCEED;
-}
-
-
-IMG_RTN_CODE allocate_image_data(Img_t* pImg, const bool set_zero){
-    // allocate memory for image data
-    if (pImg == NULL){
-        std::cout<<"the input arg pImg is null\n";
-        return INVALID_INPUT;
-    }
-    switch(pImg->imageFormat){
-        case MONO:
-        case RAW_RGGB:
-        case RAW_GRGB:
-        case RAW_GBGR:
-        case RAW_BGGR:{
-            pImg->pImageData[0] = (uint8_t*)malloc(pImg->height * pImg->strides[0]);
-            if (pImg->pImageData[0] == NULL){
-                return ALLOCATION_FAIL;
-            }
-            if (set_zero){
-                memset(pImg->pImageData[0], '0', pImg->height * pImg->strides[0]); // because image data is interpreted as char
-            }
-            break;
-        }
-        case RGB:{
-            for (int c = 0; c < 3; c++){
-                pImg->pImageData[c] = (uint8_t*)malloc(pImg->height * pImg->strides[c]);
-                if (pImg->pImageData[c] == NULL){
-                    return ALLOCATION_FAIL;
-                }
-                if (set_zero){
-                    memset(pImg->pImageData[c], '0', pImg->height * pImg->strides[c]); // because image data is interpreted as char
-                }
-            }
-            break;
-        }
-        default:
+    if (allocateImage){
+        if (allocate_image_data(pImg) != SUCCEED){
+            std::cout<<"image is not successfully allocated.\n";
             return ALLOCATION_FAIL;
-    }
-    return SUCCEED;
-}
-
-
-IMG_RTN_CODE zero_out_image(Img_t* pImg){
-    for (int c = 0; c < MAX_NUM_P; c++){
-        if (pImg->pImageData[c] != NULL){
-
         }
     }
     return SUCCEED;
 }
-
 
 IMG_RTN_CODE free_image_data(Img_t* pImg){
     for (int c = 0; c < MAX_NUM_P; c++){
@@ -214,14 +204,10 @@ IMG_RTN_CODE destruct_img(Img_t** ptr_pImg){
     return SUCCEED; // always succeed?
 }
 
-// TODO: crop_image(), not to copy and paset, but only to read original image with different offset
-// addr_next_sart = offset(starting byte) + bytes_per_line
 
 
-//TODO: RandImageGenerator.cpp, with configurable range and distribution, and fit with image format (bit depth, height, width)
 
-
-//TODO: SlidingWindow.cpp, padding_scheme()
+//TODO: SlidingWindow.cpp, padding_scheme(), and maybe crop_image() addr_next_sart = offset(starting byte) + bytes_per_line
 
 
 void test_img_def(){
@@ -237,21 +223,38 @@ void test_img_def(){
                 width,
                 height,
                 bitDepth,
-                alignment) == SUCCEED) {
+                alignment,
+                true) == SUCCEED) {
         std::cout<<"ok\n";
     }
-    allocate_image_data(pMyImg, true);
-
-    for (int i = 0; i < 10; i++){
-        std::cout<<"    "<< (*(pMyImg->pImageData[0] + i));
-    }
-    std::cout<<'\n';
-    
-
 
     view_img_properties(pMyImg);
-    destruct_img(&pMyImg);
-    
-    
 
+    // try to use the image:
+    uint16_t* pMyData_p0 = NULL;
+    pMyData_p0 = (uint16_t*)(pMyImg->pImageData[0]);
+    if (pMyData_p0 == NULL){
+        return;
+    }
+    for (int i = 0; i < pMyImg->height; ++i){
+        for (int j = 0; j < pMyImg->width; ++j){
+            *(pMyData_p0 + i * (pMyImg->strides[0]) + j) = i * pMyImg->height + j + 34;
+        }
+    }
+
+    for (int i = 0; i < 12; i++){
+        std::cout<<"    "<< (*(pMyData_p0 + i));
+    }
+    std::cout<<'\n';
+
+    for (int i = 0; i < 12; i++){
+        std::cout<<"    "<< (*(pMyData_p0 + pMyImg->strides[0] + i));
+    }
+    std::cout<<'\n';
+
+    destruct_img(&pMyImg);
+
+    // but we have not null-ed pMyData_p0 yet. this is dangerous.
+    pMyData_p0 = NULL;
+    
  }
