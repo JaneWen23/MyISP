@@ -1,15 +1,30 @@
 #include <iostream>
 #include <stdlib.h>
+#include <random>
 #include "RandImageGen.hpp"
 
 
+const int constant_num(const Distrib_t& sDistrib){
+    return sDistrib.lb;
+}
 
-// random, uniformly distributed, with range configurable
-// random, guassian distributed, with mean and deviation configurable
-int val_generated(const ValCfg_t& sValCfg){
-    // how to deal with the range, mean, std dev?
-    
-    return sValCfg.constant; // should return a function expression, maybe.
+
+const int rand_num_uniform(const Distrib_t& sDistrib){
+    return std::rand()%(sDistrib.ub - sDistrib.lb + 1) + sDistrib.lb;
+}
+
+
+const int rand_num_gaussian(const Distrib_t& sDistrib){
+    // should also take care of the min and max values allowed (or, range).
+    // std::default_random_engine generator(time(NULL));
+    // std::normal_distribution<int> distribution(sDistrib.mu, sDistrib.sigma);
+    // return distribution(generator);
+    return 0;
+}
+
+
+const int val_generated(const ValCfg_t& sValCfg){
+    return sValCfg.FGetNum(sValCfg.sDistrib);
 }
 
 
@@ -25,7 +40,7 @@ void set_value_by_panel(Img_t* pImg, const ValCfg_t& sValCfg, const int panel, c
 
 typedef void (*FP)(Img_t*, const ValCfg_t&, const int, const int, const int);
 
-void set_value(Img_t* pImg, ValCfg_t& sValCfg){
+IMG_RTN_CODE set_value(Img_t* pImg, const ValCfg_t& sValCfg){
     assert(pImg != NULL);
     // void (*funcPtrU8)(Img_t*, const ValCfg_t&, const int, const int, const int) = &set_value_by_panel<uint8_t>;
     // void (*funcPtrU16)(Img_t*, const ValCfg_t&, const int, const int, const int) = &set_value_by_panel<uint16_t>;
@@ -55,10 +70,15 @@ void set_value(Img_t* pImg, ValCfg_t& sValCfg){
         }
     }
     // YUV: different panels may have different height and width
+
+    return SUCCEED;
 }
 
 
 void test_rand_image_gen(){
+    std::srand(std::time(NULL)); // only need once (maybe for each distribution). how to encapsulate?
+
+
     Img_t* pMyImg = NULL; // initialze
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB;
@@ -78,7 +98,10 @@ void test_rand_image_gen(){
 
     view_img_properties(pMyImg);
 
-    ValCfg_t sValCfg = {false, 2};
+
+    Distrib_t sDistrib = {0, 511, 3, 15};  
+    ValCfg_t sValCfg = {false, rand_num_uniform, sDistrib};
+    //ValCfg_t sValCfg = {false, constant_num, sDistrib};
 
     set_value(pMyImg, sValCfg);
 
