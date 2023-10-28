@@ -6,7 +6,7 @@
 using namespace std;
 
 int main(){
-    test_rand_image_gen();
+    test_dwt();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

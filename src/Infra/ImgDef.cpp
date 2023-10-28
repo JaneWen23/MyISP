@@ -208,21 +208,14 @@ IMG_RTN_CODE destruct_img(Img_t** ptr_pImg){
     return SUCCEED; // always succeed?
 }
 
+// TODO: duplicate_img()? just copy and paste evrything.
 
 
 
 //TODO: SlidingWindow.cpp, padding_scheme(), and maybe crop_image() addr_next_sart = offset(starting byte) + bytes_per_line
 
-template <typename T>
-void my_print(int a){
-    T n;
-    n = a * 0.845;
-    std::cout<<"the value is: "<< n <<"\n";
-}
 
 void test_img_def(){
-    void (*funcPtr)(int) = &my_print<float>;
-    funcPtr(9);
 
     Img_t* pMyImg = NULL; // initialze
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
