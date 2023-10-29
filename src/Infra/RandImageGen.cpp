@@ -98,13 +98,11 @@ void test_rand_image_gen(){
 
     view_img_properties(pMyImg);
 
-
     Distrib_t sDistrib = {0, 511, 3, 15};  
     ValCfg_t sValCfg = {false, rand_num_uniform, sDistrib};
     //ValCfg_t sValCfg = {false, constant_num, sDistrib};
 
     set_value(pMyImg, sValCfg);
-
 
     for (int i = 0; i < 12; i++){
         std::cout<<"    "<< (*((uint16_t*)(pMyImg->pImageData[0]) + i));
@@ -114,9 +112,24 @@ void test_rand_image_gen(){
     for (int i = 0; i < 12; i++){
         std::cout<<"    "<< (*((uint16_t*)(pMyImg->pImageData[0]) + pMyImg->strides[0] + i));
     }
+    std::cout<<"\n\n\n";
+
+    Img_t* pMyImg2 =(Img_t*)malloc(sizeof(Img_t));
+    ducplicate_img(pMyImg, pMyImg2);
+
+    for (int i = 0; i < 12; i++){
+        std::cout<<"    "<< (*((uint16_t*)(pMyImg2->pImageData[0]) + i));
+    }
     std::cout<<'\n';
 
+    for (int i = 0; i < 12; i++){
+        std::cout<<"    "<< (*((uint16_t*)(pMyImg2->pImageData[0]) + pMyImg2->strides[0] + i));
+    }
+    std::cout<<'\n';
+
+    std::cout<<"is equal = "<< is_image_equal(pMyImg, pMyImg2)<<"\n";
 
     destruct_img(&pMyImg);
+    destruct_img(&pMyImg2);
     
  }

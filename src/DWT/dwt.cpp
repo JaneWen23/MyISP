@@ -5,7 +5,6 @@
 #include "../Infra/RandImageGen.hpp"
 
 
-// TODO: consider padding scheme + sliding window; also, FIR filtering;
 // need to process a window (or a strip)
 // may "crop" the input image 
 

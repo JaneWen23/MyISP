@@ -37,14 +37,16 @@ typedef enum{
 
 
 IMG_RTN_CODE construct_img(Img_t* pImg, 
-                            IMAGE_FMT imageFormat,
-                            size_t width,
-                            size_t height,
-                            size_t bitDepth,
-                            size_t alignment,
-                            bool allocateImage);
+                            const IMAGE_FMT imageFormat,
+                            const size_t width,
+                            const size_t height,
+                            const size_t bitDepth,
+                            const size_t alignment,
+                            const bool allocateImage);
 IMG_RTN_CODE destruct_img(Img_t**);
 void view_img_properties(const Img_t* pImg);
+IMG_RTN_CODE ducplicate_img(const Img_t* pSrcImg, Img_t* pDstImg);
+bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg);
 
 void test_img_def(); // to be rewritten as unit test
 

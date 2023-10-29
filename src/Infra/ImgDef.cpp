@@ -152,12 +152,12 @@ IMG_RTN_CODE allocate_image_data(Img_t* pImg){
 }
 
 IMG_RTN_CODE construct_img( Img_t* pImg, 
-                            IMAGE_FMT imageFormat,
-                            size_t width,
-                            size_t height,
-                            size_t bitDepth,
-                            size_t alignment,
-                            bool allocateImage){
+                            const IMAGE_FMT imageFormat,
+                            const size_t width,
+                            const size_t height,
+                            const size_t bitDepth,
+                            const size_t alignment,
+                            const bool allocateImage){
     // takes in args to set up the properties of the img type; 
     if (pImg == NULL){
         std::cout<<"Img_t object is not allocated.\n";
@@ -186,6 +186,61 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
     return SUCCEED;
 }
 
+IMG_RTN_CODE ducplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
+    // dose NOT set ROI because ROI size is in pixel (each pixel may take 1, 2 or 4 bytes), 
+    // but the Img_t cannot handle different data types.
+    if (pSrcImg == NULL){
+        std::cout<<"source Img_t object is not allocated.\n";
+        return ALLOCATION_FAIL;
+    }
+    if (pSrcImg->pImageData[0] == NULL){
+        std::cout<<"source image is not reachable, maybe it is not allocated.\n";
+        return ALLOCATION_FAIL;
+    }
+    if (pDstImg == NULL){
+        std::cout<<"destination Img_t object is not allocated.\n";
+        return ALLOCATION_FAIL;
+    }
+    if (construct_img(pDstImg, 
+                    pSrcImg->imageFormat, 
+                    pSrcImg->width,
+                    pSrcImg->height,
+                    pSrcImg->bitDepth,
+                    pSrcImg->alignment,
+                    true) == SUCCEED){
+        // copy image data
+        for (int c = 0; c < MAX_NUM_P; ++c){
+            if (pSrcImg->pImageData[0] != NULL){
+                for (int i = 0; i < pSrcImg->height; ++i){
+                    for (int j = 0; j < pSrcImg->strides[c]; ++j){
+                        *(pDstImg->pImageData[c] + i * (pSrcImg->strides[c]) + j) = *(pSrcImg->pImageData[c] + i * (pSrcImg->strides[c]) + j);
+                    }
+                }
+            }
+        }
+    }
+    else{
+        std::cout<<"destination image not allocated successfully.\n";
+        return ALLOCATION_FAIL;
+    }
+    return SUCCEED;
+}
+
+bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg){
+    for (int c = 0; c < MAX_NUM_P; ++c){
+        if (pSrcImg->pImageData[0] != NULL){
+            for (int i = 0; i < pSrcImg->height; ++i){
+                for (int j = 0; j < pSrcImg->strides[c]; ++j){
+                    if(*(pDstImg->pImageData[c] + i * (pSrcImg->strides[c]) + j) != *(pSrcImg->pImageData[c] + i * (pSrcImg->strides[c]) + j)){
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
 IMG_RTN_CODE free_image_data(Img_t* pImg){
     for (int c = 0; c < MAX_NUM_P; c++){
         if (pImg->pImageData[c] != NULL){
@@ -208,11 +263,6 @@ IMG_RTN_CODE destruct_img(Img_t** ptr_pImg){
     return SUCCEED; // always succeed?
 }
 
-// TODO: duplicate_img()? just copy and paste evrything.
-
-
-
-//TODO: SlidingWindow.cpp, padding_scheme(), and maybe crop_image() addr_next_sart = offset(starting byte) + bytes_per_line
 
 
 void test_img_def(){
