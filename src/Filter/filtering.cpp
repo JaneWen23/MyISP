@@ -1,5 +1,5 @@
 
-# include "filtering.hpp"
+# include "Filtering.hpp"
 
 // FIR or IIR; conv or FFT; 1D and 2D, 2D separate to 1D
 
