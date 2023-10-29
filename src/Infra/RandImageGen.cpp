@@ -48,7 +48,7 @@ IMG_RTN_CODE set_value(Img_t* pImg, const ValCfg_t& sValCfg){
 
     FP f = NULL;
 
-    if (sValCfg.isSigned == false){
+    if (sValCfg.sign == UNSIGNED){
         if (pImg->bitDepth <= 8){
             f = set_value_by_panel<uint8_t>;
         }
@@ -99,8 +99,8 @@ void test_rand_image_gen(){
     view_img_properties(pMyImg);
 
     Distrib_t sDistrib = {0, 511, 3, 15};  
-    ValCfg_t sValCfg = {false, rand_num_uniform, sDistrib};
-    //ValCfg_t sValCfg = {false, constant_num, sDistrib};
+    ValCfg_t sValCfg = {UNSIGNED, rand_num_uniform, sDistrib};
+    //ValCfg_t sValCfg = {UNSIGNED, constant_num, sDistrib};
 
     set_value(pMyImg, sValCfg);
 

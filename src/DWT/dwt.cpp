@@ -46,8 +46,8 @@ void test_dwt(){
 
 
     Distrib_t sDistrib = {0, 511, 3, 15};  
-    ValCfg_t sValCfg = {false, rand_num_uniform, sDistrib};
-    //ValCfg_t sValCfg = {false, constant_num, sDistrib};
+    ValCfg_t sValCfg = {UNSIGNED, rand_num_uniform, sDistrib};
+    //ValCfg_t sValCfg = {UNSIGNED, constant_num, sDistrib};
 
     set_value(pMyImg, sValCfg);
 

@@ -5,6 +5,11 @@
 #include <stddef.h>
 #include "ImgDef.hpp"
 
+typedef enum{
+    UNSIGNED,
+    SIGNED
+} SIGN;
+
 typedef struct{
     int lb; // uniform distribution lower bound; if distribution is actually a constant, this will be returned.
     int ub; // uniform distribution upper bound.
@@ -14,7 +19,7 @@ typedef struct{
 } Distrib_t;
 
 typedef struct{
-    bool isSigned;
+    SIGN sign;
     const int (*FGetNum)(const Distrib_t&); // function to generate the number under a certain distribution.
     Distrib_t sDistrib;
 } ValCfg_t;
