@@ -7,7 +7,7 @@
 #include "../Infra/RandImageGen.hpp"
 
 typedef enum{
-    ZERO,
+    ZEROPADDING,
     PERIODIC,
     MIRROR
 } PADDING;
@@ -24,6 +24,7 @@ typedef struct{
     uint8_t* pKernel; // pointer to kernel data; may convert to any type when used.
     int nRows;
     int nCols;
+    int centerX; // TODO: give a better name; also, consider 2D situation.
     PADDING padding;
     int rowStep;
     int colStep;
