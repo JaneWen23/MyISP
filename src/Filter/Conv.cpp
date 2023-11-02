@@ -31,13 +31,13 @@ const T dot_product_clever(const T** a, const T** b, const int vecLen){ // in us
     int i = 0;
     // parallel computation, maybe
     for(i = 0; i < vecLen - 4; i += 4){
-        res += (*(*(a+i))) * (*(*(b+i)));
-        res += (*(*(a+i+1))) * (*(*(b+i+1)));
-        res += (*(*(a+i+2))) * (*(*(b+i+2)));
-        res += (*(*(a+i+3))) * (*(*(b+i+3)));
+        res += (**(a+i)) * (**(b+i));
+        res += (**(a+i+1)) * (**(b+i+1));
+        res += (**(a+i+2)) * (**(b+i+2));
+        res += (**(a+i+3)) * (**(b+i+3));
     }
     while(i < vecLen){
-        res += (*(*(a+i))) * (*(*(b+i)));
+        res += (**(a+i)) * (**(b+i));
         ++i;
     }
     return res;
@@ -115,7 +115,7 @@ void conv_1d(const T* x, const int xLen, const KernelCfg_t& sKernelCfg, T* y){
     //     std::cout<<"    "<< (int)(*(pAddr[i]))<<", ";
     // }
     // std::cout<<"\n";
-    T** pKerAddr = (T**)malloc(kerLen * sizeof(T*)); // stores the addr of flipped kernel
+    T** pKerAddr = (T**)malloc(kerLen * sizeof(T*)); // stores the addr of flipped (or not) kernel
     set_kernel_addr<T>(pKerAddr, (T*)sKernelCfg.pKernel, kerLen, sKernelCfg.needFlip);
     // for(int i = 0; i < kerLen; ++i){
     //     std::cout<<"    "<< (int)(*(pKerAddr[i]))<<", ";
@@ -133,13 +133,13 @@ void test_dot_product_clever(){
     uint16_t x[10] = {1, 2, 3, 1, 1, 1, 7, 6, 5, 3};
     int xLen = 10;
     uint16_t h[5] = {1, 1, 1, 0, 0};
-    uint16_t y[5] = {0};
+    uint16_t y[10] = {0}; // length of y should be xLen / kernelStep
     const KernelCfg_t sKernelCfg = {
-        (uint8_t*)h, 1, 5, 2, PERIODIC, 1, 2, false};
+        (uint8_t*)h, 1, 5, 2, PERIODIC, 1, 1, false};
     //=====================================
 
     conv_1d<uint16_t>(x, xLen, sKernelCfg, y);
-    for(int i = 0; i < 5; ++i){
+    for(int i = 0; i < 10; ++i){
         std::cout<<"    "<< (int)(*(y+i)) <<", ";
     }
     std::cout<<"\n";
@@ -150,32 +150,21 @@ void test_dot_product_clever(){
 // the performance may case-by-case, i.e, 1d and 2d separately.
 
 
-// ROI width, length and pImg->strides[c] gives the actual "x", line by line; 
-// kernel shape gives vecLen to dot_product()
-// padding gives the out-of-boundary pixels of x
-// but how to let dot_product know that some x values are from padding scheme?
-
-
 
 void sliding_window(Img_t* pInImg, const ROI_t& sROI, Img_t* pOutImg, const KernelCfg_t& sKernelCfg){
     // assume actual img and kernel data are int (should determine from bitDepth!!)
-    // assume 1d conv
+    // TODO: support more data types, not just int
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
-    int* pKer =  (int*)sKernelCfg.pKernel;
-    int* pInData = (int*)(pInImg->pImageData);
-    int* pOutData = (int*)(pOutImg->pImageData);
-    int strideInPix = pInImg->strides[sROI.panelId] / sizeof(int);
-
+    int stride = pInImg->strides[sROI.panelId];
     
-    for (int i = 0; i < sROI.roiHeight; ++i){ 
-        for(int j = 0; j < sROI.roiWidth; ++j){ 
-            // out img (i,j) to in img row and col:
-            // ori_i = rowStep*i + sROI.startRow; ori_j = j + sROI.startCol 
-            // (i*roiWidth+j) --> (ori_i*strideInPix + colStep*j)
-            // need to find, or define the center of the kernel, and flip the kernel
-            //*(pOutData + i*strideInPix + j) = ...???
-        }
+    // perform 1d convolution in every row
+    uint8_t* x = pInImg->pImageData[sROI.panelId] + sROI.startRow * stride + sROI.startCol * sizeof(int);
+    uint8_t* y = pOutImg->pImageData[sROI.panelId]; // TODO: if the out img has different img format (such as mono), it does not allow panelId different than 0.
+    for (int i = 0; i < sROI.roiHeight; ++i){
+        conv_1d<int>((int*)x, sROI.roiWidth, sKernelCfg, (int*)y);
+        x += stride;
+        y += pOutImg->strides[sROI.panelId];
     }
 
 }
@@ -183,13 +172,62 @@ void sliding_window(Img_t* pInImg, const ROI_t& sROI, Img_t* pOutImg, const Kern
 
 
 void test_conv(){
-    // int a[11] = {2,1,1,1,1,1,1,1,1,1,1};
-    // int b[11] = {1,1,1,1,1,1,1,1,1,1,1};
+    //test_dot_product_clever();
 
-    // int res = dot_product<int>(a, b, 1);
-    // std::cout<<"dot product result = "<< res<<"\n";
-    //std::cout<<"bool="<<(0 < -2)<<"\n";
+    Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
+    IMAGE_FMT imageFormat = RGB;
+    size_t width = 20;
+    size_t height = 12;
+    size_t bitDepth = 32;
+    size_t alignment = 32;
+    bool allocateImage = true;
 
-    test_dot_product_clever();
-    //test_set_addr_array_2();
+    construct_img(pImg1, 
+                  imageFormat,
+                  width,
+                  height,
+                  bitDepth,
+                  alignment,
+                  allocateImage);
+    
+    ValCfg_t sValCfg = {SIGNED, rand_num_uniform, {0, 99, 0, 0}};
+
+    set_value(pImg1, sValCfg);
+    view_img_properties(pImg1);
+    std::cout<<"original:\n";
+    for (int j = 0; j < height; j++){
+        for (int i = 0; i < width; i++){
+            std::cout<<"  "<< (*((int*)(pImg1->pImageData[0] + j*pImg1->strides[0]) + i));
+        }
+        std::cout<<'\n';
+    }
+
+    Img_t* pImg2 =(Img_t*)malloc(sizeof(Img_t));
+    construct_img(pImg2, 
+                  imageFormat,
+                  width,
+                  height,
+                  bitDepth,
+                  alignment,
+                  allocateImage);
+
+    int h[5] = {0, 0, 1, 0, 0};
+    const KernelCfg_t sKernelCfg = {
+        (uint8_t*)h, 1, 5, 2, PERIODIC, 1, 1, false};
+
+    ROI_t sROI = {0, 2, 2, 15, 9};
+
+    sliding_window(pImg1, sROI, pImg2, sKernelCfg);
+
+
+    std::cout<<"filtered:\n";
+    for (int j = 0; j < 10; j++){
+        for (int i = 0; i < 20; i++){
+            std::cout<<"  "<< (*((int*)(pImg2->pImageData[0] + j*pImg2->strides[0]) + i));
+        }
+        std::cout<<'\n';
+    }
+
+    destruct_img(&pImg1);
+    destruct_img(&pImg2);
 }

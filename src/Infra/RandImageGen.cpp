@@ -31,9 +31,10 @@ const int val_generated(const ValCfg_t& sValCfg){
 template<typename T>
 void set_value_by_panel(Img_t* pImg, const ValCfg_t& sValCfg, const int panel, const int h, const int w){
     T* pTmp = (T*)(pImg->pImageData[panel]);
+    int strideInPix = pImg->strides[panel] / sizeof(T);
     for (int i = 0; i < h; ++i){
         for (int j = 0; j < w; ++j){
-            *(pTmp + i * (pImg->strides[panel]) + j) = (T)val_generated(sValCfg);
+            *(pTmp + i * strideInPix + j) = (T)val_generated(sValCfg);
         }
     }
 }
