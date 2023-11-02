@@ -116,7 +116,7 @@ void conv_1d(const T* x, const int xLen, const KernelCfg_t& sKernelCfg, T* y){
     // }
     // std::cout<<"\n";
     T** pKerAddr = (T**)malloc(kerLen * sizeof(T*)); // stores the addr of flipped kernel
-    set_kernel_addr(pKerAddr, sKernelCfg.pKernel, kerLen, sKernelCfg.needFlip);
+    set_kernel_addr<T>(pKerAddr, (T*)sKernelCfg.pKernel, kerLen, sKernelCfg.needFlip);
     // for(int i = 0; i < kerLen; ++i){
     //     std::cout<<"    "<< (int)(*(pKerAddr[i]))<<", ";
     // }
@@ -130,15 +130,15 @@ void conv_1d(const T* x, const int xLen, const KernelCfg_t& sKernelCfg, T* y){
 
 
 void test_dot_product_clever(){
-    uint8_t x[10] = {1, 2, 3, 1, 1, 1, 7, 6, 5, 3};
+    uint16_t x[10] = {1, 2, 3, 1, 1, 1, 7, 6, 5, 3};
     int xLen = 10;
-    uint8_t h[5] = {1, 1, 1, 0, 0};
-    uint8_t y[5] = {0};
+    uint16_t h[5] = {1, 1, 1, 0, 0};
+    uint16_t y[5] = {0};
     const KernelCfg_t sKernelCfg = {
-        h, 1, 5, 2, PERIODIC, 1, 2, false};
+        (uint8_t*)h, 1, 5, 2, PERIODIC, 1, 2, false};
     //=====================================
 
-    conv_1d<uint8_t>(x, xLen, sKernelCfg, y);
+    conv_1d<uint16_t>(x, xLen, sKernelCfg, y);
     for(int i = 0; i < 5; ++i){
         std::cout<<"    "<< (int)(*(y+i)) <<", ";
     }
