@@ -96,12 +96,14 @@ void view_img_properties(const Img_t* pImg){
 
 template<typename T>
 void print_data(uint8_t* pData){
-    std::cout<<"\t"<< *((T*)(pData));
+    std::cout<<"\t"<< + *((T*)(pData)); // "+" is to make output as digit, not as char
 }
 
 typedef void (*FP)(uint8_t*);
 
 void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
+    // TODO: check input validity:
+
     FP f = NULL;
     int scale = 0;
     if (pImg->sign == UNSIGNED){

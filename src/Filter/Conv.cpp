@@ -201,8 +201,8 @@ void test_conv(){
     IMAGE_FMT imageFormat = RGB; // out can be different than in
     size_t width = 20; // out can be different than in
     size_t height = 12; // out can be different than in
-    SIGN sign = SIGNED; // out can be different than in
-    size_t bitDepth = 16; // out and kernel must be the same as in, and you should be careful about the sign,
+    SIGN sign = UNSIGNED; // out can be different than in
+    size_t bitDepth = 32; // out and kernel must be the same as in, and you should be careful about the sign,
     // i.e., if out img is signed but in img is unsigned, since the in img data type will be treated as out img data type,
     // the large unsigned values (from "in img") will be interpreted into negative signed values; to prevent this, you
     // may choose a "larger" data type for in img.
@@ -237,7 +237,7 @@ void test_conv(){
                   alignment,
                   allocateImage);
 
-    uint16_t h[5] = {0, 0, 1, 0, 0}; // should be matched with Img_t bitDepth!!
+    uint32_t h[5] = {0, 0, 1, 0, 0}; // should be matched with Img_t bitDepth!!
     const KernelCfg_t sKernelCfg = {
         (uint8_t*)h, 1, 5, 2, PERIODIC, 1, 1, false};
 
