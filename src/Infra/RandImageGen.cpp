@@ -61,7 +61,15 @@ IMG_RTN_CODE set_value(Img_t* pImg, const ValCfg_t& sValCfg){
         }
     }
     else {
-        f = set_value_by_panel<int>;
+        if (pImg->bitDepth <= 8){
+            f = set_value_by_panel<int8_t>;
+        }
+        else if (pImg->bitDepth <= 16){
+            f = set_value_by_panel<int16_t>;
+        }
+        else if (pImg->bitDepth <= 32){
+            f = set_value_by_panel<int>;
+        }
     }
 
     // if not YUV:
@@ -91,6 +99,7 @@ void test_rand_image_gen(){
                 imageFormat,
                 width,
                 height,
+                SIGNED,
                 bitDepth,
                 alignment,
                 true) == SUCCEED) {
@@ -100,7 +109,7 @@ void test_rand_image_gen(){
     view_img_properties(pMyImg);
 
     Distrib_t sDistrib = {0, 511, 3, 15};  
-    ValCfg_t sValCfg = {UNSIGNED, rand_num_uniform, sDistrib};
+    ValCfg_t sValCfg = {SIGNED, rand_num_uniform, sDistrib};
     //ValCfg_t sValCfg = {UNSIGNED, constant_num, sDistrib};
 
     set_value(pMyImg, sValCfg);
@@ -111,7 +120,7 @@ void test_rand_image_gen(){
     std::cout<<'\n';
 
     for (int i = 0; i < 12; i++){
-        std::cout<<"    "<< (*((uint16_t*)(pMyImg->pImageData[0]) + pMyImg->strides[0] + i));
+        std::cout<<"    "<< (*((uint16_t*)(pMyImg->pImageData[0] + pMyImg->strides[0]) + i));
     }
     std::cout<<"\n\n\n";
 
@@ -124,7 +133,7 @@ void test_rand_image_gen(){
     std::cout<<'\n';
 
     for (int i = 0; i < 12; i++){
-        std::cout<<"    "<< (*((uint16_t*)(pMyImg2->pImageData[0]) + pMyImg2->strides[0] + i));
+        std::cout<<"    "<< (*((uint16_t*)(pMyImg2->pImageData[0] + pMyImg2->strides[0]) + i));
     }
     std::cout<<'\n';
 

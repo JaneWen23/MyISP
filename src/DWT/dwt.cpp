@@ -30,12 +30,14 @@ void test_dwt(){
     IMAGE_FMT imageFormat = RGB;
     size_t width = 50;
     size_t height = 30;
+    SIGN sign = UNSIGNED;
     size_t bitDepth = 16;
     size_t alignment = 32;
     if (construct_img(pMyImg, 
                 imageFormat,
                 width,
                 height,
+                sign,
                 bitDepth,
                 alignment,
                 true) == SUCCEED) {

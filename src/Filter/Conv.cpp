@@ -148,24 +148,50 @@ void test_dot_product_clever(){
 
 
 // the performance may case-by-case, i.e, 1d and 2d separately.
+template<typename T>
+void perform_conv_1d_horizontal(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
+    // perform 1d convolution in every row
+    int inImgStride = pInImg->strides[sInImgROI.panelId];
+    int outImgStride = pOutImg->strides[sOutImgROI.panelId];
+    uint8_t* x = pInImg->pImageData[sInImgROI.panelId] + sInImgROI.startRow * inImgStride + sInImgROI.startCol * sizeof(T);
+    uint8_t* y = pOutImg->pImageData[sOutImgROI.panelId]+ sOutImgROI.startRow * outImgStride + sOutImgROI.startCol * sizeof(T);
+    for (int i = 0; i < sInImgROI.roiHeight; ++i){
+        conv_1d<T>((T*)x, sInImgROI.roiWidth, sKernelCfg, (T*)y);
+        x += inImgStride;
+        y += outImgStride;
+    }
+}
 
-
-
-void sliding_window(Img_t* pInImg, const ROI_t& sROI, Img_t* pOutImg, const KernelCfg_t& sKernelCfg){
+void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
     // assume actual img and kernel data are int (should determine from bitDepth!!)
-    // TODO: support more data types, not just int
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
-    int stride = pInImg->strides[sROI.panelId];
     
-    // perform 1d convolution in every row
-    uint8_t* x = pInImg->pImageData[sROI.panelId] + sROI.startRow * stride + sROI.startCol * sizeof(int);
-    uint8_t* y = pOutImg->pImageData[sROI.panelId]; // TODO: if the out img has different img format (such as mono), it does not allow panelId different than 0.
-    for (int i = 0; i < sROI.roiHeight; ++i){
-        conv_1d<int>((int*)x, sROI.roiWidth, sKernelCfg, (int*)y);
-        x += stride;
-        y += pOutImg->strides[sROI.panelId];
+    // horizontal 1d convolution
+    if (pOutImg->sign == UNSIGNED){
+        if (pOutImg->bitDepth <= 8){
+            perform_conv_1d_horizontal<uint8_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+        }
+        else if (pOutImg->bitDepth <= 16){
+            perform_conv_1d_horizontal<uint16_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+        }
+        else if (pOutImg->bitDepth <= 32){
+            perform_conv_1d_horizontal<uint32_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+        }
     }
+    else{
+        if (pOutImg->bitDepth <= 8){
+            perform_conv_1d_horizontal<int8_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+        }
+        else if (pOutImg->bitDepth <= 16){
+            perform_conv_1d_horizontal<int16_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+        }
+        else if (pOutImg->bitDepth <= 32){
+            perform_conv_1d_horizontal<int>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+        }
+    }
+    
+
 
 }
 
@@ -175,29 +201,34 @@ void test_conv(){
     //test_dot_product_clever();
 
     Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
-    IMAGE_FMT imageFormat = RGB;
-    size_t width = 20;
-    size_t height = 12;
-    size_t bitDepth = 32;
-    size_t alignment = 32;
-    bool allocateImage = true;
+    IMAGE_FMT imageFormat = RGB; // out can be different than in
+    size_t width = 20; // out can be different than in
+    size_t height = 12; // out can be different than in
+    SIGN sign = SIGNED; // out can be different than in
+    size_t bitDepth = 16; // out and kernel must be the same as in, and you should be careful about the sign,
+    // i.e., if out img is signed but in img is unsigned, since the in img data type will be treated as out img data type,
+    // the large unsigned values (from "in img") will be interpreted into negative signed values; to prevent this, you
+    // may choose a "larger" data type for in img.
+    size_t alignment = 32; // out must be the same as in
+    bool allocateImage = true; // recommend that out = in = true
 
     construct_img(pImg1, 
                   imageFormat,
                   width,
                   height,
+                  sign,
                   bitDepth,
                   alignment,
                   allocateImage);
     
-    ValCfg_t sValCfg = {SIGNED, rand_num_uniform, {0, 99, 0, 0}};
+    ValCfg_t sValCfg = {pImg1->sign, rand_num_uniform, {0, 99, 0, 0}};
 
     set_value(pImg1, sValCfg);
     view_img_properties(pImg1);
     std::cout<<"original:\n";
     for (int j = 0; j < height; j++){
         for (int i = 0; i < width; i++){
-            std::cout<<"  "<< (*((int*)(pImg1->pImageData[0] + j*pImg1->strides[0]) + i));
+            std::cout<<"  "<< (*((uint16_t*)(pImg1->pImageData[0] + j*pImg1->strides[0]) + i));
         }
         std::cout<<'\n';
     }
@@ -207,23 +238,27 @@ void test_conv(){
                   imageFormat,
                   width,
                   height,
+                  sign,
                   bitDepth,
                   alignment,
                   allocateImage);
 
-    int h[5] = {0, 0, 1, 0, 0};
+    uint16_t h[5] = {0, 0, 1, 0, 0}; // should be matched with Img_t bitDepth!!
     const KernelCfg_t sKernelCfg = {
         (uint8_t*)h, 1, 5, 2, PERIODIC, 1, 1, false};
 
-    ROI_t sROI = {0, 2, 2, 15, 9};
+    ROI_t sInImgROI = {0, 3, 2, 15, 9};
+    ROI_t sOutImgROI = {1, 1, 1, 15, 9}; // may create a helper function; 
+    // if format is mono, panel id must be 0; should also check img width height vs ROI width height and kernel step
+    // or create a helper function for out img width height
 
-    sliding_window(pImg1, sROI, pImg2, sKernelCfg);
+    sliding_window(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
 
 
     std::cout<<"filtered:\n";
     for (int j = 0; j < 10; j++){
         for (int i = 0; i < 20; i++){
-            std::cout<<"  "<< (*((int*)(pImg2->pImageData[0] + j*pImg2->strides[0]) + i));
+            std::cout<<"  "<< (*((uint16_t*)(pImg2->pImageData[1] + j*pImg2->strides[0]) + i));
         }
         std::cout<<'\n';
     }

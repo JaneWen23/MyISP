@@ -57,6 +57,14 @@ const char* get_image_format_name(const IMAGE_FMT imageFormat){
     }
 }
 
+const char* get_sign(const SIGN sign){
+    if(sign == SIGNED){
+        return "SIGNED";
+    }
+    else{
+        return "UNSIGNED";
+    }
+}
 
 void view_img_properties(const Img_t* pImg){
     if (pImg == NULL){
@@ -66,6 +74,7 @@ void view_img_properties(const Img_t* pImg){
     std::cout<<"imageFormat = "<< get_image_format_name(pImg->imageFormat)<<"\n";
     std::cout<<"width = "<< pImg->width<<"\n";
     std::cout<<"height = "<< pImg->height<<"\n";
+    std::cout<<"sign = "<< get_sign(pImg->sign)<<"\n";
     std::cout<<"bitDepth = "<< pImg->bitDepth<<"\n";
     std::cout<<"alignment = "<< pImg->alignment<<"\n";
     std::cout<<"strides = ";
@@ -155,6 +164,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
                             const IMAGE_FMT imageFormat,
                             const size_t width,
                             const size_t height,
+                            const SIGN sign,
                             const size_t bitDepth,
                             const size_t alignment,
                             const bool allocateImage){
@@ -166,6 +176,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
     pImg->imageFormat = imageFormat;
     pImg->width = width; // but there may be a different widt and/or height in a different channel, what we do is to control the stride
     pImg->height = height;
+    pImg->sign = sign;
     pImg->bitDepth = bitDepth;
     pImg->alignment = alignment;
  
@@ -205,6 +216,7 @@ IMG_RTN_CODE ducplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
                     pSrcImg->imageFormat, 
                     pSrcImg->width,
                     pSrcImg->height,
+                    pSrcImg->sign,
                     pSrcImg->bitDepth,
                     pSrcImg->alignment,
                     true) == SUCCEED){
@@ -278,6 +290,7 @@ void test_img_def(){
                 imageFormat,
                 width,
                 height,
+                UNSIGNED,
                 bitDepth,
                 alignment,
                 true) == SUCCEED) {
