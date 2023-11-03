@@ -94,6 +94,53 @@ void view_img_properties(const Img_t* pImg){
     std::cout<<"\n";
 }
 
+template<typename T>
+void print_data(uint8_t* pData){
+    std::cout<<"\t"<< *((T*)(pData));
+}
+
+typedef void (*FP)(uint8_t*);
+
+void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
+    FP f = NULL;
+    int scale = 0;
+    if (pImg->sign == UNSIGNED){
+        if (pImg->bitDepth <= 8){
+            f = print_data<uint8_t>;
+            scale = sizeof(uint8_t);
+        }
+        else if (pImg->bitDepth <= 16){
+            f = print_data<uint16_t>;
+            scale = sizeof(uint16_t);
+        }
+        else if (pImg->bitDepth <= 32){
+            f = print_data<uint32_t>;
+            scale = sizeof(uint32_t);
+        }
+    }
+    else {
+        if (pImg->bitDepth <= 8){
+            f = print_data<int8_t>;
+            scale = sizeof(int8_t);
+        }
+        else if (pImg->bitDepth <= 16){
+            f = print_data<int16_t>;
+            scale = sizeof(int16_t);
+        }
+        else if (pImg->bitDepth <= 32){
+            f = print_data<int>;
+            scale = sizeof(int);
+        }
+    }
+
+    for (int j = sViewROI.startRow; j < sViewROI.startRow + sViewROI.roiHeight; ++j){
+        for (int i = sViewROI.startCol; i < sViewROI.startCol + sViewROI.roiWidth; ++i){
+            //std::cout<<"\t"<< (*((uint16_t*)(pImg->pImageData[viewROI.panelId] + j*pImg->strides[viewROI.panelId]) + i));
+            f(pImg->pImageData[sViewROI.panelId] + j*pImg->strides[sViewROI.panelId] + i*scale);
+        }
+        std::cout<<'\n';
+    }
+}
 
 void set_strides(Img_t* pImg){
     // strides are initiated by zeros.

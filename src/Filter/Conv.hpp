@@ -13,14 +13,6 @@ typedef enum{
 } PADDING;
 
 typedef struct{
-    size_t panelId; // ROI is usually 2d, panel is as defined in Img_t
-    size_t startRow; // starting row of original image
-    size_t startCol; // starting column of original image
-    size_t roiWidth; // in pixel
-    size_t roiHeight; // in pixel
-} ROI_t;
-
-typedef struct{
     uint8_t* pKernel; // pointer to kernel data; may convert to any type when used.
     int nRows;
     int nCols;

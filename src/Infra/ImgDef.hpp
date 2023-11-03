@@ -33,6 +33,14 @@ typedef struct{
     uint8_t* pImageData[MAX_NUM_P]; // the pointers to all components of the image
 } Img_t;
 
+typedef struct{
+    size_t panelId; // ROI is usually 2d, panel is as defined in Img_t
+    size_t startRow; // starting row of original image
+    size_t startCol; // starting column of original image
+    size_t roiWidth; // in pixel
+    size_t roiHeight; // in pixel
+} ROI_t;
+
 typedef enum{
     SUCCEED,
     ALLOCATION_FAIL,
@@ -52,6 +60,7 @@ IMG_RTN_CODE construct_img(Img_t* pImg,
                             const bool allocateImage);
 IMG_RTN_CODE destruct_img(Img_t**);
 void view_img_properties(const Img_t* pImg);
+void view_image_data(const Img_t* pImg, const ROI_t& viewROI);
 IMG_RTN_CODE ducplicate_img(const Img_t* pSrcImg, Img_t* pDstImg);
 bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg);
 

@@ -163,7 +163,6 @@ void perform_conv_1d_horizontal(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pO
 }
 
 void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
-    // assume actual img and kernel data are int (should determine from bitDepth!!)
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
     
@@ -191,8 +190,6 @@ void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const
         }
     }
     
-
-
 }
 
 
@@ -225,18 +222,15 @@ void test_conv(){
 
     set_value(pImg1, sValCfg);
     view_img_properties(pImg1);
+
     std::cout<<"original:\n";
-    for (int j = 0; j < height; j++){
-        for (int i = 0; i < width; i++){
-            std::cout<<"  "<< (*((uint16_t*)(pImg1->pImageData[0] + j*pImg1->strides[0]) + i));
-        }
-        std::cout<<'\n';
-    }
+    ROI_t viewROI_1 = {0,0,0,width,height};
+    view_image_data(pImg1, viewROI_1);
 
     Img_t* pImg2 =(Img_t*)malloc(sizeof(Img_t));
     construct_img(pImg2, 
                   imageFormat,
-                  width,
+                  25,
                   height,
                   sign,
                   bitDepth,
@@ -254,14 +248,9 @@ void test_conv(){
 
     sliding_window(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
 
-
     std::cout<<"filtered:\n";
-    for (int j = 0; j < 10; j++){
-        for (int i = 0; i < 20; i++){
-            std::cout<<"  "<< (*((uint16_t*)(pImg2->pImageData[1] + j*pImg2->strides[0]) + i));
-        }
-        std::cout<<'\n';
-    }
+    ROI_t viewROI_2 = {1,0,0,8,10};
+    view_image_data(pImg2, viewROI_2);
 
     destruct_img(&pImg1);
     destruct_img(&pImg2);
