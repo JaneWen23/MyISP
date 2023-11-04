@@ -102,7 +102,26 @@ void print_data(uint8_t* pData){
 typedef void (*FP)(uint8_t*);
 
 void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
-    // TODO: check input validity:
+    if(pImg->pImageData[sViewROI.panelId] == NULL){
+        std::cout<<"error: the panel to view is not allocated yet. returned.\n";
+        return;
+    }
+    if(sViewROI.startRow > pImg->height){
+        std::cout<<"error: start row to view is greater than image height. returned.\n";
+        return;
+    }
+    if(sViewROI.startCol > pImg->width){
+        std::cout<<"error: start column to view is greater than image width. returned.\n";
+        return;
+    }
+    if(sViewROI.startRow + sViewROI.roiHeight > pImg->height){
+        std::cout<<"error: end row to view exceeses the image height. returned.\n";
+        return;
+    }
+    if(sViewROI.startCol + sViewROI.roiWidth > pImg->width){
+        std::cout<<"error: end column to view exceeses the image width. returned.\n";
+        return;
+    }
 
     FP f = NULL;
     int scale = 0;

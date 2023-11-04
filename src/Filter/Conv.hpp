@@ -14,12 +14,13 @@ typedef enum{
 
 typedef struct{
     uint8_t* pKernel; // pointer to kernel data; may convert to any type when used.
-    int nRows;
-    int nCols;
-    int centerX; // TODO: give a better name; also, consider 2D situation.
+    int kerHeight;
+    int kerWidth;
+    int horiCenter; // horizontal center
+    int vertCenter; // vertical center
     PADDING padding;
-    int rowStep;
-    int colStep;
+    int horiStep; // horizontal step
+    int vertStep; // vertical step
     bool needFlip; // if true, it is convolution; if false, it is correlation.
 } KernelCfg_t;
 
