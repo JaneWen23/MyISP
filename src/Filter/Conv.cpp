@@ -167,7 +167,7 @@ void conv_1d_deprecated(const T* x, const int xLen, const KernelCfg_t& sKernelCf
 }
 
 template<typename T>
-void conv_2d_meta(const T** px, const int xWidth, 
+void conv_2d_unit(const T** px, const int xWidth, 
                   const T** pKerAddrMatrix, 
                   const KernelCfg_t& sKernelCfg, 
                   T* y){
@@ -197,7 +197,30 @@ void conv_2d_meta(const T** px, const int xWidth,
 }
 
 template<typename T>
-void conv_1d_vertical_meta(const T** px, const int xRoiWidth, 
+void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
+             const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
+             const int inImgStride, const int outImgStride, 
+             uint8_t* y){
+    uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
+    uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
+    memset(zVec, 0, sizeof(T));
+    for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
+        for (int l = -sKernelCfg.vertCenter; l < sKernelCfg.kerHeight - sKernelCfg.vertCenter; ++l){
+            px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
+        }
+        
+        conv_2d_unit<T>((const T**)px, xWidth, 
+                        pKerAddrMatrix, 
+                        sKernelCfg,
+                        (T*)y);
+
+        y += outImgStride;
+    }
+}
+
+
+template<typename T>
+void conv_1d_vertical_unit(const T** px, const int xRoiWidth, 
                            const T ** pKerAddr, 
                            const KernelCfg_t& sKernelCfg, 
                            T* y){
@@ -210,7 +233,29 @@ void conv_1d_vertical_meta(const T** px, const int xRoiWidth,
 }
 
 template<typename T>
-void conv_1d_horizontal_meta(const T** px, const int xWidth, 
+void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
+             const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
+             const int inImgStride, const int outImgStride, 
+             uint8_t* y){
+    uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
+    uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
+    memset(zVec, 0, sizeof(T));
+    for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
+        for (int l = -sKernelCfg.vertCenter; l < sKernelCfg.kerHeight - sKernelCfg.vertCenter; ++l){
+            px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
+        }
+        
+        conv_1d_vertical_unit<T>((const T**)px, xWidth, 
+                        pKerAddrMatrix, 
+                        sKernelCfg,
+                        (T*)y);
+
+        y += outImgStride;
+    }
+}
+
+template<typename T>
+void conv_1d_horizontal_unit(const T** px, const int xWidth, 
                              const T ** pKerAddr, 
                              const KernelCfg_t& sKernelCfg,  
                              T* y){
@@ -219,105 +264,100 @@ void conv_1d_horizontal_meta(const T** px, const int xWidth,
     const T z = 0; // this is useful for zero-padding
 
     set_addr_array<T>(pAddrArray, px[0], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
-    // for(int i = 0; i < lenPadded; ++i){
-    //     std::cout<<"    "<< (int)(*(pAddr[i]))<<", ";
-    // }
-    // std::cout<<"\n";
 
     for(int i = 0; i < xWidth; i += sKernelCfg.horiStep){
         *(y + (i/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)pAddrArray + i, (const T **)pKerAddr, sKernelCfg.kerWidth);
     }
 }
 
-
 template<typename T>
-void perform_conv_2d_meta(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
-    int inImgStride = pInImg->strides[sInImgROI.panelId];
-    int outImgStride = pOutImg->strides[sOutImgROI.panelId];
-    uint8_t* x = pInImg->pImageData[sInImgROI.panelId] + sInImgROI.startRow * inImgStride + sInImgROI.startCol * sizeof(T);
-    uint8_t* y = pOutImg->pImageData[sOutImgROI.panelId]+ sOutImgROI.startRow * outImgStride + sOutImgROI.startCol * sizeof(T);
-
-    uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
-    uint8_t* zVec = (uint8_t*)malloc(sInImgROI.roiWidth * sizeof(T));
-    memset(zVec, 0, sizeof(T));
-
-    T** pKerAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*)); // stores the addr of horizontally flipped (or not) kernel;
-    for (int i = 0; i < sKernelCfg.kerHeight; ++i){
-        set_kernel_addr<T>(pKerAddrMatrix + i*sKernelCfg.kerWidth, (T*)sKernelCfg.pKernel + i*sKernelCfg.kerWidth, sKernelCfg.kerWidth, sKernelCfg.needFlip);
-    }
-    // for(int i = 0; i < sKernelCfg.kerWidth * sKernelCfg.kerHeight; ++i){
-    //     std::cout<<"    "<< (int)(*(pKerAddrMatrix[i]))<<", ";
-    // }
-    // std::cout<<"\n";
-
-    // TODO: then, need vertically flipped kernel!!!
-
-    for (int i = 0; i < sInImgROI.roiHeight; i += sKernelCfg.vertStep){
-        for (int l = -sKernelCfg.vertCenter; l < sKernelCfg.kerHeight - sKernelCfg.vertCenter; ++l){
-            px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, (const uint8_t*)x, sInImgROI.roiHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
-        }
-        
-        conv_2d_meta<T>((const T**)px, sInImgROI.roiWidth, 
-                        (const T**)pKerAddrMatrix, 
+void conv_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
+             const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
+             const int inImgStride, const int outImgStride, 
+             uint8_t* y){
+    for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
+        conv_1d_horizontal_unit<T>((const T**)(&x), xWidth, 
+                        pKerAddrMatrix, 
                         sKernelCfg,
                         (T*)y);
-
-        conv_1d_vertical_meta<T>((const T**)px, sInImgROI.roiWidth, 
-                                 (const T**)pKerAddrMatrix, 
-                                 sKernelCfg,
-                                 (T*)y);
-
-        conv_1d_horizontal_meta<T>((const T**)px, sInImgROI.roiWidth, 
-                                   (const T**)pKerAddrMatrix, 
-                                   sKernelCfg,
-                                   (T*)y);
-
-        y += outImgStride;
-    }
-}
-
-
-template<typename T>
-void perform_conv_1d_horizontal(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
-    // perform 1d convolution in every row
-    int inImgStride = pInImg->strides[sInImgROI.panelId];
-    int outImgStride = pOutImg->strides[sOutImgROI.panelId];
-    uint8_t* x = pInImg->pImageData[sInImgROI.panelId] + sInImgROI.startRow * inImgStride + sInImgROI.startCol * sizeof(T);
-    uint8_t* y = pOutImg->pImageData[sOutImgROI.panelId]+ sOutImgROI.startRow * outImgStride + sOutImgROI.startCol * sizeof(T);
-    for (int i = 0; i < sInImgROI.roiHeight; ++i){
-        //conv_1d<T>((T*)x, sInImgROI.roiWidth, sKernelCfg, (T*)y);
         x += inImgStride;
         y += outImgStride;
     }
 }
 
+template<typename T>
+void perform_conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, const int inImgRoiHeight,
+                  uint8_t* y, const int outImgStride,
+                  const KernelCfg_t& sKernelCfg){
+    T** pKerAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*)); // stores the addr of flipped (or not) kernel;
+    set_kernel_addr<T>(pKerAddrMatrix, (T*)sKernelCfg.pKernel, sKernelCfg.kerHeight * sKernelCfg.kerWidth, sKernelCfg.needFlip);
+    
+    if (sKernelCfg.kerHeight == 1){
+        conv_1d_horizontal<T>(x, inImgRoiWidth, inImgRoiHeight,
+            (const T**)pKerAddrMatrix, sKernelCfg, 
+            inImgStride, outImgStride, 
+            y);
+    }
+    else if (sKernelCfg.kerWidth == 1){
+        conv_1d_vertical<T>(x, inImgRoiWidth, inImgRoiHeight,
+            (const T**)pKerAddrMatrix, sKernelCfg, 
+            inImgStride, outImgStride, 
+            y);
+    }
+    else{
+        conv_2d<T>(x, inImgRoiWidth, inImgRoiHeight,
+            (const T**)pKerAddrMatrix, sKernelCfg, 
+            inImgStride, outImgStride, 
+            y);
+    }
+}
+
+typedef void (*FP)(const uint8_t*, const int, const int, const int,
+                  uint8_t*, const int, const KernelCfg_t&);
+
 void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
-    
-    // horizontal 1d convolution
+    int inImgStride = pInImg->strides[sInImgROI.panelId];
+    int outImgStride = pOutImg->strides[sOutImgROI.panelId];
+    int scale = 0;
+    FP f = NULL;
+    // convolution
     if (pOutImg->sign == UNSIGNED){
         if (pOutImg->bitDepth <= 8){
-            perform_conv_1d_horizontal<uint8_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+            scale = sizeof(uint8_t);
+            f = perform_conv<uint8_t>;
         }
         else if (pOutImg->bitDepth <= 16){
-            perform_conv_1d_horizontal<uint16_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+            scale = sizeof(uint16_t);
+            f = perform_conv<uint16_t>;
         }
         else if (pOutImg->bitDepth <= 32){
-            perform_conv_1d_horizontal<uint32_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+            scale = sizeof(uint32_t);
+            f = perform_conv<uint32_t>;
         }
     }
     else{
         if (pOutImg->bitDepth <= 8){
-            perform_conv_1d_horizontal<int8_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+            scale = sizeof(int8_t);
+            f = perform_conv<int8_t>;
         }
         else if (pOutImg->bitDepth <= 16){
-            perform_conv_1d_horizontal<int16_t>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+            scale = sizeof(int16_t);
+            f = perform_conv<int16_t>;
         }
         else if (pOutImg->bitDepth <= 32){
-            perform_conv_1d_horizontal<int>(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+            scale = sizeof(int);
+            f = perform_conv<int>;
         }
     }
+
+    uint8_t* x = pInImg->pImageData[sInImgROI.panelId] + sInImgROI.startRow * inImgStride + sInImgROI.startCol * scale;
+    uint8_t* y = pOutImg->pImageData[sOutImgROI.panelId]+ sOutImgROI.startRow * outImgStride + sOutImgROI.startCol * scale;
+
+    f((const uint8_t*)x, inImgStride, sInImgROI.roiWidth, sInImgROI.roiHeight,
+                  y, outImgStride,
+                  sKernelCfg);
     
 }
 
@@ -367,20 +407,19 @@ void test_conv(){
                   allocateImage);
 
     // uint32_t h[6] = {0, 1,
-    //                  1, 1,
-    //                  0, 0}; // should be matched with Img_t bitDepth!!
+    //                  2, 3,
+    //                  4, 5}; // should be matched with Img_t bitDepth!!
     uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
-    //const KernelCfg_t sKernelCfg = {
-        // (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, false};
+    // const KernelCfg_t sKernelCfg = {
+    //     (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, true};
     const KernelCfg_t sKernelCfg = {
-    (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 1, false};
+    (uint8_t*)h, 5, 1, 0, 2, ZEROPADDING, 1, 1, false};
 
     ROI_t sInImgROI = {0, 0, 0, width, height};
     ROI_t sOutImgROI = {0, 0, 0, width, height}; // TODO: may create a helper function to find ROI (???) based on kernel; 
     // TODO: create a helper function for out img width height and kernel step
 
-    //sliding_window(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
-    perform_conv_2d_meta<int>(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
+    sliding_window(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
 
     std::cout<<"filtered:\n";
     ROI_t viewROI_2 = {0,0,0,width,height};
