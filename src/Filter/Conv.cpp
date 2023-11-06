@@ -203,7 +203,7 @@ void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
              uint8_t* y){
     uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
     uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
-    memset(zVec, 0, sizeof(T));
+    memset(zVec, 0, xWidth * sizeof(T));
     for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
         for (int l = -sKernelCfg.vertCenter; l < sKernelCfg.kerHeight - sKernelCfg.vertCenter; ++l){
             px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
@@ -239,7 +239,7 @@ void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
              uint8_t* y){
     uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
     uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
-    memset(zVec, 0, sizeof(T));
+    memset(zVec, 0, xWidth * sizeof(T));
     for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
         for (int l = -sKernelCfg.vertCenter; l < sKernelCfg.kerHeight - sKernelCfg.vertCenter; ++l){
             px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
@@ -286,7 +286,7 @@ void conv_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
 }
 
 template<typename T>
-void perform_conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, const int inImgRoiHeight,
+void conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, const int inImgRoiHeight,
                   uint8_t* y, const int outImgStride,
                   const KernelCfg_t& sKernelCfg){
     T** pKerAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*)); // stores the addr of flipped (or not) kernel;
@@ -312,7 +312,7 @@ void perform_conv(const uint8_t* x, const int inImgStride, const int inImgRoiWid
     }
 }
 
-typedef void (*FP)(const uint8_t*, const int, const int, const int,
+typedef void (*FP_CONV)(const uint8_t*, const int, const int, const int,
                   uint8_t*, const int, const KernelCfg_t&);
 
 void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
@@ -321,34 +321,34 @@ void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const
     int inImgStride = pInImg->strides[sInImgROI.panelId];
     int outImgStride = pOutImg->strides[sOutImgROI.panelId];
     int scale = 0;
-    FP f = NULL;
+    FP_CONV f = NULL;
     // convolution
     if (pOutImg->sign == UNSIGNED){
         if (pOutImg->bitDepth <= 8){
             scale = sizeof(uint8_t);
-            f = perform_conv<uint8_t>;
+            f = conv<uint8_t>;
         }
         else if (pOutImg->bitDepth <= 16){
             scale = sizeof(uint16_t);
-            f = perform_conv<uint16_t>;
+            f = conv<uint16_t>;
         }
         else if (pOutImg->bitDepth <= 32){
             scale = sizeof(uint32_t);
-            f = perform_conv<uint32_t>;
+            f = conv<uint32_t>;
         }
     }
     else{
         if (pOutImg->bitDepth <= 8){
             scale = sizeof(int8_t);
-            f = perform_conv<int8_t>;
+            f = conv<int8_t>;
         }
         else if (pOutImg->bitDepth <= 16){
             scale = sizeof(int16_t);
-            f = perform_conv<int16_t>;
+            f = conv<int16_t>;
         }
         else if (pOutImg->bitDepth <= 32){
             scale = sizeof(int);
-            f = perform_conv<int>;
+            f = conv<int>;
         }
     }
 
