@@ -44,6 +44,27 @@ const T dot_product_clever(const T** a, const T** b, const int vecLen){ // in us
 }
 
 template<typename T>
+const T my_formula(const T** a, const T** b, const int vecLen){
+    T res = 0;
+    for(int i = 0; i < vecLen; ++i){
+        res += (**(a+i) > **(b+i))? **(a+i) : **(b+i);
+    }
+    return res;
+}
+
+//typedef T (*FP_MF)(const T**, const T**, const int);
+
+template<typename T>
+struct MyStruct{
+    const T (*FP_MF)(const T**, const T**, const int);
+};
+
+void test_my_struct(){
+    MyStruct<int> MyStructInt;
+    MyStructInt.FP_MF = my_formula; // no need to type my_formula<int> anymore, because it follows the struct type!!
+}
+
+template<typename T>
 void set_kernel_addr(T** pAddr, T* pKernel, int kerLen, bool needFlip){
     if (needFlip){
         for(int i = kerLen - 1; i >= 0; --i){
@@ -191,7 +212,7 @@ void conv_2d_unit(const T** px, const int xWidth,
     // kerWidth: to help with horizontal padding len
     // kerHeight: to determine how many rows needed for the 2d convolution to output one line
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
-    T yTemp = 0;
+    T yTmp = 0;
     T** pAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
     const T z = 0;
     
@@ -204,11 +225,11 @@ void conv_2d_unit(const T** px, const int xWidth,
         // if a 2d kernel cannot be broken into manipulation of several 1d, 
         // you should first transpose the "pAddrMatrix" outside this loop,
         // then apply the flatten kernel here (increment of transposed (and flatten) pAddrMatrix is horiStep * kerHeight).
-        yTemp = 0;
+        yTmp = 0;
         for(int i = 0; i < sKernelCfg.kerHeight; ++i){
-            yTemp += dot_product_clever<T>((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
+            yTmp += dot_product_clever<T>((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
         }
-        *(y + (j/sKernelCfg.horiStep)) = yTemp;
+        *(y + (j/sKernelCfg.horiStep)) = yTmp;
     }
 
 }
@@ -238,7 +259,7 @@ void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
 
 template<typename T>
 void conv_1d_vertical_unit(const T** px, const int xRoiWidth, 
-                           const T ** pKerAddr, 
+                           const T** pKerAddr, 
                            const KernelCfg_t& sKernelCfg, 
                            T* y){
     for(int j = 0; j < xRoiWidth; j += sKernelCfg.horiStep){
@@ -273,7 +294,7 @@ void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
 
 template<typename T>
 void conv_1d_horizontal_unit(const T** px, const int xWidth, 
-                             const T ** pKerAddr, 
+                             const T** pKerAddr, 
                              const KernelCfg_t& sKernelCfg,  
                              T* y){
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
@@ -332,13 +353,18 @@ void conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, cons
 typedef void (*FP_CONV)(const uint8_t*, const int, const int, const int,
                   uint8_t*, const int, const KernelCfg_t&);
 
-void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
+void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, void* myPtr, const KernelCfg_t& sKernelCfg){
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
     int inImgStride = pInImg->strides[sInImgROI.panelId];
     int outImgStride = pOutImg->strides[sOutImgROI.panelId];
     int scale = 0;
     FP_CONV f = NULL;
+
+    // test my struct
+    MyStruct<uint16_t>* pRealStruct = (MyStruct<uint16_t>*)(myPtr);
+    pRealStruct->FP_MF = my_formula;
+
     // convolution
     if (pOutImg->sign == UNSIGNED){
         if (pOutImg->bitDepth <= 8){
@@ -436,7 +462,12 @@ void test_conv(){
     ROI_t sOutImgROI = {0, 0, 0, width, height}; // TODO: may create a helper function to find ROI (???) based on kernel; 
     // TODO: create a helper function for out img width height and kernel step
 
-    sliding_window(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
+    // test my struct
+    MyStruct<uint16_t> MyStructInt;
+    MyStructInt.FP_MF = my_formula;
+
+
+    //sliding_window(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
 
     std::cout<<"filtered:\n";
     ROI_t viewROI_2 = {0,0,0,width,height};
