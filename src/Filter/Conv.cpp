@@ -101,6 +101,19 @@ void set_addr_array(T** pAddr, const T* x, const int xWidth, const int lenPadded
     }
 }
 
+template<typename T>
+void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T** pDst){
+    for (int i = 0; i < srcHeight; ++i){
+        for (int j = 0; j < srcWidth; ++j){
+            *(pDst + j*srcHeight + i) = *(pSrc + i*srcWidth + j);
+        }
+    }
+    // or, for i = 0, 1, ..., srcHeight-1:
+    // mapped(i) = (i % srcHeight) * srcWidth + i
+    // mapped(i) is the index of pDst to be set value of pSrc[i].
+    // TODO: may set up a timer to see which way is better.
+}
+
 
 const uint8_t* vert_padding_map(const int ind, const uint8_t* x, const int roiHeight, const int inImgStride, const PADDING& padding, const uint8_t* zVec){
     switch (padding){
@@ -187,6 +200,10 @@ void conv_2d_unit(const T** px, const int xWidth,
     }
 
     for(int j = 0; j < xWidth; j += sKernelCfg.horiStep){
+        // this is to some extent seperable: "2d dot product" is the sum of several 1d dot products
+        // if a 2d kernel cannot be broken into manipulation of several 1d, 
+        // you should first transpose the "pAddrMatrix" outside this loop,
+        // then apply the flatten kernel here (increment of transposed (and flatten) pAddrMatrix is horiStep * kerHeight).
         yTemp = 0;
         for(int i = 0; i < sKernelCfg.kerHeight; ++i){
             yTemp += dot_product_clever<T>((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
@@ -368,8 +385,8 @@ void test_conv(){
 
     Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB; // out can be different than in
-    size_t width = 20; // out can be different than in
-    size_t height = 12; // out can be different than in
+    size_t width = 10; // out can be different than in
+    size_t height = 8; // out can be different than in
     SIGN sign = SIGNED; // out can be different than in
     size_t bitDepth = 32; // out and kernel must be the same as in, and you should be careful about the sign,
     // i.e., if out img is signed but in img is unsigned, since the in img data type will be treated as out img data type,
@@ -406,14 +423,14 @@ void test_conv(){
                   alignment,
                   allocateImage);
 
-    // uint32_t h[6] = {0, 1,
-    //                  2, 3,
-    //                  4, 5}; // should be matched with Img_t bitDepth!!
-    uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
-    // const KernelCfg_t sKernelCfg = {
-    //     (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, true};
+    uint32_t h[6] = {0, 1,
+                     2, 3,
+                     4, 5}; // should be matched with Img_t bitDepth!!
+    // uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
     const KernelCfg_t sKernelCfg = {
-    (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 2, false};
+        (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, true};
+    // const KernelCfg_t sKernelCfg = {
+    // (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 2, false};
 
     ROI_t sInImgROI = {0, 0, 0, width, height};
     ROI_t sOutImgROI = {0, 0, 0, width, height}; // TODO: may create a helper function to find ROI (???) based on kernel; 
