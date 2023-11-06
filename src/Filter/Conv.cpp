@@ -280,7 +280,7 @@ void conv_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
                         pKerAddrMatrix, 
                         sKernelCfg,
                         (T*)y);
-        x += inImgStride;
+        x += sKernelCfg.vertStep * inImgStride;
         y += outImgStride;
     }
 }
@@ -352,10 +352,10 @@ void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const
         }
     }
 
-    uint8_t* x = pInImg->pImageData[sInImgROI.panelId] + sInImgROI.startRow * inImgStride + sInImgROI.startCol * scale;
+    const uint8_t* x = pInImg->pImageData[sInImgROI.panelId] + sInImgROI.startRow * inImgStride + sInImgROI.startCol * scale;
     uint8_t* y = pOutImg->pImageData[sOutImgROI.panelId]+ sOutImgROI.startRow * outImgStride + sOutImgROI.startCol * scale;
 
-    f((const uint8_t*)x, inImgStride, sInImgROI.roiWidth, sInImgROI.roiHeight,
+    f(x, inImgStride, sInImgROI.roiWidth, sInImgROI.roiHeight,
                   y, outImgStride,
                   sKernelCfg);
     
@@ -413,7 +413,7 @@ void test_conv(){
     // const KernelCfg_t sKernelCfg = {
     //     (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, true};
     const KernelCfg_t sKernelCfg = {
-    (uint8_t*)h, 5, 1, 0, 2, ZEROPADDING, 1, 1, false};
+    (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 2, false};
 
     ROI_t sInImgROI = {0, 0, 0, width, height};
     ROI_t sOutImgROI = {0, 0, 0, width, height}; // TODO: may create a helper function to find ROI (???) based on kernel; 
