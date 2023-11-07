@@ -11,7 +11,7 @@ typedef struct{
     //  the range is defined as [lb, ub], as a closed interval.
     int mu; // this is for gaussian distribution, can set randomly if do not generate normal-distributed random numbers.
     int sigma; // this is for gaussian distribution, can set randomly if do not generate normal-distributed random numbers.
-} Distrib_t;
+} Distrib_t; // TODO: maybe we can use union??
 
 typedef struct{
     SIGN sign; // SIGN is defined in "ImgDef.hpp"

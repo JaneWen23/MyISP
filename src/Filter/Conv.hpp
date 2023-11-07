@@ -22,6 +22,7 @@ typedef struct{
     int horiStep; // horizontal step
     int vertStep; // vertical step
     bool needFlip; // if true, it is convolution; if false, it is correlation.
+    void* formula;
 } KernelCfg_t;
 
 
