@@ -43,6 +43,7 @@ const T dot_product_clever(const T** a, const T** b, const int vecLen){ // in us
     return res;
 }
 
+// this function is for test only. can be removed.
 template<typename T>
 const T my_formula(const T** a, const T** b, const int vecLen){
     T res = 0;
@@ -52,23 +53,12 @@ const T my_formula(const T** a, const T** b, const int vecLen){
     return res;
 }
 
-// these func pointers can point to either my_formula or dot_product_clever
-typedef const uint8_t (*FP_MFu8)(const uint8_t**, const uint8_t**, const int);
-typedef const uint16_t (*FP_MFu16)(const uint16_t**, const uint16_t**, const int);
-typedef const uint32_t (*FP_MFu32)(const uint32_t**, const uint32_t**, const int);
-typedef const int8_t (*FP_MFs8)(const int8_t**, const int8_t**, const int);
-typedef const int16_t (*FP_MFs16)(const int16_t**, const int16_t**, const int);
-typedef const int (*FP_MFs32)(const int**, const int**, const int);
 
 template<typename T>
-struct MyStruct{
-    const T (*FP_MF)(const T**, const T**, const int);
+struct Formulas{
+    const T (*f)(const T**, const T**, const int);
 }; // note: cannot typedef, because there is no type yet.
 
-// void test_my_struct(){
-//     //pRealStruct->FP_MFu8 = my_formula; // no need to type my_formula<int> anymore, because it follows the struct type!!
-//     //pRealStruct->FP_MFu16 = dot_product_clever; // no need to type my_formula<int> anymore, because it follows the struct type!!
-// }
 
 template<typename T>
 void set_kernel_addr(T** pAddr, T* pKernel, int kerLen, bool needFlip){
@@ -221,24 +211,34 @@ void conv_2d_unit(const T** px, const int xWidth,
     T yTmp = 0;
     T** pAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
     const T z = 0;
-    MyStruct<T> myRealStruct;
-    myRealStruct.FP_MF = (decltype(myRealStruct.FP_MF))(sKernelCfg.formula);
+    Formulas<T> Formula;
+    Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
     
     for (int i = 0; i < sKernelCfg.kerHeight; ++i){
         set_addr_array<T>(pAddrMatrix+i*xWidthPadded, px[i], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
     }
 
-    for(int j = 0; j < xWidth; j += sKernelCfg.horiStep){
-        // this is to some extent seperable: "2d dot product" is the sum of several 1d dot products
+    if (!sKernelCfg.divideAndConquer){
+        T** pAddrMatrixTrans = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
+        // TODO: do the transpose here
+    }
+
+    int jj = 0; // horizontal index at the output image
+    for (int j = 0; j < xWidth; j += sKernelCfg.horiStep){
+        // this is to some extent seperable: "2d dot product" is the sum of several 1d dot products;
         // if a 2d kernel cannot be broken into manipulation of several 1d, 
         // you should first transpose the "pAddrMatrix" outside this loop,
         // then apply the flatten kernel here (increment of transposed (and flatten) pAddrMatrix is horiStep * kerHeight).
-        yTmp = 0;
-        for(int i = 0; i < sKernelCfg.kerHeight; ++i){
+
+        yTmp = 0; // this is helpful for the manipulation of 1d results.
+        for (int i = 0; i < sKernelCfg.kerHeight; ++i){
             // yTmp += dot_product_clever<T>((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
-            yTmp += myRealStruct.FP_MF((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
+            yTmp += Formula.f((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
         }
-        *(y + (j/sKernelCfg.horiStep)) = yTmp;
+        *(y + jj) = yTmp;
+        jj += sKernelCfg.horiUpsample;
+
+        // TODO: then need another version, for "not divide_and_conquer" style
     }
 
 }
@@ -261,7 +261,7 @@ void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
                         sKernelCfg,
                         (T*)y);
 
-        y += outImgStride;
+        y += sKernelCfg.vertUpsample * outImgStride;
     }
 }
 
@@ -271,8 +271,13 @@ void conv_1d_vertical_unit(const T** px, const int xRoiWidth,
                            const T** pKerAddr, 
                            const KernelCfg_t& sKernelCfg, 
                            T* y){
+    Formulas<T> Formula;
+    Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
+    int jj = 0; // horizontal index at the output image
     for(int j = 0; j < xRoiWidth; j += sKernelCfg.horiStep){
-        *(y + (j/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)px, (const T **)pKerAddr, sKernelCfg.kerHeight);
+        //*(y + (j/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)px, (const T **)pKerAddr, sKernelCfg.kerHeight);
+        *(y + jj) = Formula.f((const T **)px, (const T **)pKerAddr, sKernelCfg.kerHeight);
+        jj += sKernelCfg.horiUpsample;
         for(int i = 0; i < sKernelCfg.kerHeight; ++i){
             px[i] += 1;
         }
@@ -297,7 +302,7 @@ void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
                         sKernelCfg,
                         (T*)y);
 
-        y += outImgStride;
+        y += sKernelCfg.vertUpsample * outImgStride;
     }
 }
 
@@ -309,11 +314,16 @@ void conv_1d_horizontal_unit(const T** px, const int xWidth,
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
     T** pAddrArray = (T**)malloc(xWidthPadded * sizeof(T*)); // stores the addr of padded x
     const T z = 0; // this is useful for zero-padding
+    Formulas<T> Formula;
+    Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
 
     set_addr_array<T>(pAddrArray, px[0], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
 
+    int jj = 0; // horizontal index at the output image
     for(int i = 0; i < xWidth; i += sKernelCfg.horiStep){
-        *(y + (i/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)pAddrArray + i, (const T **)pKerAddr, sKernelCfg.kerWidth);
+        //*(y + (i/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)pAddrArray + i, (const T **)pKerAddr, sKernelCfg.kerWidth);
+        *(y + jj) = Formula.f((const T **)pAddrArray + i, (const T **)pKerAddr, sKernelCfg.kerWidth);
+        jj += sKernelCfg.horiUpsample;
     }
 }
 
@@ -328,7 +338,7 @@ void conv_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
                         sKernelCfg,
                         (T*)y);
         x += sKernelCfg.vertStep * inImgStride;
-        y += outImgStride;
+        y += sKernelCfg.vertUpsample * outImgStride;
     }
 }
 
@@ -411,8 +421,8 @@ void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const
 
 template<typename T>
 void test_my_ptr(void* myPtr){
-    MyStruct<T> myRealStruct;
-    myRealStruct.FP_MF = (decltype(myRealStruct.FP_MF))myPtr;
+    Formulas<T> Formula;
+    Formula.FP_MF = (decltype(Formula.FP_MF))myPtr;
     T res = 0;
     T x = 3;
     T y = 1;
@@ -420,7 +430,7 @@ void test_my_ptr(void* myPtr){
     const T* b = &y;
     const T** aa = &a;
     const T** bb = &b;
-    res = myRealStruct.FP_MF(aa, bb, 1); // note: a function can be called like this!!
+    res = Formula.FP_MF(aa, bb, 1); // note: a function can be called like this!!
     std::cout<<"res = "<<res<<"\n";
 }
 
@@ -468,18 +478,18 @@ void test_conv(){
                   alignment,
                   allocateImage);
 
-    MyStruct<int>* pRealStruct = (MyStruct<int>*)malloc(sizeof(MyStruct<int>)); // test my struct
-    pRealStruct->FP_MF = my_formula; // test my struct
-    //test_my_ptr<int>((void*)pRealStruct->FP_MF);
+    Formulas<int>* pMyFml = (Formulas<int>*)malloc(sizeof(Formulas<int>)); // test my struct
+    pMyFml->f = my_formula; // test my struct
+    //test_my_ptr<int>((void*)pRealStruct->f);
 
-    uint32_t h[6] = {0, 1,
-                     2, 3,
-                     4, 5}; // should be matched with Img_t bitDepth!!
-    // uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
-    const KernelCfg_t sKernelCfg = {
-        (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, false, (void*)pRealStruct->FP_MF};
+    // uint32_t h[6] = {0, 1,
+    //                  2, 3,
+    //                  4, 5}; // should be matched with Img_t bitDepth!!
+    uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
     // const KernelCfg_t sKernelCfg = {
-    // (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 2, false};
+    //     (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, 1, 1, false, (void*)pRealStruct->f, true};
+    const KernelCfg_t sKernelCfg = {
+    (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml->f, true};
 
     ROI_t sInImgROI = {0, 0, 0, width, height};
     ROI_t sOutImgROI = {0, 0, 0, width, height}; // TODO: may create a helper function to find ROI (???) based on kernel; 
