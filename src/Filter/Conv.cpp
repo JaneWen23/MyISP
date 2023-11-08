@@ -55,7 +55,7 @@ const T my_formula(const T** a, const T** b, const int vecLen){
 
 
 template<typename T>
-struct Formulas{
+struct Formulas_T{
     const T (*f)(const T**, const T**, const int);
 }; // note: cannot typedef, because there is no type yet.
 
@@ -119,16 +119,26 @@ void set_addr_array(T** pAddr, const T* x, const int xWidth, const int lenPadded
 }
 
 template<typename T>
-void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T** pDst){
+void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T** pDst){ // not in use
     for (int i = 0; i < srcHeight; ++i){
         for (int j = 0; j < srcWidth; ++j){
             *(pDst + j*srcHeight + i) = *(pSrc + i*srcWidth + j);
         }
     }
-    // or, for i = 0, 1, ..., srcHeight-1:
+    // or, for i = 0, 1, ..., L-1:
     // mapped(i) = (i % srcHeight) * srcWidth + i
     // mapped(i) is the index of pDst to be set value of pSrc[i].
-    // TODO: may set up a timer to see which way is better.
+}
+
+template<typename T>
+void copy_row_to_col(T** pSrc, const int srcRowInd, const int srcHeight, const int srcWidth, T** pDst){
+    // matrix transpose.
+    // src and dst are BOTH matricies, but only need one row of src matrix at a time.
+    // copy each src row to the col of destination.
+
+    for (int j = 0; j < srcWidth; ++j){
+        *(pDst + j*srcHeight + srcRowInd) = *(pSrc + j);
+    }
 }
 
 
@@ -170,34 +180,9 @@ const uint8_t* vert_padding_map(const int ind, const uint8_t* x, const int roiHe
     }
 }
 
-template<typename T>
-void conv_1d_deprecated(const T* x, const int xLen, const KernelCfg_t& sKernelCfg, T* y){
-    int kerLen = sKernelCfg.kerWidth;
-    int lenPadded = xLen + kerLen - 1;
-    T** pAddr = (T**)malloc(lenPadded * sizeof(T*)); // stores the addr of padded x
-    const T z = 0; // this is useful for zero-padding
-
-    set_addr_array<T>(pAddr, x, xLen, lenPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
-    // for(int i = 0; i < lenPadded; ++i){
-    //     std::cout<<"    "<< (int)(*(pAddr[i]))<<", ";
-    // }
-    // std::cout<<"\n";
-    T** pKerAddr = (T**)malloc(kerLen * sizeof(T*)); // stores the addr of flipped (or not) kernel;
-    set_kernel_addr<T>(pKerAddr, (T*)sKernelCfg.pKernel, kerLen, sKernelCfg.needFlip);
-    // for(int i = 0; i < kerLen; ++i){
-    //     std::cout<<"    "<< (int)(*(pKerAddr[i]))<<", ";
-    // }
-    // std::cout<<"\n";
-
-    for(int i = 0; i < xLen; i += sKernelCfg.horiStep){
-        *(y + (i/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)pAddr + i, (const T **)pKerAddr, kerLen);
-        // if vertical or 2D: break into sum of #_of_lines' dot products, treat the row direction as automatically operated and need not taking care.
-    }
-    
-}
 
 template<typename T>
-void conv_2d_unit(const T** px, const int xWidth, 
+void conv_2d_divide_conquer_unit(const T** px, const int xWidth, 
                   const T** pKerAddrMatrix, 
                   const KernelCfg_t& sKernelCfg, 
                   T* y){
@@ -210,38 +195,62 @@ void conv_2d_unit(const T** px, const int xWidth,
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
     T yTmp = 0;
     T** pAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
-    const T z = 0;
-    Formulas<T> Formula;
+    const T z = 0; // useful for zero-padding
+    Formulas_T<T> Formula;
     Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
     
     for (int i = 0; i < sKernelCfg.kerHeight; ++i){
         set_addr_array<T>(pAddrMatrix+i*xWidthPadded, px[i], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
     }
 
-    if (!sKernelCfg.divideAndConquer){
-        T** pAddrMatrixTrans = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
-        // TODO: do the transpose here
+    int jj = 0; // horizontal index at the output image
+    for (int j = 0; j < xWidth; j += sKernelCfg.horiStep){
+        // divide and conquer: "2d dot product" is the sum of several 1d dot products (because of associativity);
+        yTmp = 0; // this is helpful for the manipulation of 1d results.
+        for (int i = 0; i < sKernelCfg.kerHeight; ++i){
+            yTmp += Formula.f((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
+            // i.e. yTmp = manipulate(yTmp, Formula.f(...)); 
+            // currently, the manipulation is addition. theoretically it can also be multiplication. 
+            // but it seems that multiplication is not quite used, so currently we do not consider multiplication.
+        }
+        *(y + jj) = yTmp;
+        jj += sKernelCfg.horiUpsample;
+    }
+    free(pAddrMatrix);
+}
+
+template<typename T>
+void conv_2d_flatten_unit(const T** px, const int xWidth, 
+                  const T** pKerAddrMatrix, 
+                  const KernelCfg_t& sKernelCfg, 
+                  T* y){
+    int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
+    T yTmp = 0;
+    T** pAddrTmp = (T**)malloc(xWidthPadded * sizeof(T*));
+    T** pAddrMatrixTrans = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
+    const T z = 0; // useful for zero-padding
+    Formulas_T<T> Formula;
+    Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
+    
+    for (int i = 0; i < sKernelCfg.kerHeight; ++i){
+        set_addr_array<T>(pAddrTmp, px[i], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
+        copy_row_to_col<T>(pAddrTmp, i, sKernelCfg.kerHeight, xWidthPadded, pAddrMatrixTrans); // get transposed addr matrix
     }
 
     int jj = 0; // horizontal index at the output image
     for (int j = 0; j < xWidth; j += sKernelCfg.horiStep){
-        // this is to some extent seperable: "2d dot product" is the sum of several 1d dot products;
-        // if a 2d kernel cannot be broken into manipulation of several 1d, 
-        // you should first transpose the "pAddrMatrix" outside this loop,
-        // then apply the flatten kernel here (increment of transposed (and flatten) pAddrMatrix is horiStep * kerHeight).
-
-        yTmp = 0; // this is helpful for the manipulation of 1d results.
-        for (int i = 0; i < sKernelCfg.kerHeight; ++i){
-            // yTmp += dot_product_clever<T>((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
-            yTmp += Formula.f((const T **)pAddrMatrix + j + i*xWidthPadded, (const T **)pKerAddrMatrix+i*sKernelCfg.kerWidth, sKernelCfg.kerWidth);
-        }
-        *(y + jj) = yTmp;
+        // apply the flatten kernel (increment of transposed (and flatten) addr matrix is horiStep * kerHeight).
+        *(y + jj) += Formula.f((const T **)pAddrMatrixTrans + j * sKernelCfg.kerHeight, (const T **)pKerAddrMatrix, sKernelCfg.kerHeight*sKernelCfg.kerWidth);
         jj += sKernelCfg.horiUpsample;
-
-        // TODO: then need another version, for "not divide_and_conquer" style
     }
-
+    free(pAddrTmp);
+    free(pAddrMatrixTrans);
 }
+
+template<typename T>
+struct Conv2D_T{
+    void (*conv_2d_unit)(const T**, const int, const T**, const KernelCfg_t&, T*);
+}; // note: cannot typedef, because there is no type yet.
 
 template<typename T>
 void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
@@ -251,18 +260,29 @@ void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
     uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
     uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
     memset(zVec, 0, xWidth * sizeof(T));
+    Conv2D_T<T> ConvType;
+
+    if (sKernelCfg.divideAndConquer){
+        ConvType.conv_2d_unit = (decltype(ConvType.conv_2d_unit))conv_2d_divide_conquer_unit;
+    }
+    else{
+        ConvType.conv_2d_unit = (decltype(ConvType.conv_2d_unit))conv_2d_flatten_unit;
+    }
+
     for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
         for (int l = -sKernelCfg.vertCenter; l < sKernelCfg.kerHeight - sKernelCfg.vertCenter; ++l){
             px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
         }
         
-        conv_2d_unit<T>((const T**)px, xWidth, 
+        ConvType.conv_2d_unit((const T**)px, xWidth, 
                         pKerAddrMatrix, 
                         sKernelCfg,
                         (T*)y);
 
         y += sKernelCfg.vertUpsample * outImgStride;
     }
+    free(px);
+    free(zVec);
 }
 
 
@@ -271,11 +291,10 @@ void conv_1d_vertical_unit(const T** px, const int xRoiWidth,
                            const T** pKerAddr, 
                            const KernelCfg_t& sKernelCfg, 
                            T* y){
-    Formulas<T> Formula;
+    Formulas_T<T> Formula;
     Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
     int jj = 0; // horizontal index at the output image
     for(int j = 0; j < xRoiWidth; j += sKernelCfg.horiStep){
-        //*(y + (j/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)px, (const T **)pKerAddr, sKernelCfg.kerHeight);
         *(y + jj) = Formula.f((const T **)px, (const T **)pKerAddr, sKernelCfg.kerHeight);
         jj += sKernelCfg.horiUpsample;
         for(int i = 0; i < sKernelCfg.kerHeight; ++i){
@@ -304,6 +323,8 @@ void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
 
         y += sKernelCfg.vertUpsample * outImgStride;
     }
+    free(px);
+    free(zVec);
 }
 
 template<typename T>
@@ -314,17 +335,17 @@ void conv_1d_horizontal_unit(const T** px, const int xWidth,
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
     T** pAddrArray = (T**)malloc(xWidthPadded * sizeof(T*)); // stores the addr of padded x
     const T z = 0; // this is useful for zero-padding
-    Formulas<T> Formula;
+    Formulas_T<T> Formula;
     Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
 
     set_addr_array<T>(pAddrArray, px[0], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
 
     int jj = 0; // horizontal index at the output image
-    for(int i = 0; i < xWidth; i += sKernelCfg.horiStep){
-        //*(y + (i/sKernelCfg.horiStep)) = dot_product_clever<T>((const T **)pAddrArray + i, (const T **)pKerAddr, sKernelCfg.kerWidth);
-        *(y + jj) = Formula.f((const T **)pAddrArray + i, (const T **)pKerAddr, sKernelCfg.kerWidth);
+    for(int j = 0; j < xWidth; j += sKernelCfg.horiStep){
+        *(y + jj) = Formula.f((const T **)pAddrArray + j, (const T **)pKerAddr, sKernelCfg.kerWidth);
         jj += sKernelCfg.horiUpsample;
     }
+    free(pAddrArray);
 }
 
 template<typename T>
@@ -347,7 +368,9 @@ void conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, cons
                   uint8_t* y, const int outImgStride,
                   const KernelCfg_t& sKernelCfg){
     T** pKerAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*)); // stores the addr of flipped (or not) kernel;
-    set_kernel_addr<T>(pKerAddrMatrix, (T*)sKernelCfg.pKernel, sKernelCfg.kerHeight * sKernelCfg.kerWidth, sKernelCfg.needFlip);
+    if (sKernelCfg.pKernel != NULL){
+        set_kernel_addr<T>(pKerAddrMatrix, (T*)sKernelCfg.pKernel, sKernelCfg.kerHeight * sKernelCfg.kerWidth, sKernelCfg.needFlip);
+    }
     
     if (sKernelCfg.kerHeight == 1){
         conv_1d_horizontal<T>(x, inImgRoiWidth, inImgRoiHeight,
@@ -421,7 +444,7 @@ void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const
 
 template<typename T>
 void test_my_ptr(void* myPtr){
-    Formulas<T> Formula;
+    Formulas_T<T> Formula;
     Formula.FP_MF = (decltype(Formula.FP_MF))myPtr;
     T res = 0;
     T x = 3;
@@ -478,18 +501,18 @@ void test_conv(){
                   alignment,
                   allocateImage);
 
-    Formulas<int>* pMyFml = (Formulas<int>*)malloc(sizeof(Formulas<int>)); // test my struct
-    pMyFml->f = my_formula; // test my struct
+    Formulas_T<int> pMyFml; // test my struct
+    pMyFml.f = dot_product_clever; // test my struct
     //test_my_ptr<int>((void*)pRealStruct->f);
 
-    // uint32_t h[6] = {0, 1,
-    //                  2, 3,
-    //                  4, 5}; // should be matched with Img_t bitDepth!!
-    uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
-    // const KernelCfg_t sKernelCfg = {
-    //     (uint8_t*)h, 3, 2, 0, 1, ZEROPADDING, 1, 1, 1, 1, false, (void*)pRealStruct->f, true};
+    uint32_t h[6] = {0, 0,
+                     0, 1,
+                     0, 0}; // should be matched with Img_t bitDepth!!
+    //uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
     const KernelCfg_t sKernelCfg = {
-    (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml->f, true};
+        (uint8_t*)h, 3, 2, 0, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, false};
+    // const KernelCfg_t sKernelCfg = {
+    // (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, true};
 
     ROI_t sInImgROI = {0, 0, 0, width, height};
     ROI_t sOutImgROI = {0, 0, 0, width, height}; // TODO: may create a helper function to find ROI (???) based on kernel; 

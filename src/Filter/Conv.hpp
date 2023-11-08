@@ -14,18 +14,18 @@ typedef enum{
 
 typedef struct{
     uint8_t* pKernel; // pointer to kernel data; may convert to any type when used.
-    int kerHeight;
-    int kerWidth;
+    int kerHeight; // if no explicit kernel, this is equivalently window height, minimum is 1
+    int kerWidth; // if no explicit kernel, this is equivalently window width, minimum is 1
     int horiCenter; // horizontal center
     int vertCenter; // vertical center
     PADDING padding;
-    int horiStep; // horizontal step (same effect as filtering followed by down-sampling)
-    int vertStep; // vertical step (same effect as filtering followed by down-sampling)
-    int horiUpsample; // (down-sampled (or not)) filtering followed by up-sampling
-    int vertUpsample; // (down-sampled (or nor)) filtering followed by up-sampling
+    int horiStep; // horizontal step (same effect as filtering followed by down-sampling horizontally)
+    int vertStep; // vertical step (same effect as filtering followed by down-sampling vertically)
+    int horiUpsample; // (down-sampled (or not)) filtering followed by up-sampling horizontally
+    int vertUpsample; // (down-sampled (or nor)) filtering followed by up-sampling vertically
     bool needFlip; // if true, it is convolution; if false, it is correlation.
-    void* formula;
-    bool divideAndConquer; // if true, 2d filtering can be defined by manipulations of several 1d results; if false, 2d filtering may have a different formula than 1d.
+    void* formula; // dot product for convolution; self-defined formula for other filterings.
+    bool divideAndConquer; // if true, 2d filtering can be defined by summation of several 1d results; if false, 2d filtering will be performed in naive way.
 } KernelCfg_t;
 
 
