@@ -119,7 +119,7 @@ void set_addr_array(T** pAddr, const T* x, const int xWidth, const int lenPadded
 }
 
 template<typename T>
-void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T** pDst){ // not in use
+void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T** pDst){
     for (int i = 0; i < srcHeight; ++i){
         for (int j = 0; j < srcWidth; ++j){
             *(pDst + j*srcHeight + i) = *(pSrc + i*srcWidth + j);
@@ -228,6 +228,7 @@ void conv_2d_flatten_unit(const T** px, const int xWidth,
     T yTmp = 0;
     T** pAddrTmp = (T**)malloc(xWidthPadded * sizeof(T*));
     T** pAddrMatrixTrans = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
+    T** pAddrTransBack = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*));
     const T z = 0; // useful for zero-padding
     Formulas_T<T> Formula;
     Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
@@ -239,12 +240,14 @@ void conv_2d_flatten_unit(const T** px, const int xWidth,
 
     int jj = 0; // horizontal index at the output image
     for (int j = 0; j < xWidth; j += sKernelCfg.horiStep){
-        // apply the flatten kernel (increment of transposed (and flatten) addr matrix is horiStep * kerHeight).
-        *(y + jj) += Formula.f((const T **)pAddrMatrixTrans + j * sKernelCfg.kerHeight, (const T **)pKerAddrMatrix, sKernelCfg.kerHeight*sKernelCfg.kerWidth);
+        // apply the flatten kernel (after "x" being transposed back)
+        addr_matrix_transpose(pAddrMatrixTrans + j * sKernelCfg.kerHeight, sKernelCfg.kerWidth, sKernelCfg.kerHeight, pAddrTransBack);
+        *(y + jj) += Formula.f((const T **)pAddrTransBack, (const T **)pKerAddrMatrix, sKernelCfg.kerHeight*sKernelCfg.kerWidth);
         jj += sKernelCfg.horiUpsample;
     }
     free(pAddrTmp);
     free(pAddrMatrixTrans);
+    free(pAddrTransBack);
 }
 
 template<typename T>
@@ -390,6 +393,7 @@ void conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, cons
             inImgStride, outImgStride, 
             y);
     }
+    free(pKerAddrMatrix);
 }
 
 typedef void (*FP_CONV)(const uint8_t*, const int, const int, const int,
@@ -507,10 +511,10 @@ void test_conv(){
 
     uint32_t h[6] = {0, 0,
                      0, 1,
-                     0, 0}; // should be matched with Img_t bitDepth!!
+                     0, 1}; // should be matched with Img_t bitDepth!!
     //uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
     const KernelCfg_t sKernelCfg = {
-        (uint8_t*)h, 3, 2, 0, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, false};
+        (uint8_t*)h, 3, 2, 1, 1, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, false};
     // const KernelCfg_t sKernelCfg = {
     // (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, true};
 
