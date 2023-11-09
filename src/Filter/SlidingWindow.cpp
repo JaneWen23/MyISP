@@ -1,63 +1,11 @@
 
-#include "Conv.hpp"
+#include "SlidingWindow.hpp"
+#include "../Math/Math.hpp"
 
-// sliding window: a uniform API to perform 1D/2D convolution of any kernel, with step configurable.
+// sliding window: a uniform API to perform 1D/2D filtering of any kernel, with configurable settings.
 
 
 // TODO: openMP??? -O2? -O3?
-template<typename T>
-const T dot_product(const T* a, const T* b, const int vecLen){ // not in use
-    T res = 0;
-    int i = 0;
-    // parallel computation, maybe
-    for (i = 0; i < vecLen - 4; i += 4){
-        res += (*(a+i)) * (*(b+i));
-        res += (*(a+i+1)) * (*(b+i+1));
-        res += (*(a+i+2)) * (*(b+i+2));
-        res += (*(a+i+3)) * (*(b+i+3));
-    }
-    while(i < vecLen){
-        res += (*(a+i)) * (*(b+i));
-        ++i;
-    }
-    return res;
-}
-
-template<typename T>
-const T dot_product_clever(const T** a, const T** b, const int vecLen){ // in use
-    // "T** a" is to help handel the padded signal.
-    // "T** b" is to help handel the flipped kernel.
-    T res = 0;
-    int i = 0;
-    // parallel computation, maybe
-    for(i = 0; i < vecLen - 4; i += 4){
-        res += (**(a+i)) * (**(b+i));
-        res += (**(a+i+1)) * (**(b+i+1));
-        res += (**(a+i+2)) * (**(b+i+2));
-        res += (**(a+i+3)) * (**(b+i+3));
-    }
-    while(i < vecLen){
-        res += (**(a+i)) * (**(b+i));
-        ++i;
-    }
-    return res;
-}
-
-// this function is for test only. can be removed.
-template<typename T>
-const T my_formula(const T** a, const T** b, const int vecLen){
-    T res = 0;
-    for(int i = 0; i < vecLen; ++i){
-        res += (**(a+i) > **(b+i))? **(a+i) : **(b+i);
-    }
-    return res;
-}
-
-
-template<typename T>
-struct Formulas_T{
-    const T (*f)(const T**, const T**, const int);
-}; // note: cannot typedef, because there is no type yet.
 
 
 template<typename T>
@@ -119,7 +67,7 @@ void set_addr_array(T** pAddr, const T* x, const int xWidth, const int lenPadded
 }
 
 template<typename T>
-void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T** pDst){
+void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T** pDst){ // not in use
     for (int i = 0; i < srcHeight; ++i){
         for (int j = 0; j < srcWidth; ++j){
             *(pDst + j*srcHeight + i) = *(pSrc + i*srcWidth + j);
@@ -130,8 +78,9 @@ void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T*
     // mapped(i) is the index of pDst to be set value of pSrc[i].
 }
 
+
 template<typename T>
-void copy_row_to_col(T** pSrc, const int srcRowInd, const int srcHeight, const int srcWidth, T** pDst){
+void copy_row_to_col(T** pSrc, const int srcRowInd, const int srcHeight, const int srcWidth, T** pDst){ // not in use
     // matrix transpose.
     // src and dst are BOTH matricies, but only need one row of src matrix at a time.
     // copy each src row to the col of destination.
@@ -182,7 +131,7 @@ const uint8_t* vert_padding_map(const int ind, const uint8_t* x, const int roiHe
 
 
 template<typename T>
-void conv_2d_divide_conquer_unit(const T** px, const int xWidth, 
+void filter_2d_divide_conquer_unit(const T** px, const int xWidth, 
                   const T** pKerAddrMatrix, 
                   const KernelCfg_t& sKernelCfg, 
                   T* y){
@@ -220,56 +169,58 @@ void conv_2d_divide_conquer_unit(const T** px, const int xWidth,
 }
 
 template<typename T>
-void conv_2d_flatten_unit(const T** px, const int xWidth, 
+void filter_2d_flatten_unit(const T** px, const int xWidth, 
                   const T** pKerAddrMatrix, 
                   const KernelCfg_t& sKernelCfg, 
                   T* y){
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
     T yTmp = 0;
-    T** pAddrTmp = (T**)malloc(xWidthPadded * sizeof(T*));
-    T** pAddrMatrixTrans = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
-    T** pAddrTransBack = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*));
+    T** pAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
+    T** pAddrFlatten = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*));
     const T z = 0; // useful for zero-padding
     Formulas_T<T> Formula;
     Formula.f = (decltype(Formula.f))(sKernelCfg.formula); // convert void* to the type of Formula.f
     
     for (int i = 0; i < sKernelCfg.kerHeight; ++i){
-        set_addr_array<T>(pAddrTmp, px[i], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
-        copy_row_to_col<T>(pAddrTmp, i, sKernelCfg.kerHeight, xWidthPadded, pAddrMatrixTrans); // get transposed addr matrix
+        set_addr_array<T>(pAddrMatrix + i * xWidthPadded, px[i], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
     }
 
     int jj = 0; // horizontal index at the output image
     for (int j = 0; j < xWidth; j += sKernelCfg.horiStep){
-        // apply the flatten kernel (after "x" being transposed back)
-        addr_matrix_transpose(pAddrMatrixTrans + j * sKernelCfg.kerHeight, sKernelCfg.kerWidth, sKernelCfg.kerHeight, pAddrTransBack);
-        *(y + jj) += Formula.f((const T **)pAddrTransBack, (const T **)pKerAddrMatrix, sKernelCfg.kerHeight*sKernelCfg.kerWidth);
+        // prepare the addresses
+        for(int l = 0; l < sKernelCfg.kerHeight; ++l){
+            for (int k = 0; k < sKernelCfg.kerWidth; ++k){
+                *(pAddrFlatten + l * sKernelCfg.kerWidth + k) = *(pAddrMatrix + l * xWidthPadded + j + k);
+            }
+        }
+        // apply the flatten kernel
+        *(y + jj) += Formula.f((const T **)pAddrFlatten, (const T **)pKerAddrMatrix, sKernelCfg.kerHeight*sKernelCfg.kerWidth);
         jj += sKernelCfg.horiUpsample;
     }
-    free(pAddrTmp);
-    free(pAddrMatrixTrans);
-    free(pAddrTransBack);
+    free(pAddrMatrix);
+    free(pAddrFlatten);
 }
 
 template<typename T>
-struct Conv2D_T{
-    void (*conv_2d_unit)(const T**, const int, const T**, const KernelCfg_t&, T*);
+struct Unit2D_T{
+    void (*filt_2d_unit)(const T**, const int, const T**, const KernelCfg_t&, T*);
 }; // note: cannot typedef, because there is no type yet.
 
 template<typename T>
-void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
+void filter_2d(const uint8_t* x, const int xWidth, const int xHeight,
              const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
              const int inImgStride, const int outImgStride, 
              uint8_t* y){
     uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
     uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
     memset(zVec, 0, xWidth * sizeof(T));
-    Conv2D_T<T> ConvType;
+    Unit2D_T<T> UnitImplement;
 
     if (sKernelCfg.divideAndConquer){
-        ConvType.conv_2d_unit = (decltype(ConvType.conv_2d_unit))conv_2d_divide_conquer_unit;
+        UnitImplement.filt_2d_unit = (decltype(UnitImplement.filt_2d_unit))filter_2d_divide_conquer_unit;
     }
     else{
-        ConvType.conv_2d_unit = (decltype(ConvType.conv_2d_unit))conv_2d_flatten_unit;
+        UnitImplement.filt_2d_unit = (decltype(UnitImplement.filt_2d_unit))filter_2d_flatten_unit;
     }
 
     for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
@@ -277,7 +228,7 @@ void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
             px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
         }
         
-        ConvType.conv_2d_unit((const T**)px, xWidth, 
+        UnitImplement.filt_2d_unit((const T**)px, xWidth, 
                         pKerAddrMatrix, 
                         sKernelCfg,
                         (T*)y);
@@ -290,7 +241,7 @@ void conv_2d(const uint8_t* x, const int xWidth, const int xHeight,
 
 
 template<typename T>
-void conv_1d_vertical_unit(const T** px, const int xRoiWidth, 
+void filter_1d_vertical_unit(const T** px, const int xRoiWidth, 
                            const T** pKerAddr, 
                            const KernelCfg_t& sKernelCfg, 
                            T* y){
@@ -307,7 +258,7 @@ void conv_1d_vertical_unit(const T** px, const int xRoiWidth,
 }
 
 template<typename T>
-void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
+void filter_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
              const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
              const int inImgStride, const int outImgStride, 
              uint8_t* y){
@@ -319,7 +270,7 @@ void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
             px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
         }
         
-        conv_1d_vertical_unit<T>((const T**)px, xWidth, 
+        filter_1d_vertical_unit<T>((const T**)px, xWidth, 
                         pKerAddrMatrix, 
                         sKernelCfg,
                         (T*)y);
@@ -331,7 +282,7 @@ void conv_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
 }
 
 template<typename T>
-void conv_1d_horizontal_unit(const T** px, const int xWidth, 
+void filter_1d_horizontal_unit(const T** px, const int xWidth, 
                              const T** pKerAddr, 
                              const KernelCfg_t& sKernelCfg,  
                              T* y){
@@ -352,12 +303,12 @@ void conv_1d_horizontal_unit(const T** px, const int xWidth,
 }
 
 template<typename T>
-void conv_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
+void filter_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
              const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
              const int inImgStride, const int outImgStride, 
              uint8_t* y){
     for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
-        conv_1d_horizontal_unit<T>((const T**)(&x), xWidth, 
+        filter_1d_horizontal_unit<T>((const T**)(&x), xWidth, 
                         pKerAddrMatrix, 
                         sKernelCfg,
                         (T*)y);
@@ -367,28 +318,31 @@ void conv_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
 }
 
 template<typename T>
-void conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, const int inImgRoiHeight,
-                  uint8_t* y, const int outImgStride,
-                  const KernelCfg_t& sKernelCfg){
+void filter(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, const int inImgRoiHeight,
+                  const KernelCfg_t& sKernelCfg,
+                  const int outImgStride,
+                  uint8_t* y){
+    assert(sKernelCfg.kerHeight > 0);
+    assert(sKernelCfg.kerWidth > 0);
     T** pKerAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*)); // stores the addr of flipped (or not) kernel;
     if (sKernelCfg.pKernel != NULL){
         set_kernel_addr<T>(pKerAddrMatrix, (T*)sKernelCfg.pKernel, sKernelCfg.kerHeight * sKernelCfg.kerWidth, sKernelCfg.needFlip);
     }
     
     if (sKernelCfg.kerHeight == 1){
-        conv_1d_horizontal<T>(x, inImgRoiWidth, inImgRoiHeight,
+        filter_1d_horizontal<T>(x, inImgRoiWidth, inImgRoiHeight,
             (const T**)pKerAddrMatrix, sKernelCfg, 
             inImgStride, outImgStride, 
             y);
     }
     else if (sKernelCfg.kerWidth == 1){
-        conv_1d_vertical<T>(x, inImgRoiWidth, inImgRoiHeight,
+        filter_1d_vertical<T>(x, inImgRoiWidth, inImgRoiHeight,
             (const T**)pKerAddrMatrix, sKernelCfg, 
             inImgStride, outImgStride, 
             y);
     }
     else{
-        conv_2d<T>(x, inImgRoiWidth, inImgRoiHeight,
+        filter_2d<T>(x, inImgRoiWidth, inImgRoiHeight,
             (const T**)pKerAddrMatrix, sKernelCfg, 
             inImgStride, outImgStride, 
             y);
@@ -396,74 +350,60 @@ void conv(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, cons
     free(pKerAddrMatrix);
 }
 
-typedef void (*FP_CONV)(const uint8_t*, const int, const int, const int,
-                  uint8_t*, const int, const KernelCfg_t&);
+typedef void (*FP_FILT)(const uint8_t*, const int, const int, const int,
+                        const KernelCfg_t&,const int, uint8_t*);
 
-void sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
+IMG_RTN_CODE sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
     int inImgStride = pInImg->strides[sInImgROI.panelId];
     int outImgStride = pOutImg->strides[sOutImgROI.panelId];
     int scale = 0;
-    FP_CONV f = NULL;
+    FP_FILT f = NULL;
 
     if (pOutImg->sign == UNSIGNED){
         if (pOutImg->bitDepth <= 8){
             scale = sizeof(uint8_t);
-            f = conv<uint8_t>;
+            f = filter<uint8_t>;
         }
         else if (pOutImg->bitDepth <= 16){
             scale = sizeof(uint16_t);
-            f = conv<uint16_t>;
+            f = filter<uint16_t>;
         }
         else if (pOutImg->bitDepth <= 32){
             scale = sizeof(uint32_t);
-            f = conv<uint32_t>;
+            f = filter<uint32_t>;
         }
     }
     else{
         if (pOutImg->bitDepth <= 8){
             scale = sizeof(int8_t);
-            f = conv<int8_t>;
+            f = filter<int8_t>;
         }
         else if (pOutImg->bitDepth <= 16){
             scale = sizeof(int16_t);
-            f = conv<int16_t>;
+            f = filter<int16_t>;
         }
         else if (pOutImg->bitDepth <= 32){
             scale = sizeof(int);
-            f = conv<int>;
+            f = filter<int>;
         }
     }
 
     const uint8_t* x = pInImg->pImageData[sInImgROI.panelId] + sInImgROI.startRow * inImgStride + sInImgROI.startCol * scale;
     uint8_t* y = pOutImg->pImageData[sOutImgROI.panelId]+ sOutImgROI.startRow * outImgStride + sOutImgROI.startCol * scale;
 
-    
     f(x, inImgStride, sInImgROI.roiWidth, sInImgROI.roiHeight,
-                  y, outImgStride,
-                  sKernelCfg);
+      sKernelCfg,
+      outImgStride,
+      y);
     
-}
-
-template<typename T>
-void test_my_ptr(void* myPtr){
-    Formulas_T<T> Formula;
-    Formula.FP_MF = (decltype(Formula.FP_MF))myPtr;
-    T res = 0;
-    T x = 3;
-    T y = 1;
-    const T* a = &x;
-    const T* b = &y;
-    const T** aa = &a;
-    const T** bb = &b;
-    res = Formula.FP_MF(aa, bb, 1); // note: a function can be called like this!!
-    std::cout<<"res = "<<res<<"\n";
+    return SUCCEED;
 }
 
 
-void test_conv(){
-    //test_dot_product_clever();
+
+void test_sliding_window(){
 
     Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB; // out can be different than in

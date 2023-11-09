@@ -1,5 +1,5 @@
-#ifndef _CONV_H
-#define _CONV_H
+#ifndef _SLIDING_WINDOW_H
+#define _SLIDING_WINDOW_H
 
 #include <iostream>
 #include <stdlib.h>
@@ -29,6 +29,8 @@ typedef struct{
 } KernelCfg_t;
 
 
-void test_conv();
+IMG_RTN_CODE sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg);
+
+void test_sliding_window();
 
 #endif
