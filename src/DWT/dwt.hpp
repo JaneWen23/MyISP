@@ -1,8 +1,8 @@
-#ifndef _dwt_H
-#define _dwt_H
+#ifndef _DWT_H
+#define _DWT_H
 
 #include "../Infra/ImgDef.hpp"
-
+#include "../Filter/SlidingWindow.hpp"
 
 typedef struct{
 

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include "dwt.hpp"
-#include "../Infra/ImgDef.hpp"
+
 #include "../Infra/RandImageGen.hpp"
 
 
@@ -14,7 +14,7 @@
 
 
 IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, Img_t* pOutImg, void* pDWTArg){
-    
+    // sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg)
     return SUCCEED;
 }
 
@@ -54,15 +54,6 @@ void test_dwt(){
     set_value(pMyImg, sValCfg);
 
 
-    for (int i = 0; i < 12; i++){
-        std::cout<<"    "<< (*((uint16_t*)(pMyImg->pImageData[0]) + i));
-    }
-    std::cout<<'\n';
-
-    for (int i = 0; i < 12; i++){
-        std::cout<<"    "<< (*((uint16_t*)(pMyImg->pImageData[0]) + pMyImg->strides[0] + i));
-    }
-    std::cout<<'\n';
 
 
     destruct_img(&pMyImg);
