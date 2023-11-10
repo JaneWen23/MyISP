@@ -353,7 +353,7 @@ void filter(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, co
 typedef void (*FP_FILT)(const uint8_t*, const int, const int, const int,
                         const KernelCfg_t&,const int, uint8_t*);
 
-IMG_RTN_CODE sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
+IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
     int inImgStride = pInImg->strides[sInImgROI.panelId];
