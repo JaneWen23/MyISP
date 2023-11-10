@@ -13,12 +13,12 @@ typedef enum{
 } PADDING;
 
 typedef struct{
-    uint8_t* pKernel; // pointer to kernel data; may convert to any type when used; can be NULL if no explicit kernel.
+    uint8_t* pKernel; // pointer to kernel data; may convert to any type when used.
     int kerHeight; // if no explicit kernel, this is equivalently window height, minimum is 1
     int kerWidth; // if no explicit kernel, this is equivalently window width, minimum is 1
     int horiCenter; // horizontal center
     int vertCenter; // vertical center
-    PADDING padding; // padding scheme
+    PADDING padding;
     int horiStep; // horizontal step (same effect as filtering followed by down-sampling horizontally)
     int vertStep; // vertical step (same effect as filtering followed by down-sampling vertically)
     int horiUpsample; // (down-sampled (or not)) filtering followed by up-sampling horizontally
@@ -29,7 +29,7 @@ typedef struct{
 } KernelCfg_t;
 
 
-IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg);
+IMG_RTN_CODE sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg);
 
 void test_sliding_window();
 
