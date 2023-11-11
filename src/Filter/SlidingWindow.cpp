@@ -5,9 +5,6 @@
 // sliding window: a uniform API to perform 1D/2D filtering of any kernel, with configurable settings.
 
 
-// TODO: openMP???
-
-
 template<typename T>
 void set_kernel_addr(T** pAddr, T* pKernel, int kerLen, bool needFlip){
     if (needFlip){
@@ -445,9 +442,8 @@ void test_sliding_window(){
                   alignment,
                   allocateImage);
 
-    Formulas_T<int> pMyFml; // test my struct
-    pMyFml.f = dot_product; // test my struct
-    //test_my_ptr<int>((void*)pRealStruct->f);
+    Formulas_T<int> pMyFml;
+    pMyFml.f = dot_product;
 
     uint32_t h[6] = {0, 0,
                      0, 1,

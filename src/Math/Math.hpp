@@ -1,5 +1,6 @@
 #ifndef _MATH_H
 #define _MATH_H
+#include <stdlib.h>
 
 template<typename T>
 const T dot_product(const T* a, const T* b, const int vecLen){ // not in use
@@ -47,6 +48,30 @@ const T my_formula(const T** a, const T** b, const int vecLen){
         res += (**(a+i) > **(b+i))? **(a+i) : **(b+i);
     }
     return res;
+}
+
+template<typename T>
+const T LeGall53_fwd_predict(const T** a, const T** b = NULL, const int vecLen = 3){
+    // kernel height = 1, horizontal window center = 0, out ROI starts from 1
+    return **(a+1) - ((**a + **(a+2))>>1);
+}
+
+template<typename T>
+const T LeGall53_fwd_update(const T** a, const T** b = NULL, const int vecLen = 3){
+    // kernel height = 1, horizontal window center = 1, out ROI starts from 0
+    return **(a+1) + ((**a + **(a+2))>>2);
+}
+
+template<typename T>
+const T LeGall53_bwd_predict(const T** a, const T** b = NULL, const int vecLen = 3){
+    // kernel height = 1, horizontal window center = 0, out ROI starts from 1
+    return **(a+1) + ((**a + **(a+2))>>1);
+}
+
+template<typename T>
+const T LeGall53_bwd_update(const T** a, const T** b = NULL, const int vecLen = 3){
+    // kernel height = 1, horizontal window center = 0, out ROI starts from 1
+    return **(a+1) - ((**a + **(a+2))>>2);
 }
 
 template<typename T>
