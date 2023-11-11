@@ -61,7 +61,7 @@ IMG_RTN_CODE construct_img(Img_t* pImg,
 IMG_RTN_CODE destruct_img(Img_t**);
 void view_img_properties(const Img_t* pImg);
 void view_image_data(const Img_t* pImg, const ROI_t& viewROI);
-IMG_RTN_CODE ducplicate_img(const Img_t* pSrcImg, Img_t* pDstImg);
+IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg);
 bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg);
 
 void test_img_def(); // to be rewritten as unit test

@@ -115,11 +115,11 @@ void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
         return;
     }
     if(sViewROI.startRow + sViewROI.roiHeight > pImg->height){
-        std::cout<<"error: end row to view exceeses the image height. returned.\n";
+        std::cout<<"error: end row to view excesses the image height. returned.\n";
         return;
     }
     if(sViewROI.startCol + sViewROI.roiWidth > pImg->width){
-        std::cout<<"error: end column to view exceeses the image width. returned.\n";
+        std::cout<<"error: end column to view excesses the image width. returned.\n";
         return;
     }
 
@@ -170,8 +170,8 @@ void set_strides(Img_t* pImg){
     }  
 
     // if panel_0 width actual is 100, while panel_1 actual width is 50, what will be the strides?
-    // the width will be 100 for both panels, and it is only a number, it does not affect actuall image allocation
-    // so stride[0] = 100*num_of_bytes_for_a_pixel + make_up_alingment_bytes, 
+    // the width will be 100 for both panels, and it is only a number, it does not affect actual image allocation
+    // so stride[0] = 100*num_of_bytes_for_a_pixel + make_up_alignment_bytes, 
     // and stride[1] = 50*num_of_bytes_for_a_pixel + make_up_alignment_bytes
     size_t bytes_per_line = get_next_multiple(pImg->width * (pImg->bitDepth + 7)/8, pImg->alignment);
     switch (pImg->imageFormat){
@@ -242,7 +242,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
         return ALLOCATION_FAIL;
     }
     pImg->imageFormat = imageFormat;
-    pImg->width = width; // but there may be a different widt and/or height in a different channel, what we do is to control the stride
+    pImg->width = width; // but there may be a different width and/or height in a different channel, what we do is to control the stride
     pImg->height = height;
     pImg->sign = sign;
     pImg->bitDepth = bitDepth;
@@ -265,7 +265,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
     return SUCCEED;
 }
 
-IMG_RTN_CODE ducplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
+IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
     // dose NOT set ROI because ROI size is in pixel (each pixel may take 1, 2 or 4 bytes), 
     // but the Img_t cannot handle different data types.
     if (pSrcImg == NULL){
@@ -347,7 +347,7 @@ IMG_RTN_CODE destruct_img(Img_t** ptr_pImg){
 
 void test_img_def(){
 
-    Img_t* pMyImg = NULL; // initialze
+    Img_t* pMyImg = NULL; // initialize
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB;
     size_t width = 50;

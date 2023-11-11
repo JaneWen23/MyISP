@@ -5,7 +5,7 @@
 // sliding window: a uniform API to perform 1D/2D filtering of any kernel, with configurable settings.
 
 
-// TODO: openMP??? -O2? -O3?
+// TODO: openMP???
 
 
 template<typename T>
@@ -82,7 +82,7 @@ void addr_matrix_transpose(T** pSrc, const int srcHeight, const int srcWidth, T*
 template<typename T>
 void copy_row_to_col(T** pSrc, const int srcRowInd, const int srcHeight, const int srcWidth, T** pDst){ // not in use
     // matrix transpose.
-    // src and dst are BOTH matricies, but only need one row of src matrix at a time.
+    // src and dst are BOTH matrices, but only need one row of src matrix at a time.
     // copy each src row to the col of destination.
 
     for (int j = 0; j < srcWidth; ++j){
@@ -136,7 +136,7 @@ void filter_2d_divide_conquer_unit(const T** px, const int xWidth,
                   const KernelCfg_t& sKernelCfg, 
                   T* y){
     // px[i] stored the head address of i-th line of x, i is in terms of kernel height
-    // outside this func: need augumented "x", i.e., pad the non-existed rows;
+    // outside this func: need augmented "x", i.e., pad the non-existed rows;
     // inside this func: pad the x horizontally, stack this operation for all #_kernel_height lines
    
     // kerWidth: to help with horizontal padding len
@@ -446,7 +446,7 @@ void test_sliding_window(){
                   allocateImage);
 
     Formulas_T<int> pMyFml; // test my struct
-    pMyFml.f = dot_product_clever; // test my struct
+    pMyFml.f = dot_product; // test my struct
     //test_my_ptr<int>((void*)pRealStruct->f);
 
     uint32_t h[6] = {0, 0,

@@ -125,7 +125,7 @@ void test_rand_image_gen(){
     std::cout<<"\n\n\n";
 
     Img_t* pMyImg2 =(Img_t*)malloc(sizeof(Img_t));
-    ducplicate_img(pMyImg, pMyImg2);
+    duplicate_img(pMyImg, pMyImg2);
 
     for (int i = 0; i < 12; i++){
         std::cout<<"    "<< (*((uint16_t*)(pMyImg2->pImageData[0]) + i));

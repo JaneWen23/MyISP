@@ -6,17 +6,19 @@ sliding_window() is a function to implement 1D and 2D image filtering with a fin
 
 ### 1.1. Convolution
 
-√ int-to-int conlolution
+√ int-to-int convolution
 
 √ 1D / 2D convolution with padding scheme
 
-√ 1D / 2D horizontal / vertical stride of kernel sliding
+√ 1D / 2D horizontal / vertical stride(aka. step) of kernel sliding
 
 √ 1D / 2D horizontal / vertical upsample after filtering
 
 √ option to flip the kernel or not
 
 ### 1.2. Self-Defined Filtering
+
+√ padding schemes, stride(aka. step), upsample, flip kernel or not
 
 √ user provide the formula that defines the filter in the single window, then sliding_window() will perform the filtering
 
@@ -38,9 +40,9 @@ sliding_window() is a function to implement 1D and 2D image filtering with a fin
 
 The input / output image and the ROI structures are defined in "ImgDef.cpp" and they are easy to understand. (The output image ROI means to )
 
-Up to 32-bit bitdepth is supported, regardless of signed or unsigned and input / output image should be integers (currently it does not support float types). 
+Up to 32-bit bit-depth is supported, regardless of signed or unsigned and input / output image should be integers (currently it does not support float types). 
 
-Also note that although the output image may be signed while the input image being unsigned, the input and output images should be set to the same bitdepth. To prevent a large unsigned number to be interpreted as negative, you may choose a higher bitdepth for both.
+Also note that although the output image may be signed while the input image being unsigned, the input and output images should be set to the same bit-depth. To prevent a large unsigned number to be interpreted as negative, you may choose a higher bit-depth for both.
 
 The KernelCfg structure defines the kernel itself, filter behaviors, and the option related to 2D implementation:
 
@@ -60,7 +62,7 @@ The KernelCfg structure defines the kernel itself, filter behaviors, and the opt
     *   int horiUpsample; // (down-sampled (or not)) filtering followed by up-sampling horizontally
     *   int vertUpsample; // (down-sampled (or nor)) filtering followed by up-sampling vertically
     *   bool needFlip; // if true, it is convolution; if false, it is correlation.
-    *   void* formula; // function pointer. use dot_product for convolution; self-defined formula for other filterings.
+    *   void* formula; // function pointer. use dot_product for convolution; self-defined formula for other filtering.
   
 * member related to the way the program carrying out 2D filtering:
 
@@ -68,7 +70,7 @@ The KernelCfg structure defines the kernel itself, filter behaviors, and the opt
 
 Note that only integers are allowed for the explicit kernel. The fraction kernels may be defined implicitly, but the filter result should also be rounded to integers.
 
-Although the kernel does not specify bitdepth, when calling sliding_window(), the kernel bitdepth will be treated always as the same as the output image. The user should take care of the actual kernel values.
+Although the kernel does not specify bit-depth, when calling sliding_window(), the kernel bit-depth will be treated always as the same as the output image. The user should take care of the actual kernel values.
 
 ### 2.2. Output
 
@@ -78,7 +80,7 @@ The output image, which is treated as an input argument, has several things to b
 
 * the output image must be allocated before passed to sliding_window(), because the program won't create one but writes to the location of output image directly.
 
-* the sign and the bitdepth: output image may be signed, but should have the same bitdepth as the input image. So choose a propreate bitdepth for both imput and output images.
+* the sign and the bit-depth: output image may be signed, but should have the same bit-depth as the input image. So choose a proper bit-depth for both input and output images.
 
 * output image does not need to have the same size and/or panels as input image.
   
