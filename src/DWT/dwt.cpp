@@ -101,9 +101,9 @@ void test_dwt(){
     ROI_t sOutImgROI = {0, 0, 1, width-1, height}; 
     
     sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI, sKernelCfg_fwd_p);
-    // std::cout<<"filtered1:\n";
-    // ROI_t viewROI = {0,0,0,width,height};
-    // view_image_data(pImg1, viewROI);
+    std::cout<<"filtered1:\n";
+    ROI_t viewROI = {0,0,0,width,height};
+    view_image_data(pImg1, viewROI);
  
 
     Formulas_T<int> pMyFml2;
@@ -113,16 +113,16 @@ void test_dwt(){
     ROI_t sOutImgROI2 = {0, 0, 0, width, height}; 
     sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI2, sKernelCfg_fwd_u);
 
-    // std::cout<<"filtered2:\n";
+    std::cout<<"filtered2:\n";
      ROI_t viewROI2 = {0,0,0,width,height};
-    // view_image_data(pImg1, viewROI2);
+    view_image_data(pImg1, viewROI2);
 
     // level 2
     dwt_horizontal_reorder<int>(pImg1, sOutImgROI2);
     std::cout<<"re-ordered:\n";
     view_image_data(pImg1, viewROI2);
 
-    ROI_t sInImgROI_Lv2 = {0, 0, 0, width/2-1, height}; // !!!
+    ROI_t sInImgROI_Lv2 = {0, 0, 0, width/2, height};
     ROI_t sOutImgROI_lv2 = {0, 0, 1, width/2-1, height}; 
     sliding_window(pImg1, sInImgROI_Lv2, pImg1, sOutImgROI_lv2, sKernelCfg_fwd_p);
     std::cout<<"filtered_predict_lv2:\n";
@@ -165,11 +165,6 @@ void test_dwt(){
     view_image_data(pImg1, viewROI2);
 
 
-    // Formulas_T<int> pMyFml4;
-    // pMyFml4.f = LeGall53_bwd_predict;
-    // const KernelCfg_t sKernelCfg4 = {
-    // NULL, 1, 3, 0, 0, MIRROR, 2, 1, 2, 1, false, (void*)pMyFml4.f, false};
-    // ROI_t sOutImgROI4 = {0, 0, 1, width-1, height}; 
     sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI, sKernelCfg_bwd_p);
 
     std::cout<<"filtered4:\n";

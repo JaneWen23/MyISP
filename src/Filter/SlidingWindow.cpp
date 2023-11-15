@@ -131,7 +131,7 @@ template<typename T>
 void filter_2d_divide_conquer_unit(const T** px, const int xWidth, 
                   const T** pKerAddrMatrix, 
                   const KernelCfg_t& sKernelCfg, 
-                  T* y){
+                  const int xOutWidth, T* y){
     // px[i] stored the head address of i-th line of x, i is in terms of kernel height
     // outside this func: need augmented "x", i.e., pad the non-existed rows;
     // inside this func: pad the x horizontally, stack this operation for all #_kernel_height lines
@@ -150,7 +150,7 @@ void filter_2d_divide_conquer_unit(const T** px, const int xWidth,
     }
 
     int jj = 0; // horizontal index at the output image
-    for (int j = 0; j < xWidth; j += sKernelCfg.horiStep){
+    for (int j = 0; j < xOutWidth; j += sKernelCfg.horiStep){
         // divide and conquer: "2d dot product" is the sum of several 1d dot products (because of associativity);
         yTmp = 0; // this is helpful for the manipulation of 1d results.
         for (int i = 0; i < sKernelCfg.kerHeight; ++i){
@@ -169,7 +169,7 @@ template<typename T>
 void filter_2d_flatten_unit(const T** px, const int xWidth, 
                   const T** pKerAddrMatrix, 
                   const KernelCfg_t& sKernelCfg, 
-                  T* y){
+                  const int xOutWidth, T* y){
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
     T yTmp = 0;
     T** pAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * xWidthPadded * sizeof(T*));
@@ -183,7 +183,7 @@ void filter_2d_flatten_unit(const T** px, const int xWidth,
     }
 
     int jj = 0; // horizontal index at the output image
-    for (int j = 0; j < xWidth; j += sKernelCfg.horiStep){
+    for (int j = 0; j < xOutWidth; j += sKernelCfg.horiStep){
         // prepare the addresses
         for(int l = 0; l < sKernelCfg.kerHeight; ++l){
             for (int k = 0; k < sKernelCfg.kerWidth; ++k){
@@ -200,14 +200,14 @@ void filter_2d_flatten_unit(const T** px, const int xWidth,
 
 template<typename T>
 struct Unit2D_T{
-    void (*filt_2d_unit)(const T**, const int, const T**, const KernelCfg_t&, T*);
+    void (*filt_2d_unit)(const T**, const int, const T**, const KernelCfg_t&, const int, T*);
 }; // note: cannot typedef, because there is no type yet.
 
 template<typename T>
 void filter_2d(const uint8_t* x, const int xWidth, const int xHeight,
              const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
              const int inImgStride, const int outImgStride, 
-             uint8_t* y){
+             const int xOutWidth, uint8_t* y){
     uint8_t** px = (uint8_t**)malloc(sKernelCfg.kerHeight * sizeof(T*));
     uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
     memset(zVec, 0, xWidth * sizeof(T));
@@ -228,7 +228,7 @@ void filter_2d(const uint8_t* x, const int xWidth, const int xHeight,
         UnitImplement.filt_2d_unit((const T**)px, xWidth, 
                         pKerAddrMatrix, 
                         sKernelCfg,
-                        (T*)y);
+                        xOutWidth, (T*)y);
 
         y += sKernelCfg.vertUpsample * outImgStride;
     }
@@ -282,7 +282,7 @@ template<typename T>
 void filter_1d_horizontal_unit(const T** px, const int xWidth, 
                              const T** pKerAddr, 
                              const KernelCfg_t& sKernelCfg,  
-                             T* y){
+                             const int xOutWidth, T* y){
     int xWidthPadded = xWidth + sKernelCfg.kerWidth - 1;
     T** pAddrArray = (T**)malloc(xWidthPadded * sizeof(T*)); // stores the addr of padded x
     const T z = 0; // this is useful for zero-padding
@@ -292,7 +292,7 @@ void filter_1d_horizontal_unit(const T** px, const int xWidth,
     set_addr_array<T>(pAddrArray, px[0], xWidth, xWidthPadded, sKernelCfg.horiCenter, sKernelCfg.padding, &z);
 
     int jj = 0; // horizontal index at the output image
-    for(int j = 0; j < xWidth; j += sKernelCfg.horiStep){
+    for(int j = 0; j < xOutWidth; j += sKernelCfg.horiStep){
         *(y + jj) = Formula.f((const T **)pAddrArray + j, (const T **)pKerAddr, sKernelCfg.kerWidth);
         jj += sKernelCfg.horiUpsample;
     }
@@ -303,12 +303,12 @@ template<typename T>
 void filter_1d_horizontal(const uint8_t* x, const int xWidth, const int xHeight,
              const T** pKerAddrMatrix, const KernelCfg_t& sKernelCfg, 
              const int inImgStride, const int outImgStride, 
-             uint8_t* y){
+             const int xOutWidth, uint8_t* y){
     for (int i = 0; i < xHeight; i += sKernelCfg.vertStep){
         filter_1d_horizontal_unit<T>((const T**)(&x), xWidth, 
                         pKerAddrMatrix, 
                         sKernelCfg,
-                        (T*)y);
+                        xOutWidth, (T*)y);
         x += sKernelCfg.vertStep * inImgStride;
         y += sKernelCfg.vertUpsample * outImgStride;
     }
@@ -318,7 +318,7 @@ template<typename T>
 void filter(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, const int inImgRoiHeight,
                   const KernelCfg_t& sKernelCfg,
                   const int outImgStride,
-                  uint8_t* y){
+                  const int outImgRoiWidth, uint8_t* y){
     assert(sKernelCfg.kerHeight > 0);
     assert(sKernelCfg.kerWidth > 0);
     T** pKerAddrMatrix = (T**)malloc(sKernelCfg.kerHeight * sKernelCfg.kerWidth * sizeof(T*)); // stores the addr of flipped (or not) kernel;
@@ -330,25 +330,25 @@ void filter(const uint8_t* x, const int inImgStride, const int inImgRoiWidth, co
         filter_1d_horizontal<T>(x, inImgRoiWidth, inImgRoiHeight,
             (const T**)pKerAddrMatrix, sKernelCfg, 
             inImgStride, outImgStride, 
-            y);
+            outImgRoiWidth, y);
     }
     else if (sKernelCfg.kerWidth == 1){
-        filter_1d_vertical<T>(x, inImgRoiWidth, inImgRoiHeight,
+        filter_1d_vertical<T>(x, outImgRoiWidth, inImgRoiHeight,
             (const T**)pKerAddrMatrix, sKernelCfg, 
             inImgStride, outImgStride, 
-            y);
+            y); // note that the second argument is different, and total argument number is different
     }
     else{
         filter_2d<T>(x, inImgRoiWidth, inImgRoiHeight,
             (const T**)pKerAddrMatrix, sKernelCfg, 
             inImgStride, outImgStride, 
-            y);
+            outImgRoiWidth, y);
     }
     free(pKerAddrMatrix);
 }
 
 typedef void (*FP_FILT)(const uint8_t*, const int, const int, const int,
-                        const KernelCfg_t&,const int, uint8_t*);
+                        const KernelCfg_t&,const int, const int, uint8_t*);
 
 IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
     assert(pInImg != NULL);
@@ -393,7 +393,7 @@ IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* 
     f(x, inImgStride, sInImgROI.roiWidth, sInImgROI.roiHeight,
       sKernelCfg,
       outImgStride,
-      y);
+      sOutImgROI.roiWidth, y);
     
     return SUCCEED;
 }
