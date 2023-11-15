@@ -8,17 +8,43 @@
 
 
 
-// predict_step_1d(T data, padding_scheme), template typename T needed
-
-// update_step_1d()
-
 
 IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, Img_t* pOutImg, void* pDWTArg){
     // sliding_window(Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg)
     return SUCCEED;
 }
 
+template<typename T>
+void dwt_horizontal_reorder(Img_t* pImg, const ROI_t sImgROI){
+    // ImgROI.startCol must be 0, otherwise, there will be errors.
+    T tmp = 0;
+    int strideInPix = pImg->strides[sImgROI.panelId] / sizeof(T);
+    for (int i = sImgROI.startRow; i < sImgROI.startRow + sImgROI.roiHeight; ++i){
+        for (int t = 1; t < sImgROI.roiWidth>>1; ++t){
+            for (int j = t; j < sImgROI.roiWidth - t; j += 2){
+                tmp = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j);
+                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j) = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix+ j + 1);
+                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j + 1) = tmp;
+            }
+        }
+    }
+}
 
+template<typename T>
+void dwt_horizontal_reorder_back(Img_t* pImg, const ROI_t sImgROI){
+    // ImgROI.startCol must be 0, otherwise, there will be errors.
+    T tmp = 0;
+    int strideInPix = pImg->strides[sImgROI.panelId] / sizeof(T);
+    for (int i = sImgROI.startRow; i < sImgROI.startRow + sImgROI.roiHeight; ++i){
+        for (int t = (sImgROI.roiWidth-1)>>1; t > 0; --t){
+            for (int j = t; j < sImgROI.roiWidth - t; j += 2){
+                tmp = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j);
+                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j) = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix+ j + 1);
+                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j + 1) = tmp;
+            }
+        }
+    }
+}
 
 
 void test_dwt(){
@@ -68,49 +94,83 @@ void test_dwt(){
     Formulas_T<int> pMyFml;
     pMyFml.f = LeGall53_fwd_predict;
 
-    const KernelCfg_t sKernelCfg = {
+    const KernelCfg_t sKernelCfg_fwd_p = {
         NULL, 1, 3, 0, 0, MIRROR, 2, 1, 2, 1, false, (void*)pMyFml.f, false};
     
     ROI_t sInImgROI = {0, 0, 0, width, height};
     ROI_t sOutImgROI = {0, 0, 1, width-1, height}; 
     
-    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI, sKernelCfg);
-    std::cout<<"filtered1:\n";
-    ROI_t viewROI = {0,0,0,width,height};
-    view_image_data(pImg1, viewROI);
+    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI, sKernelCfg_fwd_p);
+    // std::cout<<"filtered1:\n";
+    // ROI_t viewROI = {0,0,0,width,height};
+    // view_image_data(pImg1, viewROI);
  
 
     Formulas_T<int> pMyFml2;
     pMyFml2.f = LeGall53_fwd_update;
-    const KernelCfg_t sKernelCfg2 = {
+    const KernelCfg_t sKernelCfg_fwd_u = {
     NULL, 1, 3, 1, 0, MIRROR, 2, 1, 2, 1, false, (void*)pMyFml2.f, false};
     ROI_t sOutImgROI2 = {0, 0, 0, width, height}; 
-    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI2, sKernelCfg2);
+    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI2, sKernelCfg_fwd_u);
 
-    std::cout<<"filtered2:\n";
-    ROI_t viewROI2 = {0,0,0,width,height};
+    // std::cout<<"filtered2:\n";
+     ROI_t viewROI2 = {0,0,0,width,height};
+    // view_image_data(pImg1, viewROI2);
+
+    // level 2
+    dwt_horizontal_reorder<int>(pImg1, sOutImgROI2);
+    std::cout<<"re-ordered:\n";
+    view_image_data(pImg1, viewROI2);
+
+    ROI_t sInImgROI_Lv2 = {0, 0, 0, width/2-1, height}; // !!!
+    ROI_t sOutImgROI_lv2 = {0, 0, 1, width/2-1, height}; 
+    sliding_window(pImg1, sInImgROI_Lv2, pImg1, sOutImgROI_lv2, sKernelCfg_fwd_p);
+    std::cout<<"filtered_predict_lv2:\n";
+    view_image_data(pImg1, viewROI2);
+
+    ROI_t sOutImgROI2_lv2 = {0, 0, 0, width/2, height}; 
+    sliding_window(pImg1, sInImgROI_Lv2, pImg1, sOutImgROI2_lv2, sKernelCfg_fwd_u);
+    std::cout<<"filtered_update_lv2:\n";
     view_image_data(pImg1, viewROI2);
 
     //==================================
 
     Formulas_T<int> pMyFml3;
     pMyFml3.f = LeGall53_bwd_update;
-    const KernelCfg_t sKernelCfg3 = {
+    const KernelCfg_t sKernelCfg_bwd_u = {
     NULL, 1, 3, 1, 0, MIRROR, 2, 1, 2, 1, false, (void*)pMyFml3.f, false};
-    ROI_t sOutImgROI3 = {0, 0, 0, width, height}; 
-    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI3, sKernelCfg3);
 
-    std::cout<<"filtered3:\n";
-    ROI_t viewROI3 = {0,0,0,width,height};
+    sliding_window(pImg1, sInImgROI_Lv2, pImg1, sOutImgROI2_lv2, sKernelCfg_bwd_u);
+    std::cout<<"filtered_bwd_update_lv2:\n";
     view_image_data(pImg1, viewROI2);
 
 
     Formulas_T<int> pMyFml4;
     pMyFml4.f = LeGall53_bwd_predict;
-    const KernelCfg_t sKernelCfg4 = {
+    const KernelCfg_t sKernelCfg_bwd_p = {
     NULL, 1, 3, 0, 0, MIRROR, 2, 1, 2, 1, false, (void*)pMyFml4.f, false};
-    ROI_t sOutImgROI4 = {0, 0, 1, width-1, height}; 
-    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI4, sKernelCfg4);
+
+    sliding_window(pImg1, sInImgROI_Lv2, pImg1, sOutImgROI_lv2, sKernelCfg_bwd_p);
+    std::cout<<"filtered_bwd_predict_lv2:\n";
+    view_image_data(pImg1, viewROI2);
+    //====================
+
+    dwt_horizontal_reorder_back<int>(pImg1, sOutImgROI2);
+    std::cout<<"reorder after lv2 inv dwt:\n";
+    view_image_data(pImg1, viewROI2);
+
+    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI2, sKernelCfg_bwd_u);
+    std::cout<<"filtered3:\n";
+    ROI_t viewROI3 = {0,0,0,width,height};
+    view_image_data(pImg1, viewROI2);
+
+
+    // Formulas_T<int> pMyFml4;
+    // pMyFml4.f = LeGall53_bwd_predict;
+    // const KernelCfg_t sKernelCfg4 = {
+    // NULL, 1, 3, 0, 0, MIRROR, 2, 1, 2, 1, false, (void*)pMyFml4.f, false};
+    // ROI_t sOutImgROI4 = {0, 0, 1, width-1, height}; 
+    sliding_window(pImg1, sInImgROI, pImg1, sOutImgROI, sKernelCfg_bwd_p);
 
     std::cout<<"filtered4:\n";
     ROI_t viewROI4 = {0,0,0,width,height};
