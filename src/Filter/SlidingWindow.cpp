@@ -442,15 +442,15 @@ void test_sliding_window(){
                   alignment,
                   allocateImage);
 
-    Formulas_T<int> pMyFml;
-    pMyFml.f = dot_product;
+    Formulas_T<int> MyFml;
+    MyFml.f = dot_product;
 
     uint32_t h[6] = {0, 0,
                      0, 1,
                      0, 1}; // should be matched with Img_t bitDepth!!
     //uint32_t h[5] = {0, 1, 1, 0, 0}; // should be matched with Img_t bitDepth!!
     const KernelCfg_t sKernelCfg = {
-        (uint8_t*)h, 3, 2, 1, 1, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, false};
+        (uint8_t*)h, 3, 2, 1, 1, ZEROPADDING, 1, 1, 1, 1, false, (void*)MyFml.f, false};
     // const KernelCfg_t sKernelCfg = {
     // (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, true};
 
