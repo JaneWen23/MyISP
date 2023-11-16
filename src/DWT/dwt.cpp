@@ -6,35 +6,70 @@
 
 #include "../Infra/RandImageGen.hpp"
 
-
-
 template<typename T>
+void dwt_horizontal_swap(uint8_t* pData, const int strideInPix, const int i, const int j){
+    // at row i, swap pixels at col j and j + 1
+    T tmp = 0;
+    tmp = *((T*)pData + i*strideInPix + j);
+    *((T*)pData + i*strideInPix + j) = *((T*)pData + i*strideInPix+ j + 1);
+    *((T*)pData + i*strideInPix + j + 1) = tmp;
+}
+
+typedef void (*FP)(uint8_t*, const int, const int, const int);
+
+
 void dwt_horizontal_reorder(Img_t* pImg, const ROI_t sImgROI){
     //  must begin with ind = 0, otherwise, there will be errors.
-    T tmp = 0;
-    int strideInPix = pImg->strides[sImgROI.panelId] / sizeof(T);
+    FP fswap = NULL;
+    int scale = 0;
+    if (pImg->bitDepth <= 8){
+        scale = sizeof(int8_t);
+        fswap = dwt_horizontal_swap<int8_t>;
+    }
+    else if (pImg->bitDepth <= 16){
+        scale = sizeof(int16_t);
+        fswap = dwt_horizontal_swap<int16_t>;
+    }
+    else if (pImg->bitDepth <= 32){
+        scale = sizeof(int);
+        fswap = dwt_horizontal_swap<int>;
+    }
+    assert(scale != 0);
+    int strideInPix = pImg->strides[sImgROI.panelId] / scale;
+
     for (int i = sImgROI.startRow; i < sImgROI.startRow + sImgROI.roiHeight; ++i){
         for (int t = 1; t <= (sImgROI.roiWidth-1)>>1; ++t){
             for (int j = t; j < sImgROI.roiWidth - t; j += 2){
-                tmp = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j);
-                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j) = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix+ j + 1);
-                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j + 1) = tmp;
+                fswap(pImg->pImageData[sImgROI.panelId], strideInPix, i, j);
             }
         }
     }
 }
 
-template<typename T>
+
 void dwt_horizontal_reorder_back(Img_t* pImg, const ROI_t sImgROI){
     // must begin with ind = 0, otherwise, there will be errors.
-    T tmp = 0;
-    int strideInPix = pImg->strides[sImgROI.panelId] / sizeof(T);
+    FP fswap = NULL;
+    int scale = 0;
+    if (pImg->bitDepth <= 8){
+        scale = sizeof(int8_t);
+        fswap = dwt_horizontal_swap<int8_t>;
+    }
+    else if (pImg->bitDepth <= 16){
+        scale = sizeof(int16_t);
+        fswap = dwt_horizontal_swap<int16_t>;
+    }
+    else if (pImg->bitDepth <= 32){
+        scale = sizeof(int);
+        fswap = dwt_horizontal_swap<int>;
+    }
+    assert(scale != 0);
+    int strideInPix = pImg->strides[sImgROI.panelId] / scale;
+
     for (int i = sImgROI.startRow; i < sImgROI.startRow + sImgROI.roiHeight; ++i){
         for (int t = (sImgROI.roiWidth-1)>>1; t > 0; --t){
             for (int j = t; j < sImgROI.roiWidth - t; j += 2){
-                tmp = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j);
-                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j) = *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix+ j + 1);
-                *((T*)pImg->pImageData[sImgROI.panelId] + i*strideInPix + j + 1) = tmp;
+                fswap(pImg->pImageData[sImgROI.panelId], strideInPix, i, j);
             }
         }
     }
@@ -50,8 +85,8 @@ IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, void* pDWTArg){
             ROI_t sOutImgROI = {0, 0, (n+1)%2, widthTmp-((n+1)%2), pInImg->height}; 
             sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, *(pArg->pDwtKerCfg[n])); // convert pointer to reference: use "*"
         }
-        dwt_horizontal_reorder<int>(pInImg, sInImgROI); // template!!!
-        widthTmp = (widthTmp + 1) >> 1; // update inROI depended on level
+        dwt_horizontal_reorder(pInImg, sInImgROI);
+        widthTmp = (widthTmp + 1) >> 1;
     }
     return SUCCEED;
 }
@@ -63,6 +98,7 @@ void test_dwt_forward_1d(){
 
     Formulas_T<int> pMyFml; // template!!!
     pMyFml.f = LeGall53_fwd_predict;
+    // what is "Formulas_T<int>::f" ?????
     KernelCfg_t sKernelCfg_fwd_p = {
         NULL, 1, 3, 0, 0, MIRROR, 2, 1, 2, 1, false, (void*)pMyFml.f, false};
 
@@ -181,7 +217,7 @@ void test_dwt(){
     view_image_data(pImg1, viewROI2);
 
     // level 2
-    dwt_horizontal_reorder<int>(pImg1, sOutImgROI2);
+    dwt_horizontal_reorder(pImg1, sOutImgROI2);
     std::cout<<"re-ordered:\n";
     view_image_data(pImg1, viewROI2);
 
@@ -218,7 +254,7 @@ void test_dwt(){
     view_image_data(pImg1, viewROI2);
     //====================
 
-    dwt_horizontal_reorder_back<int>(pImg1, sOutImgROI2);
+    dwt_horizontal_reorder_back(pImg1, sOutImgROI2);
     std::cout<<"reorder after lv2 inv dwt:\n";
     view_image_data(pImg1, viewROI2);
 
