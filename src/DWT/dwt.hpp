@@ -18,5 +18,6 @@ void test_dwt();
 void test_dwt_forward_1d();
 
 IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, void* pAlgoArg);
+IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg);
 
 #endif
