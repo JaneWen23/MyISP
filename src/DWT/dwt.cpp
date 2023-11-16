@@ -76,6 +76,45 @@ void dwt_horizontal_reorder_back(Img_t* pImg, const ROI_t sImgROI){
 }
 
 
+void config_kernels_horizontal_LeGal53(DWTArg_t* pDWTArg, const int dwtLevel, const PADDING& padding){
+    pDWTArg->level = dwtLevel;
+    pDWTArg->numLiftingSteps = 2;
+
+    // for (int i = 0; i < pDWTArg->numLiftingSteps; ++i){
+    //     pDWTArg->sFwdDwtKerCfg[i] = (KernelCfg_t*)malloc(sizeof(KernelCfg_t));
+    //     pDWTArg->sBwdDwtKerCfg[i] = (KernelCfg_t*)malloc(sizeof(KernelCfg_t));
+    // }
+
+    Formulas_T<int> MyFml; // template!!! // scope!!! duration!!!
+    MyFml.f = LeGall53_fwd_predict;
+    KernelCfg_t sKernelCfg_fwd_p = {
+        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)MyFml.f, false};
+
+    pDWTArg->sFwdDwtKerCfg[0] = sKernelCfg_fwd_p; // = ????
+
+    Formulas_T<int> MyFml2;
+    MyFml2.f = LeGall53_fwd_update;
+    KernelCfg_t sKernelCfg_fwd_u = {
+        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)MyFml2.f, false};
+
+    pDWTArg->sFwdDwtKerCfg[1] = sKernelCfg_fwd_u;
+
+    Formulas_T<int> MyFml3;
+    MyFml3.f = LeGall53_bwd_update;
+    KernelCfg_t sKernelCfg_bwd_u = {
+        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)MyFml3.f, false};
+
+    pDWTArg->sBwdDwtKerCfg[0] = sKernelCfg_bwd_u;
+
+    Formulas_T<int> MyFml4;
+    MyFml4.f = LeGall53_bwd_predict;
+    KernelCfg_t sKernelCfg_bwd_p = {
+        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)MyFml4.f, false};
+
+    pDWTArg->sBwdDwtKerCfg[1] = sKernelCfg_bwd_p;
+}
+
+
 IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, void* pDWTArg){
     DWTArg_t* pArg = (DWTArg_t*)pDWTArg;
     int widthTmp = pInImg->width;
@@ -83,7 +122,7 @@ IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, void* pDWTArg){
         ROI_t sInImgROI = {0, 0, 0, widthTmp, pInImg->height};
         for (int n = 0; n < pArg->numLiftingSteps; ++n){
             ROI_t sOutImgROI = {0, 0, (n+1)%2, widthTmp-((n+1)%2), pInImg->height}; 
-            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, *(pArg->pDwtKerCfg[n])); // convert pointer to reference: use "*"
+            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdDwtKerCfg[n]); // convert pointer to reference: use "*"
         }
         dwt_horizontal_reorder(pInImg, sInImgROI);
         widthTmp = (widthTmp + 1) >> 1;
@@ -103,7 +142,7 @@ IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg){
         dwt_horizontal_reorder_back(pInImg, sInImgROI);
         for (int n = 0; n < pArg->numLiftingSteps; ++n){
             ROI_t sOutImgROI = {0, 0, n%2, pWidthAll[lv-1]-(n%2), pInImg->height}; 
-            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, *(pArg->pDwtKerCfg[n])); // convert pointer to reference: use "*"
+            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sBwdDwtKerCfg[n]); // convert pointer to reference: use "*"
         }
     }
     return SUCCEED;
@@ -111,22 +150,7 @@ IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg){
 
 void test_dwt_forward_1d(){
     DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    pDWTArg->level = 2;
-    pDWTArg->numLiftingSteps = 2;
-
-    Formulas_T<int> MyFml; // template!!!
-    MyFml.f = LeGall53_fwd_predict;
-    KernelCfg_t sKernelCfg_fwd_p = {
-        NULL, 1, 3, 0, 0, MIRROR, 2, 1, 2, 1, false, (void*)MyFml.f, false};
-
-    pDWTArg->pDwtKerCfg[0] = &sKernelCfg_fwd_p;
-
-    Formulas_T<int> MyFml2;
-    MyFml2.f = LeGall53_fwd_update;
-    KernelCfg_t sKernelCfg_fwd_u = {
-        NULL, 1, 3, 1, 0, MIRROR, 2, 1, 2, 1, false, (void*)MyFml2.f, false};
-
-    pDWTArg->pDwtKerCfg[1] = &sKernelCfg_fwd_u;
+    config_kernels_horizontal_LeGal53(pDWTArg, 2, MIRROR);
 
 
     Img_t* pInImg =(Img_t*)malloc(sizeof(Img_t));
@@ -161,21 +185,6 @@ void test_dwt_forward_1d(){
     ROI_t viewROI = {0, 0, 0, pInImg->width, pInImg->height};
     std::cout<<"after dwt:\n";
     view_image_data(pInImg, viewROI);
-
-
-    Formulas_T<int> MyFml3; // template!!!
-    MyFml3.f = LeGall53_bwd_update;
-    KernelCfg_t sKernelCfg_bwd_u = {
-    NULL, 1, 3, 1, 0, MIRROR, 2, 1, 2, 1, false, (void*)MyFml3.f, false};
-
-    pDWTArg->pDwtKerCfg[0] = &sKernelCfg_bwd_u;
-
-    Formulas_T<int> MyFml4;
-    MyFml4.f = LeGall53_bwd_predict;
-    KernelCfg_t sKernelCfg_bwd_p = {
-    NULL, 1, 3, 0, 0, MIRROR, 2, 1, 2, 1, false, (void*)MyFml4.f, false};
-
-    pDWTArg->pDwtKerCfg[1] = &sKernelCfg_bwd_p;
 
     dwt_backward_1d(pInImg, (void*)pDWTArg);
 
