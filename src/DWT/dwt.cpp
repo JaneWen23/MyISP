@@ -15,12 +15,21 @@ void dwt_horizontal_swap(uint8_t* pData, const int strideInPix, const int i, con
     *((T*)pData + i*strideInPix + j + 1) = tmp;
 }
 
-typedef void (*FP)(uint8_t*, const int, const int, const int);
+template<typename T>
+void dwt_vertical_swap(uint8_t* pData, const int strideInPix, const int i, const int j){
+    // at col j, swap pixels at row i and i + 1
+    T tmp = 0;
+    tmp = *((T*)pData + i*strideInPix + j);
+    *((T*)pData + i*strideInPix + j) = *((T*)pData + (i+1)*strideInPix+ j);
+    *((T*)pData + (i+1)*strideInPix+ j) = tmp;
+}
+
+typedef void (*FSWAP)(uint8_t*, const int, const int, const int);
 
 
 void dwt_horizontal_reorder(Img_t* pImg, const ROI_t sImgROI){
     //  must begin with ind = 0, otherwise, there will be errors.
-    FP fswap = NULL;
+    FSWAP fswap = NULL;
     int scale = 0;
     if (pImg->bitDepth <= 8){
         scale = sizeof(int8_t);
@@ -46,10 +55,38 @@ void dwt_horizontal_reorder(Img_t* pImg, const ROI_t sImgROI){
     }
 }
 
+void dwt_vertical_reorder(Img_t* pImg, const ROI_t sImgROI){
+    //  must begin with ind = 0, otherwise, there will be errors.
+    FSWAP fswap = NULL;
+    int scale = 0;
+    if (pImg->bitDepth <= 8){
+        scale = sizeof(int8_t);
+        fswap = dwt_vertical_swap<int8_t>;
+    }
+    else if (pImg->bitDepth <= 16){
+        scale = sizeof(int16_t);
+        fswap = dwt_vertical_swap<int16_t>;
+    }
+    else if (pImg->bitDepth <= 32){
+        scale = sizeof(int);
+        fswap = dwt_vertical_swap<int>;
+    }
+    assert(scale > 0);
+    int strideInPix = pImg->strides[sImgROI.panelId] / scale;
+
+    for (int j = sImgROI.startCol; j < sImgROI.startCol + sImgROI.roiWidth; ++j){
+        for (int t = 1; t <= (sImgROI.roiHeight-1)>>1; ++t){
+            for (int i = t; i < sImgROI.roiHeight - t; i += 2){
+                fswap(pImg->pImageData[sImgROI.panelId], strideInPix, i, j);
+            }
+        }
+    }
+}
+
 
 void dwt_horizontal_reorder_back(Img_t* pImg, const ROI_t sImgROI){
     // must begin with ind = 0, otherwise, there will be errors.
-    FP fswap = NULL;
+    FSWAP fswap = NULL;
     int scale = 0;
     if (pImg->bitDepth <= 8){
         scale = sizeof(int8_t);
@@ -75,53 +112,132 @@ void dwt_horizontal_reorder_back(Img_t* pImg, const ROI_t sImgROI){
     }
 }
 
-template<typename T>
-void config_kernels_horizontal_LeGall53(DWTArg_t* pDWTArg, const int dwtLevel, const PADDING& padding){
-    assert(dwtLevel > 0);
-    pDWTArg->level = dwtLevel;
-    pDWTArg->numLiftingSteps = 2;
+void dwt_vertical_reorder_back(Img_t* pImg, const ROI_t sImgROI){
+    //  must begin with ind = 0, otherwise, there will be errors.
+    FSWAP fswap = NULL;
+    int scale = 0;
+    if (pImg->bitDepth <= 8){
+        scale = sizeof(int8_t);
+        fswap = dwt_vertical_swap<int8_t>;
+    }
+    else if (pImg->bitDepth <= 16){
+        scale = sizeof(int16_t);
+        fswap = dwt_vertical_swap<int16_t>;
+    }
+    else if (pImg->bitDepth <= 32){
+        scale = sizeof(int);
+        fswap = dwt_vertical_swap<int>;
+    }
+    assert(scale > 0);
+    int strideInPix = pImg->strides[sImgROI.panelId] / scale;
 
-    Formulas_T<T> sFml; // scope!!! duration!!!
-    sFml.f = LeGall53_fwd_predict;
-    KernelCfg_t sKernelCfg_fwd_p = {
-        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)sFml.f, false};
-
-    pDWTArg->sFwdDwtKerCfg[0] = sKernelCfg_fwd_p; // = ????
-
-    Formulas_T<T> sFml2;
-    sFml2.f = LeGall53_fwd_update;
-    KernelCfg_t sKernelCfg_fwd_u = {
-        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)sFml2.f, false};
-
-    pDWTArg->sFwdDwtKerCfg[1] = sKernelCfg_fwd_u;
-
-    Formulas_T<T> sFml3;
-    sFml3.f = LeGall53_bwd_update;
-    KernelCfg_t sKernelCfg_bwd_u = {
-        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)sFml3.f, false};
-
-    pDWTArg->sBwdDwtKerCfg[0] = sKernelCfg_bwd_u;
-
-    Formulas_T<T> sFml4;
-    sFml4.f = LeGall53_bwd_predict;
-    KernelCfg_t sKernelCfg_bwd_p = {
-        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)sFml4.f, false};
-
-    pDWTArg->sBwdDwtKerCfg[1] = sKernelCfg_bwd_p;
+    for (int j = sImgROI.startCol; j < sImgROI.startCol + sImgROI.roiWidth; ++j){
+        for (int t = (sImgROI.roiHeight-1)>>1; t>0; --t){
+            for (int i = t; i < sImgROI.roiHeight - t; i += 2){
+                fswap(pImg->pImageData[sImgROI.panelId], strideInPix, i, j);
+            }
+        }
+    }
 }
 
+template<typename T>
+void config_kernels_horizontal_LeGall53(DWTArg_t* pDWTArg, const DIMENSION dimension, const int dwtLevel, const PADDING& padding){
+    assert(dwtLevel > 0);
+    pDWTArg->level = dwtLevel;
+    pDWTArg->dim = dimension;
+
+    pDWTArg->numLiftingSteps = 2; // defined by LeGall 5/3
+
+    Formulas_T<T> sFml1; // scope!!! duration!!!
+    sFml1.f = LeGall53_fwd_predict; // not related to orientation
+    Formulas_T<T> sFml2;
+    sFml2.f = LeGall53_fwd_update;
+    Formulas_T<T> sFml3;
+    sFml3.f = LeGall53_bwd_update;
+    Formulas_T<T> sFml4;
+    sFml4.f = LeGall53_bwd_predict;
+
+    // horizontal
+    KernelCfg_t sKernelCfg_fwd_hori_p = {
+        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)sFml1.f, false};
+    KernelCfg_t sKernelCfg_fwd_hori_u = {
+        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)sFml2.f, false};
+    KernelCfg_t sKernelCfg_bwd_hori_u = {
+        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)sFml3.f, false};
+    KernelCfg_t sKernelCfg_bwd_hori_p = {
+        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)sFml4.f, false};
+
+    // vertical
+    KernelCfg_t sKernelCfg_fwd_vert_p = {
+        NULL, 3, 1, 0, 0, padding, 1, 2, 1, 2, false, (void*)sFml1.f, false};
+    KernelCfg_t sKernelCfg_fwd_vert_u = {
+        NULL, 3, 1, 0, 1, padding, 1, 2, 1, 2, false, (void*)sFml2.f, false};
+    KernelCfg_t sKernelCfg_bwd_vert_u = {
+        NULL, 3, 1, 0, 1, padding, 1, 2, 1, 2, false, (void*)sFml3.f, false};
+    KernelCfg_t sKernelCfg_bwd_vert_p = {
+        NULL, 3, 1, 0, 0, padding, 1, 2, 1, 2, false, (void*)sFml4.f, false};
+
+
+    pDWTArg->sFwdHoriKerCfg[0] = sKernelCfg_fwd_hori_p;
+    pDWTArg->sFwdHoriKerCfg[1] = sKernelCfg_fwd_hori_u;
+    pDWTArg->sBwdHoriKerCfg[0] = sKernelCfg_bwd_hori_u;
+    pDWTArg->sBwdHoriKerCfg[1] = sKernelCfg_bwd_hori_p;
+
+    pDWTArg->sFwdVertKerCfg[0] = sKernelCfg_fwd_vert_p;
+    pDWTArg->sFwdVertKerCfg[1] = sKernelCfg_fwd_vert_u;
+    pDWTArg->sBwdVertKerCfg[0] = sKernelCfg_bwd_vert_u;
+    pDWTArg->sBwdVertKerCfg[1] = sKernelCfg_bwd_vert_p;
+}
+
+// TODO: panelId
+void dwt_row_decomposition(Img_t* pInImg, const DWTArg_t* pArg, const int widthTmp){
+    ROI_t sInImgROI = {0, 0, 0, widthTmp, pInImg->height};
+    for (int n = 0; n < pArg->numLiftingSteps; ++n){
+        ROI_t sOutImgROI = {0, 0, (n+1)%2, widthTmp-((n+1)%2), pInImg->height}; 
+        sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdHoriKerCfg[n]);
+    }
+    dwt_horizontal_reorder(pInImg, sInImgROI);
+}
+
+// TODO: panelId
+void dwt_column_decomposition(Img_t* pInImg, const DWTArg_t* pArg, const int heightTmp){
+    ROI_t sInImgROI = {0, 0, 0, pInImg->width, heightTmp};
+    for (int n = 0; n < pArg->numLiftingSteps; ++n){
+        ROI_t sOutImgROI = {0, (n+1)%2, 0, pInImg->width, heightTmp-((n+1)%2)}; 
+        sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdVertKerCfg[n]);
+    }
+    dwt_vertical_reorder(pInImg, sInImgROI);
+}
+
+typedef void (*FDECOMP)(Img_t*, const DWTArg_t*, const int);
 
 IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, void* pDWTArg){
     DWTArg_t* pArg = (DWTArg_t*)pDWTArg;
     int widthTmp = pInImg->width;
+    int heightTmp = pInImg->height;
+    FDECOMP f_hori = NULL;
+    FDECOMP f_vert = NULL;
+
+    if (pArg->dim == HORIZONTAL){
+        f_hori = dwt_row_decomposition;
+    }
+    else if (pArg->dim == VERTICAL){
+        f_vert = dwt_column_decomposition;
+    }
+    else if (pArg->dim == TWO_DIMENSIONAL){
+        f_hori = dwt_row_decomposition;
+        f_vert = dwt_column_decomposition;
+    }
+
     for (int lv = 1; lv <= pArg->level; ++lv){
-        ROI_t sInImgROI = {0, 0, 0, widthTmp, pInImg->height};
-        for (int n = 0; n < pArg->numLiftingSteps; ++n){
-            ROI_t sOutImgROI = {0, 0, (n+1)%2, widthTmp-((n+1)%2), pInImg->height}; 
-            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdDwtKerCfg[n]);
+        if (f_hori != NULL){
+            f_hori(pInImg, pArg, widthTmp);
         }
-        dwt_horizontal_reorder(pInImg, sInImgROI);
+        if (f_vert != NULL){
+            f_vert(pInImg, pArg, heightTmp);
+        }
         widthTmp = (widthTmp + 1) >> 1;
+        heightTmp = (heightTmp + 1) >> 1;
     }
     return SUCCEED;
 }
@@ -138,7 +254,7 @@ IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg){
         dwt_horizontal_reorder_back(pInImg, sInImgROI);
         for (int n = 0; n < pArg->numLiftingSteps; ++n){
             ROI_t sOutImgROI = {0, 0, n%2, pWidthAll[lv-1]-(n%2), pInImg->height}; 
-            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sBwdDwtKerCfg[n]);
+            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sBwdHoriKerCfg[n]);
         }
     }
     free(pWidthAll);
@@ -147,13 +263,13 @@ IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg){
 
 void test_dwt_forward_1d(){
     DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    config_kernels_horizontal_LeGall53<int>(pDWTArg, 2, MIRROR);
+    config_kernels_horizontal_LeGall53<int>(pDWTArg, VERTICAL, 2, MIRROR);
 
 
     Img_t* pInImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = MONO; // out can be different than in
     size_t width = 10; // out can be different than in
-    size_t height = 8; // out can be different than in
+    size_t height = 10; // out can be different than in
     SIGN sign = SIGNED; // out can be different than in
     size_t bitDepth = 32; // out and kernel must be the same as in, and you should be careful about the sign,
     // i.e., if out img is signed but in img is unsigned, since the in img data type will be treated as out img data type,
@@ -183,10 +299,10 @@ void test_dwt_forward_1d(){
     std::cout<<"after dwt:\n";
     view_image_data(pInImg, viewROI);
 
-    dwt_backward_1d(pInImg, (void*)pDWTArg);
+    // dwt_backward_1d(pInImg, (void*)pDWTArg);
 
-    std::cout<<"after idwt:\n";
-    view_image_data(pInImg, viewROI);
+    // std::cout<<"after idwt:\n";
+    // view_image_data(pInImg, viewROI);
 }
 
 void test_dwt(){

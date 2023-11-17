@@ -4,14 +4,22 @@
 #include "../Infra/ImgDef.hpp"
 #include "../Filter/SlidingWindow.hpp"
 
-#define MAX_NUM_STEPS 8
+#define MAX_NUM_STEPS 4
 
+typedef enum{
+    HORIZONTAL,
+    VERTICAL,
+    TWO_DIMENSIONAL
+} DIMENSION;
 
 typedef struct{
     int level;
     int numLiftingSteps;
-    KernelCfg_t sFwdDwtKerCfg[MAX_NUM_STEPS];
-    KernelCfg_t sBwdDwtKerCfg[MAX_NUM_STEPS];
+    DIMENSION dim;
+    KernelCfg_t sFwdHoriKerCfg[MAX_NUM_STEPS];
+    KernelCfg_t sBwdHoriKerCfg[MAX_NUM_STEPS];
+    KernelCfg_t sFwdVertKerCfg[MAX_NUM_STEPS];
+    KernelCfg_t sBwdVertKerCfg[MAX_NUM_STEPS];
 } DWTArg_t;
 
 
