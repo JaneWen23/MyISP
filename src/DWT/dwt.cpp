@@ -80,12 +80,7 @@ void config_kernels_horizontal_LeGal53(DWTArg_t* pDWTArg, const int dwtLevel, co
     pDWTArg->level = dwtLevel;
     pDWTArg->numLiftingSteps = 2;
 
-    // for (int i = 0; i < pDWTArg->numLiftingSteps; ++i){
-    //     pDWTArg->sFwdDwtKerCfg[i] = (KernelCfg_t*)malloc(sizeof(KernelCfg_t));
-    //     pDWTArg->sBwdDwtKerCfg[i] = (KernelCfg_t*)malloc(sizeof(KernelCfg_t));
-    // }
-
-    Formulas_T<int> MyFml; // template!!! // scope!!! duration!!!
+    Formulas_T<int> MyFml; // TODO: template!!! // scope!!! duration!!!
     MyFml.f = LeGall53_fwd_predict;
     KernelCfg_t sKernelCfg_fwd_p = {
         NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)MyFml.f, false};
@@ -122,7 +117,7 @@ IMG_RTN_CODE dwt_forward_1d(Img_t* pInImg, void* pDWTArg){
         ROI_t sInImgROI = {0, 0, 0, widthTmp, pInImg->height};
         for (int n = 0; n < pArg->numLiftingSteps; ++n){
             ROI_t sOutImgROI = {0, 0, (n+1)%2, widthTmp-((n+1)%2), pInImg->height}; 
-            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdDwtKerCfg[n]); // convert pointer to reference: use "*"
+            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdDwtKerCfg[n]);
         }
         dwt_horizontal_reorder(pInImg, sInImgROI);
         widthTmp = (widthTmp + 1) >> 1;
@@ -142,9 +137,10 @@ IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg){
         dwt_horizontal_reorder_back(pInImg, sInImgROI);
         for (int n = 0; n < pArg->numLiftingSteps; ++n){
             ROI_t sOutImgROI = {0, 0, n%2, pWidthAll[lv-1]-(n%2), pInImg->height}; 
-            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sBwdDwtKerCfg[n]); // convert pointer to reference: use "*"
+            sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sBwdDwtKerCfg[n]);
         }
     }
+    free(pWidthAll);
     return SUCCEED;
 }
 
