@@ -8,7 +8,7 @@
 using namespace std;
 
 int main(){
-    test_dwt_forward_1d();
+    test_dwt();
     //test_config_kernel();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
