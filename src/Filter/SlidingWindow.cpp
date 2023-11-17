@@ -265,7 +265,7 @@ void filter_1d_vertical(const uint8_t* x, const int xWidth, const int xHeight,
     uint8_t* zVec = (uint8_t*)malloc(xWidth * sizeof(T));
     memset(zVec, 0, xWidth * sizeof(T));
     int i = 0;
-    for (int ii = 0; ii < outImgRoiHeight; i += sKernelCfg.vertUpsample){
+    for (int ii = 0; ii < outImgRoiHeight; ii += sKernelCfg.vertUpsample){
         for (int l = -sKernelCfg.vertCenter; l < sKernelCfg.kerHeight - sKernelCfg.vertCenter; ++l){
             px[l + sKernelCfg.vertCenter] = (uint8_t*)vert_padding_map(i + l, x, xHeight, inImgStride, sKernelCfg.padding, (const uint8_t*)zVec);
         }

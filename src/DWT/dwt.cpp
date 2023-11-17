@@ -263,7 +263,7 @@ IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg){
 
 void test_dwt_forward_1d(){
     DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    config_kernels_horizontal_LeGall53<int>(pDWTArg, VERTICAL, 2, MIRROR);
+    config_kernels_horizontal_LeGall53<int>(pDWTArg, TWO_DIMENSIONAL, 2, MIRROR);
 
 
     Img_t* pInImg =(Img_t*)malloc(sizeof(Img_t));
