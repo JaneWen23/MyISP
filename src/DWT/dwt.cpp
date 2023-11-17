@@ -34,7 +34,7 @@ void dwt_horizontal_reorder(Img_t* pImg, const ROI_t sImgROI){
         scale = sizeof(int);
         fswap = dwt_horizontal_swap<int>;
     }
-    assert(scale != 0);
+    assert(scale > 0);
     int strideInPix = pImg->strides[sImgROI.panelId] / scale;
 
     for (int i = sImgROI.startRow; i < sImgROI.startRow + sImgROI.roiHeight; ++i){
@@ -63,7 +63,7 @@ void dwt_horizontal_reorder_back(Img_t* pImg, const ROI_t sImgROI){
         scale = sizeof(int);
         fswap = dwt_horizontal_swap<int>;
     }
-    assert(scale != 0);
+    assert(scale > 0);
     int strideInPix = pImg->strides[sImgROI.panelId] / scale;
 
     for (int i = sImgROI.startRow; i < sImgROI.startRow + sImgROI.roiHeight; ++i){
@@ -75,36 +75,37 @@ void dwt_horizontal_reorder_back(Img_t* pImg, const ROI_t sImgROI){
     }
 }
 
-
-void config_kernels_horizontal_LeGal53(DWTArg_t* pDWTArg, const int dwtLevel, const PADDING& padding){
+template<typename T>
+void config_kernels_horizontal_LeGall53(DWTArg_t* pDWTArg, const int dwtLevel, const PADDING& padding){
+    assert(dwtLevel > 0);
     pDWTArg->level = dwtLevel;
     pDWTArg->numLiftingSteps = 2;
 
-    Formulas_T<int> MyFml; // TODO: template!!! // scope!!! duration!!!
-    MyFml.f = LeGall53_fwd_predict;
+    Formulas_T<T> sFml; // scope!!! duration!!!
+    sFml.f = LeGall53_fwd_predict;
     KernelCfg_t sKernelCfg_fwd_p = {
-        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)MyFml.f, false};
+        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)sFml.f, false};
 
     pDWTArg->sFwdDwtKerCfg[0] = sKernelCfg_fwd_p; // = ????
 
-    Formulas_T<int> MyFml2;
-    MyFml2.f = LeGall53_fwd_update;
+    Formulas_T<T> sFml2;
+    sFml2.f = LeGall53_fwd_update;
     KernelCfg_t sKernelCfg_fwd_u = {
-        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)MyFml2.f, false};
+        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)sFml2.f, false};
 
     pDWTArg->sFwdDwtKerCfg[1] = sKernelCfg_fwd_u;
 
-    Formulas_T<int> MyFml3;
-    MyFml3.f = LeGall53_bwd_update;
+    Formulas_T<T> sFml3;
+    sFml3.f = LeGall53_bwd_update;
     KernelCfg_t sKernelCfg_bwd_u = {
-        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)MyFml3.f, false};
+        NULL, 1, 3, 1, 0, padding, 2, 1, 2, 1, false, (void*)sFml3.f, false};
 
     pDWTArg->sBwdDwtKerCfg[0] = sKernelCfg_bwd_u;
 
-    Formulas_T<int> MyFml4;
-    MyFml4.f = LeGall53_bwd_predict;
+    Formulas_T<T> sFml4;
+    sFml4.f = LeGall53_bwd_predict;
     KernelCfg_t sKernelCfg_bwd_p = {
-        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)MyFml4.f, false};
+        NULL, 1, 3, 0, 0, padding, 2, 1, 2, 1, false, (void*)sFml4.f, false};
 
     pDWTArg->sBwdDwtKerCfg[1] = sKernelCfg_bwd_p;
 }
@@ -146,7 +147,7 @@ IMG_RTN_CODE dwt_backward_1d(Img_t* pInImg, void* pDWTArg){
 
 void test_dwt_forward_1d(){
     DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    config_kernels_horizontal_LeGal53(pDWTArg, 2, MIRROR);
+    config_kernels_horizontal_LeGall53<int>(pDWTArg, 2, MIRROR);
 
 
     Img_t* pInImg =(Img_t*)malloc(sizeof(Img_t));
