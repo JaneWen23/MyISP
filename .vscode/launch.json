@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",
             "args": [],
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}/build",
         },
         {
             "name": "AddressSanitizer",

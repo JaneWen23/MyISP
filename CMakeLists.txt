@@ -7,8 +7,11 @@ add_subdirectory(src)
 
 aux_source_directory(. SRC_LIST)
 
+find_package(OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+
 add_executable(MyIspApp "top.cpp")
-target_link_libraries(MyIspApp isp_src)
+target_link_libraries(MyIspApp isp_src ${OpenCV_LIBS})
 
 #find_package(OpenMP)
 #if(OpenMP_CXX_FOUND)
