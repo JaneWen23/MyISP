@@ -11,7 +11,7 @@
                 "${file}",
                 "-o",
                 "-fopenmp",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/${fileBasenameNoExtension}",
             ],
             "options": {
                 "cwd": "${fileDirname}"

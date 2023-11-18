@@ -411,14 +411,14 @@ void test_sliding_window(){
 
     Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB; // out can be different than in
-    size_t width = 10; // out can be different than in
-    size_t height = 8; // out can be different than in
+    int width = 10; // out can be different than in
+    int height = 8; // out can be different than in
     SIGN sign = SIGNED; // out can be different than in
-    size_t bitDepth = 32; // out and kernel must be the same as in, and you should be careful about the sign,
+    int bitDepth = 32; // out and kernel must be the same as in, and you should be careful about the sign,
     // i.e., if out img is signed but in img is unsigned, since the in img data type will be treated as out img data type,
     // the large unsigned values (from "in img") will be interpreted into negative signed values; to prevent this, you
     // may choose a "larger" data type for in img.
-    size_t alignment = 32; // out must be the same as in
+    int alignment = 32; // out must be the same as in
     bool allocateImage = true; // recommend that out = in = true
 
     construct_img(pImg1, 

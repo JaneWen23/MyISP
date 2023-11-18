@@ -24,21 +24,21 @@ typedef enum{
 typedef struct{
     // NOTE: only integer (signed or unsigned) image data is supported.
     IMAGE_FMT imageFormat;
-    size_t width; // image width in pixels; there may be different widths for different panels, to be handled by imageFormat.
-    size_t height; // image height of images; there may be different heights for different panels, to be handled by imageFormat.
+    int width; // image width in pixels; there may be different widths for different panels, to be handled by imageFormat.
+    int height; // image height of images; there may be different heights for different panels, to be handled by imageFormat.
     SIGN sign;
-    size_t bitDepth; // recommend to set to the bit depth used in COMPUTER, for example 8, 16, 32; can be signed or unsigned.
-    size_t alignment; // the number of bytes for a line is a multiple of number of alignment, in bytes; if no specific alignment, set this to 1.
-    size_t strides[MAX_NUM_P]; // in bytes
+    int bitDepth; // recommend to set to the bit depth used in COMPUTER, for example 8, 16, 32; can be signed or unsigned.
+    int alignment; // the number of bytes for a line is a multiple of number of alignment, in bytes; if no specific alignment, set this to 1.
+    int strides[MAX_NUM_P]; // in bytes
     uint8_t* pImageData[MAX_NUM_P]; // the pointers to all components of the image
 } Img_t;
 
 typedef struct{
-    size_t panelId; // ROI is usually 2d, panel is as defined in Img_t
-    size_t startRow; // starting row of original image
-    size_t startCol; // starting column of original image
-    size_t roiWidth; // in pixel
-    size_t roiHeight; // in pixel
+    int panelId; // ROI is usually 2d, panel is as defined in Img_t
+    int startRow; // starting row of original image
+    int startCol; // starting column of original image
+    int roiWidth; // in pixel
+    int roiHeight; // in pixel
 } ROI_t;
 
 typedef enum{
@@ -52,11 +52,11 @@ typedef enum{
 
 IMG_RTN_CODE construct_img(Img_t* pImg, 
                             const IMAGE_FMT imageFormat,
-                            const size_t width,
-                            const size_t height,
+                            const int width,
+                            const int height,
                             const SIGN sign,
-                            const size_t bitDepth,
-                            const size_t alignment,
+                            const int bitDepth,
+                            const int alignment,
                             const bool allocateImage);
 IMG_RTN_CODE destruct_img(Img_t**);
 void view_img_properties(const Img_t* pImg);
