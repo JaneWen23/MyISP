@@ -13,7 +13,8 @@ typedef enum{
     RAW_GRGB,
     RAW_GBGR,
     RAW_BGGR,
-    YUV420
+    YUV420,
+    UNKOWN
 } IMAGE_FMT;
 
 typedef enum{
