@@ -4,16 +4,17 @@
 #include "ImgDef.hpp"
 
 
-const size_t get_next_multiple(const size_t x, const size_t m){
+const int get_next_multiple(const int x, const int m){
     // m is the multiple number (base number), and should be >= 1.
     // x is the number to find its next multiple of m
     assert(m > 0);
+    assert(x > 0);
     if ((m & (m - 1)) == 0){
         // if m > 0 and m is power of 2, use this simplified algo.
         return ((x + m -1) & ~(m - 1));
     }
     else{       
-        size_t q = 0;
+        int q = 0;
         q = x%m;
         return x + m * (bool)q - q;
     }
@@ -230,11 +231,11 @@ IMG_RTN_CODE allocate_image_data(Img_t* pImg){
 
 IMG_RTN_CODE construct_img( Img_t* pImg, 
                             const IMAGE_FMT imageFormat,
-                            const size_t width,
-                            const size_t height,
+                            const int width,
+                            const int height,
                             const SIGN sign,
-                            const size_t bitDepth,
-                            const size_t alignment,
+                            const int bitDepth,
+                            const int alignment,
                             const bool allocateImage){
     // takes in args to set up the properties of the img type; 
     if (pImg == NULL){
@@ -350,10 +351,10 @@ void test_img_def(){
     Img_t* pMyImg = NULL; // initialize
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB;
-    size_t width = 50;
-    size_t height = 30;
-    size_t bitDepth = 16;
-    size_t alignment = 16;
+    int width = 50;
+    int height = 30;
+    int bitDepth = 16;
+    int alignment = 16;
     if (construct_img(pMyImg, 
                 imageFormat,
                 width,

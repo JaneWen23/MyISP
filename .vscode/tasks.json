@@ -7,10 +7,15 @@
             "args": [
                 "-fcolor-diagnostics",
                 "-fansi-escape-codes",
+                "-I$(brew --prefix opencv)/include/opencv4/opencv2", //???
+                "-L$(brew --prefix opencv)/lib", //???
+                "-lopencv_core", //???
+                "-lopencv_imgcodecs", //???
+                "-lopencv_highgui", //???
                 "-g",
                 "${file}",
                 "-o",
-                "-fopenmp",
+                "-fopenmp", // not yet in use
                 "${fileDirname}/${fileBasenameNoExtension}",
             ],
             "options": {
