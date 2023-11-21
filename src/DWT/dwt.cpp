@@ -332,5 +332,10 @@ void demo_dwt(){
     convert_img_t_to_cv_mat(image2, pImg);
     imwrite("dwtout.png", image2);
 
+    dwt_backward(pImg, (void*)pDWTArg);
+    Mat image3;
+    convert_img_t_to_cv_mat(image3, pImg);
+    imwrite("idwtout.png", image3);
+
     destruct_img(&pImg);
 }
