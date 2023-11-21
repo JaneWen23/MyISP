@@ -199,12 +199,99 @@ void convert_cv_mat_to_img_t(cv::Mat& image, Img_t* pImg, const int alignment, b
             g = copy_data_to_img_t<int16_t>;
         }
         else if (pImg->bitDepth <= 32){
-            g = copy_data_to_img_t<int32_t>;
+            g = copy_data_to_img_t<int>;
         }
     }
     assert(g != NULL);
     g(pImg, image);
 }
+
+template<typename T>
+void copy_data_from_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
+    assert(pImg != NULL);
+    assert(pImg->pImageData != NULL);
+    if (pImg->imageFormat == RGB){
+        for (int i = 0; i < image.rows; ++i){
+            T* pCvRow = image.ptr<T>(i);
+            for (int j = 0; j < image.rows; ++j){
+                for (int c = 0; c < 3; ++c){
+                    *(pCvRow + j*3 + c) = *((T*)(pImg->pImageData[2-c] + i * pImg->strides[2-c]) + j); // cv mat is in BGR
+                }
+            }
+        }
+    }
+    else if (pImg->imageFormat == MONO){
+        for (int i = 0; i < image.rows; ++i){
+            T* pCvRow = image.ptr<T>(i);
+            for (int j = 0; j < image.rows; ++j){
+                *(pCvRow + j) = *((T*)(pImg->pImageData[0] + i * pImg->strides[0]) + j);
+            }
+        }
+    }
+}
+
+typedef void (*FCOPY2)(cv::Mat&, Img_t*);
+
+void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
+    //  cv::Mat.type()
+    //          C1 	C2 	C3 	C4 
+    // CV_8U   0   8   16	24
+    // CV_8S   1   9	17	25
+    // CV_16U  2   10	18	26
+    // CV_16S  3   11	19	27
+    // CV_32S  4   12	20	28
+    // CV_32F  5   13	21	29
+    // CV_64F  6   14	22	30 
+
+    int type = 0;
+    int typeOffset = 0;
+    switch (pImg->imageFormat){
+        case MONO:{
+            typeOffset = 0;
+            break;
+        }
+        case RGB:{
+            typeOffset = 16;
+            break;
+        }
+        default:{
+            break;
+        }
+    }
+    FCOPY2 f = NULL;
+    if (pImg->sign == UNSIGNED){
+        if (pImg->bitDepth <= 8){
+            type = 0 + typeOffset;
+            f = copy_data_from_img_t_to_cv_mat<uint8_t>;
+        }
+        else if (pImg->bitDepth <= 16){
+            type = 2 + typeOffset;
+            f = copy_data_from_img_t_to_cv_mat<uint16_t>;
+        }
+        else if (pImg->bitDepth <= 32){
+            std::cout<< "error: cv mat does not support uint32_t. returned.\n";
+            return;
+        }
+    }
+    else{
+        if (pImg->bitDepth <= 8){
+            type = 1 + typeOffset;
+            f = copy_data_from_img_t_to_cv_mat<int8_t>;
+        }
+        else if (pImg->bitDepth <= 16){
+            type = 3 + typeOffset;
+            f = copy_data_from_img_t_to_cv_mat<int16_t>;
+        }
+        else if (pImg->bitDepth <= 32){
+            type = 4 + typeOffset;
+            f = copy_data_from_img_t_to_cv_mat<int32_t>;
+        }
+    }
+    image.create(pImg->height, pImg->width, type);
+    assert(f != NULL);
+    f(image, pImg);
+}
+
 
 void test_opencv(){
     Mat image(15, 15, CV_8UC3, Scalar(3,9,5));
@@ -233,27 +320,33 @@ void test_opencv(){
     Img_t* pMyImg = NULL; // initialize
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
 
-    convert_cv_mat_to_img_t(image, pMyImg, 32, true, SIGNED, 32);
+    convert_cv_mat_to_img_t(image, pMyImg, 32, true, SIGNED, 16);
     
     ROI_t viewROI = {0, 0, 0, 15, 15};
     view_image_data(pMyImg, viewROI );
     view_img_properties(pMyImg);
+
+    Mat image2;
+    convert_img_t_to_cv_mat(image2, pMyImg);
+    // for (int i = 0; i < 15; ++i){
+    //     for (int j = 0; j < 15*3; ++j){
+    //         std::cout<<"\t"<<image2.at<int16_t>(i,j);
+    //     }
+    //     std::cout<<"\n";
+    // }
+    std::cout<<" channels:" << image2.channels() <<"\n";
+    std::cout<<" step:" << image2.step[0] <<"\n";
+    std::cout<<" step:" << image2.step[1] <<"\n";
+    std::cout<<" step:" << image2.step[2] <<"\n";
+    std::cout<<" size:" << image2.size <<"\n";
+    std::cout<<" row, col:" << image2.rows <<" "<<image2.cols <<"\n";
+    std::cout<<" type:" << image2.type() <<"\n";
+    
     destruct_img(&pMyImg);
 
-    // TODO: Img_t to cv mat,
     // TODO: and then dump bmp
 }
 
 
-//  cv::Mat.type()
-
-//          C1 	C2 	C3 	C4 
-// CV_8U   0   8   16	24
-// CV_8S   1   9	17	25
-// CV_16U  2   10	18	26
-// CV_16S  3   11	19	27
-// CV_32S  4   12	20	28
-// CV_32F  5   13	21	29
-// CV_64F  6   14	22	30 
 
 
