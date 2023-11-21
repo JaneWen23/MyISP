@@ -10,6 +10,7 @@ using namespace std;
 
 int main(){
     test_opencv();
+    //demo_dwt();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

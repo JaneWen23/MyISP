@@ -2,7 +2,10 @@
 #include <iostream>
 #include "../Filter/SlidingWindow.hpp"
 #include "../Infra/RandImageGen.hpp"
+#include "../Infra/ImageIO.hpp"
 #include "dwt.hpp"
+
+using namespace cv;
 
 template<typename T>
 void dwt_horizontal_swap(uint8_t* pData, const int strideInPix, const int i, const int j){
@@ -301,4 +304,29 @@ void test_dwt(){
     std::cout<<"after idwt:\n";
     view_image_data(pInImg, viewROI);
     destruct_img(&pInImg);
+}
+
+void demo_dwt(){
+    Mat image;
+    image = imread( "anya18.png", IMREAD_COLOR );
+    if ( !image.data )
+    {
+        std::cout<<"No image data \n";
+    }
+    Img_t* pImg =(Img_t*)malloc(sizeof(Img_t));
+    convert_cv_mat_to_img_t(image, pImg, 32, true, SIGNED, 32);
+
+    DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
+    pDWTArg->level = 2;
+    pDWTArg->orient = TWO_DIMENSIONAL;
+    pDWTArg->inImgPanelId = 0;
+    pDWTArg->outImgPanelId = 0;
+    config_dwt_kernels_LeGall53<int8_t>(pDWTArg, MIRROR);
+
+    dwt_forward(pImg, (void*)pDWTArg);
+
+    ROI_t viewROI = {0, 600, 600, 20, 20};
+    view_image_data(pImg, viewROI );
+
+    destruct_img(&pImg);
 }
