@@ -294,15 +294,15 @@ void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
 
 
 void test_opencv(){
-    Mat image(15, 15, CV_8UC3, Scalar(3,9,5));
+    //Mat image(15, 15, CV_8UC3, Scalar(3,9,5));
     //Mat image(15, 15, CV_32SC1, Scalar(-8));
 
-    // Mat image;
-    // image = imread( "anya18.png", IMREAD_COLOR );
-    // if ( !image.data )
-    // {
-    //     std::cout<<"No image data \n";
-    // }
+    Mat image;
+    image = imread( "anya18.png", IMREAD_COLOR );
+    if ( !image.data )
+    {
+        std::cout<<"No image data \n";
+    }
     // namedWindow("Display Image", WINDOW_AUTOSIZE );
     // imshow("Display Image", image);
     // waitKey(0);
@@ -328,23 +328,23 @@ void test_opencv(){
 
     Mat image2;
     convert_img_t_to_cv_mat(image2, pMyImg);
-    // for (int i = 0; i < 15; ++i){
-    //     for (int j = 0; j < 15*3; ++j){
-    //         std::cout<<"\t"<<image2.at<int16_t>(i,j);
-    //     }
-    //     std::cout<<"\n";
-    // }
-    std::cout<<" channels:" << image2.channels() <<"\n";
-    std::cout<<" step:" << image2.step[0] <<"\n";
-    std::cout<<" step:" << image2.step[1] <<"\n";
-    std::cout<<" step:" << image2.step[2] <<"\n";
-    std::cout<<" size:" << image2.size <<"\n";
-    std::cout<<" row, col:" << image2.rows <<" "<<image2.cols <<"\n";
-    std::cout<<" type:" << image2.type() <<"\n";
+    for (int i = 0; i < 15; ++i){
+        for (int j = 0; j < 15*3; ++j){
+            std::cout<<" "<<image2.at<int16_t>(i,j);
+        }
+        std::cout<<"\n";
+    }
+    // std::cout<<" channels:" << image2.channels() <<"\n";
+    // std::cout<<" step:" << image2.step[0] <<"\n";
+    // std::cout<<" step:" << image2.step[1] <<"\n";
+    // std::cout<<" step:" << image2.step[2] <<"\n";
+    // std::cout<<" size:" << image2.size <<"\n";
+    // std::cout<<" row, col:" << image2.rows <<" "<<image2.cols <<"\n";
+    // std::cout<<" type:" << image2.type() <<"\n";
+
+    imwrite("out.png", image2);
     
     destruct_img(&pMyImg);
-
-    // TODO: and then dump bmp
 }
 
 

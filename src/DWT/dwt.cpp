@@ -308,25 +308,29 @@ void test_dwt(){
 
 void demo_dwt(){
     Mat image;
-    image = imread( "anya18.png", IMREAD_COLOR );
+    image = imread( "anya18.png", IMREAD_GRAYSCALE );
     if ( !image.data )
     {
         std::cout<<"No image data \n";
     }
     Img_t* pImg =(Img_t*)malloc(sizeof(Img_t));
-    convert_cv_mat_to_img_t(image, pImg, 32, true, SIGNED, 32);
+    convert_cv_mat_to_img_t(image, pImg, 32, true, SIGNED, 16);
 
     DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
     pDWTArg->level = 2;
     pDWTArg->orient = TWO_DIMENSIONAL;
     pDWTArg->inImgPanelId = 0;
     pDWTArg->outImgPanelId = 0;
-    config_dwt_kernels_LeGall53<int8_t>(pDWTArg, MIRROR);
+    config_dwt_kernels_LeGall53<int16_t>(pDWTArg, MIRROR);
 
     dwt_forward(pImg, (void*)pDWTArg);
 
-    ROI_t viewROI = {0, 600, 600, 20, 20};
-    view_image_data(pImg, viewROI );
+    // ROI_t viewROI = {0, 600, 600, 20, 20};
+    // view_image_data(pImg, viewROI );
+
+    Mat image2;
+    convert_img_t_to_cv_mat(image2, pImg);
+    imwrite("dwtout.png", image2);
 
     destruct_img(&pImg);
 }
