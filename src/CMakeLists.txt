@@ -7,6 +7,7 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Math DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Infra DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/DWT DIR_PROJECT_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/StarTetrix DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Filter DIR_PROJECT_SRC)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXXFLAGS} -std=c++11 -O0")

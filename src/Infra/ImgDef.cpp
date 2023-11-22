@@ -51,6 +51,10 @@ const char* get_image_format_name(const IMAGE_FMT imageFormat){
             return "YUV420";
             break;
         }
+        case Y_C_C_D:{
+            return "Y_C_C_D";
+            break;
+        }
         default:{
             return "Unknown";
             break;
@@ -157,7 +161,6 @@ void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
 
     for (int j = sViewROI.startRow; j < sViewROI.startRow + sViewROI.roiHeight; ++j){
         for (int i = sViewROI.startCol; i < sViewROI.startCol + sViewROI.roiWidth; ++i){
-            //std::cout<<"\t"<< (*((uint16_t*)(pImg->pImageData[viewROI.panelId] + j*pImg->strides[viewROI.panelId]) + i));
             f(pImg->pImageData[sViewROI.panelId] + j*pImg->strides[sViewROI.panelId] + i*scale);
         }
         std::cout<<'\n';
@@ -188,6 +191,10 @@ void set_strides(Img_t* pImg){
             pImg->strides[0] = pImg->strides[1] = pImg->strides[2] = bytes_per_line;
             break;
         }
+        case Y_C_C_D:{
+            pImg->strides[0] = pImg->strides[1] = pImg->strides[2] = pImg->strides[3] = bytes_per_line;
+            break;
+        }
         default:
             break;
     }
@@ -215,6 +222,16 @@ IMG_RTN_CODE allocate_image_data(Img_t* pImg){
         }
         case RGB:{
             for (int c = 0; c < 3; c++){
+                assert(pImg->pImageData[c] == NULL); // because we set it to NULL in construct_img().
+                pImg->pImageData[c] = (uint8_t*)malloc(pImg->height * pImg->strides[c]);
+                if (pImg->pImageData[c] == NULL){
+                    return ALLOCATION_FAIL;
+                }
+            }
+            break;
+        }
+        case Y_C_C_D:{
+            for (int c = 0; c < 4; c++){
                 assert(pImg->pImageData[c] == NULL); // because we set it to NULL in construct_img().
                 pImg->pImageData[c] = (uint8_t*)malloc(pImg->height * pImg->strides[c]);
                 if (pImg->pImageData[c] == NULL){

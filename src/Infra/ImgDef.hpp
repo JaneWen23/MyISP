@@ -14,6 +14,7 @@ typedef enum{
     RAW_GBGR,
     RAW_BGGR,
     YUV420,
+    Y_C_C_D,
     UNKOWN
 } IMAGE_FMT;
 
