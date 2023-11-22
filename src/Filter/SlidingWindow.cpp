@@ -191,7 +191,7 @@ void filter_2d_flatten_unit(const T** px, const int xWidth,
             }
         }
         // apply the flatten kernel
-        *(y + jj) += Formula.f((const T **)pAddrFlatten, (const T **)pKerAddrMatrix, sKernelCfg.kerHeight*sKernelCfg.kerWidth);
+        *(y + jj) = Formula.f((const T **)pAddrFlatten, (const T **)pKerAddrMatrix, sKernelCfg.kerHeight*sKernelCfg.kerWidth);
         j += sKernelCfg.horiStep;
     }
     free(pAddrMatrix);

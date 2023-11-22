@@ -141,43 +141,43 @@ void dwt_vertical_reorder_back(Img_t* pImg, const ROI_t sImgROI){
     }
 }
 
-void dwt_row_analysis(Img_t* pInImg, const DWTArg_t* pArg, const int widthTmp){
-    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, widthTmp, pInImg->height};
+void dwt_row_analysis(Img_t* pInImg, const DWTArg_t* pArg, const int widthTmp, const int HeightTmp){
+    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, widthTmp, HeightTmp};
     for (int n = 0; n < pArg->numLiftingSteps; ++n){
-        ROI_t sOutImgROI = {pArg->outImgPanelId, 0, (n+1)%2, widthTmp-((n+1)%2), pInImg->height}; 
+        ROI_t sOutImgROI = {pArg->outImgPanelId, 0, (n+1)%2, widthTmp-((n+1)%2), HeightTmp}; 
         sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdHoriKerCfg[n]);
     }
     dwt_horizontal_reorder(pInImg, sInImgROI);
 }
 
-void dwt_column_analysis(Img_t* pInImg, const DWTArg_t* pArg, const int heightTmp){
-    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, pInImg->width, heightTmp};
+void dwt_column_analysis(Img_t* pInImg, const DWTArg_t* pArg, const int widthTmp, const int heightTmp){
+    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, widthTmp, heightTmp};
     for (int n = 0; n < pArg->numLiftingSteps; ++n){
-        ROI_t sOutImgROI = {pArg->outImgPanelId, (n+1)%2, 0, pInImg->width, heightTmp-((n+1)%2)}; 
+        ROI_t sOutImgROI = {pArg->outImgPanelId, (n+1)%2, 0, widthTmp, heightTmp-((n+1)%2)}; 
         sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sFwdVertKerCfg[n]);
     }
     dwt_vertical_reorder(pInImg, sInImgROI);
 }
 
-void dwt_row_synthesis(Img_t* pInImg, const DWTArg_t* pArg, const int widthTmp){
-    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, widthTmp, pInImg->height};
+void dwt_row_synthesis(Img_t* pInImg, const DWTArg_t* pArg, const int widthTmp, const int heightTmp){
+    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, widthTmp, heightTmp};
     dwt_horizontal_reorder_back(pInImg, sInImgROI);
     for (int n = 0; n < pArg->numLiftingSteps; ++n){
-        ROI_t sOutImgROI = {pArg->outImgPanelId, 0, n%2, widthTmp-(n%2), pInImg->height}; 
+        ROI_t sOutImgROI = {pArg->outImgPanelId, 0, n%2, widthTmp-(n%2), heightTmp}; 
         sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sBwdHoriKerCfg[n]);
     }
 }
 
-void dwt_column_synthesis(Img_t* pInImg, const DWTArg_t* pArg, const int heightTmp){
-    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, pInImg->width, heightTmp};
+void dwt_column_synthesis(Img_t* pInImg, const DWTArg_t* pArg, const int widthTmp, const int heightTmp){
+    ROI_t sInImgROI = {pArg->inImgPanelId, 0, 0, widthTmp, heightTmp};
     dwt_vertical_reorder_back(pInImg, sInImgROI);
     for (int n = 0; n < pArg->numLiftingSteps; ++n){
-        ROI_t sOutImgROI = {pArg->outImgPanelId, n%2, 0, pInImg->width, heightTmp-(n%2)}; 
+        ROI_t sOutImgROI = {pArg->outImgPanelId, n%2, 0, widthTmp, heightTmp-(n%2)}; 
         sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, pArg->sBwdVertKerCfg[n]);
     }
 }
 
-typedef void (*FAS)(Img_t*, const DWTArg_t*, const int);
+typedef void (*FAS)(Img_t*, const DWTArg_t*, const int, const int);
 
 IMG_RTN_CODE dwt_forward(Img_t* pInImg, void* pDWTArg){
     DWTArg_t* pArg = (DWTArg_t*)pDWTArg;
@@ -199,13 +199,17 @@ IMG_RTN_CODE dwt_forward(Img_t* pInImg, void* pDWTArg){
 
     for (int lv = 1; lv <= pArg->level; ++lv){ // TODO: hori and vert may have different levels!!!
         if (f_hori != NULL){
-            f_hori(pInImg, pArg, widthTmp);
+            f_hori(pInImg, pArg, widthTmp, heightTmp);
         }
         if (f_vert != NULL){
-            f_vert(pInImg, pArg, heightTmp);
+            f_vert(pInImg, pArg, widthTmp, heightTmp);
         }
-        widthTmp = (widthTmp + 1) >> 1;
-        heightTmp = (heightTmp + 1) >> 1;
+        if (f_hori != NULL){
+            widthTmp = (widthTmp + 1) >> 1;
+        }
+        if (f_vert != NULL){
+            heightTmp = (heightTmp + 1) >> 1;
+        }
     }
     return SUCCEED;
 }
@@ -238,10 +242,10 @@ IMG_RTN_CODE dwt_backward(Img_t* pInImg, void* pDWTArg){
 
     for (int lv = pArg->level; lv >= 1; --lv){
         if (f_vert != NULL){
-            f_vert(pInImg, pArg, pHeightAll[lv-1]); // NOTE: the order is revered of fwd transform.
+            f_vert(pInImg, pArg, pWidthAll[lv-1], pHeightAll[lv-1]); // NOTE: the order is reverse of fwd transform.
         }
         if (f_hori != NULL){
-            f_hori(pInImg, pArg, pWidthAll[lv-1]);
+            f_hori(pInImg, pArg, pWidthAll[lv-1], pHeightAll[lv-1]);
         }
     }
     free(pWidthAll);
@@ -317,7 +321,7 @@ void demo_dwt(){
     convert_cv_mat_to_img_t(image, pImg, 32, true, SIGNED, 16);
 
     DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    pDWTArg->level = 2;
+    pDWTArg->level = 1;
     pDWTArg->orient = TWO_DIMENSIONAL;
     pDWTArg->inImgPanelId = 0;
     pDWTArg->outImgPanelId = 0;
