@@ -10,11 +10,11 @@ typedef enum{
     MONO,
     RGB,
     RAW_RGGB,
-    RAW_GRGB,
-    RAW_GBGR,
+    RAW_GRBG,
+    RAW_GBRG,
     RAW_BGGR,
     YUV420,
-    Y_C_C_D,
+    Y_C_C_D, // the star-tetrix transformed format
     UNKOWN
 } IMAGE_FMT;
 

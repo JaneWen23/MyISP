@@ -12,7 +12,8 @@ using namespace std;
 int main(){
     //test_opencv();
     //demo_dwt();
-    test_star_tetrix();
+    //test_star_tetrix();
+    test_star_tetrix_forward();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

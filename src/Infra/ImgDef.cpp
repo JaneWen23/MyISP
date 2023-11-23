@@ -35,12 +35,12 @@ const char* get_image_format_name(const IMAGE_FMT imageFormat){
             return "RAW_RGGB";
             break;
         }
-        case RAW_GRGB:{
-            return "RAW_GRGB";
+        case RAW_GRBG:{
+            return "RAW_GRBG";
             break;
         }
-        case RAW_GBGR:{
-            return "RAW_GBGR";
+        case RAW_GBRG:{
+            return "RAW_GBRG";
             break;
         }
         case RAW_BGGR:{
@@ -181,8 +181,8 @@ void set_strides(Img_t* pImg){
     switch (pImg->imageFormat){
         case MONO:
         case RAW_RGGB:
-        case RAW_GRGB:
-        case RAW_GBGR:
+        case RAW_GRBG:
+        case RAW_GBRG:
         case RAW_BGGR:{
             pImg->strides[0] = bytes_per_line;
             break;
@@ -210,8 +210,8 @@ IMG_RTN_CODE allocate_image_data(Img_t* pImg){
     switch(pImg->imageFormat){
         case MONO:
         case RAW_RGGB:
-        case RAW_GRGB:
-        case RAW_GBGR:
+        case RAW_GRBG:
+        case RAW_GBRG:
         case RAW_BGGR:{
             assert(pImg->pImageData[0] == NULL); // because we set it to NULL in construct_img().
             pImg->pImageData[0] = (uint8_t*)malloc(pImg->height * pImg->strides[0]);
