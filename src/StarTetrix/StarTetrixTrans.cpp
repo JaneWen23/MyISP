@@ -21,42 +21,33 @@ typedef enum{
 
 template<typename T>
 void* find_star_tetrix_formula(const STEP stepName){
-    Formulas_T<T> Fml;
+    // return value is a pointer to function, converted to void*.
     switch (stepName){
         case FWD_CbCr:{
-            Fml.f = StarTetrix_fwd_CbCr;   
-            break;
+            return (void*)StarTetrix_fwd_CbCr<T>;   
         }
         case FWD_Y1Y2:{
-            Fml.f = StarTetrix_fwd_Y1Y2;
-            break;
+            return (void*)StarTetrix_fwd_Y1Y2<T>;
         }
         case FWD_Delta:{
-            Fml.f = StarTetrix_fwd_Delta;
-            break;
+            return (void*)StarTetrix_fwd_Delta<T>;
         }
         case FWD_Ybar:{
-            Fml.f = StarTetrix_fwd_Ybar;
-            break;
+            return (void*)StarTetrix_fwd_Ybar<T>;
         }
         case BWD_Y2:{
-            Fml.f = StarTetrix_bwd_Y2;
-            break;
+            return (void*)StarTetrix_bwd_Y2<T>;
         }
         case BWD_Y1:{
-            Fml.f = StarTetrix_bwd_Y1;
-            break;
+            return (void*)StarTetrix_bwd_Y1<T>;
         }
         case BWD_GrGb:{
-            Fml.f = StarTetrix_bwd_GrGb;
-            break;
+            return (void*)StarTetrix_bwd_GrGb<T>;
         }
         case BWD_BR:{
-            Fml.f = StarTetrix_bwd_BR;
-            break;
+            return (void*)StarTetrix_bwd_BR<T>;
         }
     }
-    return (void*)Fml.f;
 }
 
 void* find_star_tetrix_formula_specific(int bitDepth, const STEP stepName){
@@ -141,24 +132,6 @@ const STKerCenter_t find_star_tetrix_kernel_center(const IMAGE_FMT fmt, const CH
     return centers[find_index(fmt, ch)];
 }
 
-typedef struct{
-    int rowOffset;
-    int colOffset;
-}Offset_t;
-
-const Offset_t find_star_tetrix_out_roi_offset(const IMAGE_FMT fmt, const CH chName){
-    // ch can only be 0, 1, 2, and 3.
-    int ch = find_ch(chName);
-    const Offset_t offsets[4] = {{0, 0}, {0, 1}, {1, 0}, {1, 1}};
-    return offsets[find_index(fmt, ch)];
-}
-
-const ROI_t generate_out_img_roi(const int imgWidth, const int imgHeight, const IMAGE_FMT fmt, const CH chName){
-    Offset_t offset = find_star_tetrix_out_roi_offset(fmt, chName);
-    return {0, offset.rowOffset, offset.colOffset,
-            imgWidth - offset.colOffset, imgHeight - offset.rowOffset};
-}
-
 const KernelCfg_t generate_star_tetrix_kernel(void* pFormula, const IMAGE_FMT fmt, const CH chName, uint8_t* kerArg = NULL){
     STKerCenter_t kerCenter = find_star_tetrix_kernel_center(fmt, chName);
     return {kerArg,
@@ -167,6 +140,24 @@ const KernelCfg_t generate_star_tetrix_kernel(void* pFormula, const IMAGE_FMT fm
             MIRROR,
             2, 2, 2, 2,
             false, pFormula, false};
+}
+
+typedef struct{
+    int rowOffset;
+    int colOffset;
+}Offset_t;
+
+const Offset_t find_star_tetrix_roi_offset(const IMAGE_FMT fmt, const CH chName){
+    // ch can only be 0, 1, 2, and 3.
+    int ch = find_ch(chName);
+    const Offset_t offsets[4] = {{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+    return offsets[find_index(fmt, ch)];
+}
+
+const ROI_t generate_img_roi(const int imgWidth, const int imgHeight, const IMAGE_FMT fmt, const CH chName){
+    Offset_t offset = find_star_tetrix_roi_offset(fmt, chName);
+    return {0, offset.rowOffset, offset.colOffset,
+            imgWidth - offset.colOffset, imgHeight - offset.rowOffset};
 }
 
 template <typename T>
@@ -239,8 +230,8 @@ const StarTetrixRunTimeArg_t find_run_time_cfg(STEP stepName){
     }
 }
 
-void star_tetrix_lifting_step(Img_t* pInImg, const ROI_t& sInImgROI, const StarTetrixArg_t* pArg, STEP stepName){
-    void* pFormula = find_star_tetrix_formula_specific(pInImg->bitDepth, stepName);
+void star_tetrix_lifting_step(Img_t* pImg, const ROI_t& sInImgROI, const StarTetrixArg_t* pArg, STEP stepName){
+    void* pFormula = find_star_tetrix_formula_specific(pImg->bitDepth, stepName);
     assert(pFormula != NULL);
 
     StarTetrixRunTimeArg_t sRunTimeArg = find_run_time_cfg(stepName);
@@ -248,59 +239,159 @@ void star_tetrix_lifting_step(Img_t* pInImg, const ROI_t& sInImgROI, const StarT
     int* pKerArg = NULL;
     for (int i = 0; i < sRunTimeArg.numChs; ++i){  
         if (sRunTimeArg.needKerArg){
-            pKerArg = (int*)malloc(sizeof(int) * 9); // 9, because that kernel window is 3-by-3
-            set_kernel_arg_specific(pInImg->bitDepth, pKerArg, pArg, sRunTimeArg.chNames[i]);
+            pKerArg = (int*)malloc(sizeof(int) * 9); // 9, because kernel window is 3-by-3; but not all are used.
+            set_kernel_arg_specific(pImg->bitDepth, pKerArg, pArg, sRunTimeArg.chNames[i]);
         }
-        KernelCfg_t sKernelCfg = generate_star_tetrix_kernel(pFormula, pInImg->imageFormat, sRunTimeArg.chNames[i], (uint8_t*)pKerArg);
-        ROI_t sOutImgROI = generate_out_img_roi(pInImg->width, pInImg->height, pInImg->imageFormat, sRunTimeArg.chNames[i]);
-        sliding_window(pInImg, sInImgROI, pInImg, sOutImgROI, sKernelCfg);
+        KernelCfg_t sKernelCfg = generate_star_tetrix_kernel(pFormula, pImg->imageFormat, sRunTimeArg.chNames[i], (uint8_t*)pKerArg);
+        ROI_t sOutImgROI = generate_img_roi(pImg->width, pImg->height, pImg->imageFormat, sRunTimeArg.chNames[i]);
+        sliding_window(pImg, sInImgROI, pImg, sOutImgROI, sKernelCfg);
         if (sRunTimeArg.needKerArg){
             free(pKerArg);
         }
     }
 }
 
-void star_tetrix_forward(Img_t* pInImg, void* pStarTetrixArg){
-    if (pInImg->sign != SIGNED){
-        std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. returned.\n";
-        return;
+IMAGE_FMT find_image_fmt(IMAGE_FMT srcFmt){
+    switch (srcFmt){
+        case RAW_RGGB:{
+            return Y_C_C_D_RGGB;
+        }
+        case RAW_GRBG:{
+            return Y_C_C_D_GRBG;
+        }
+        case RAW_GBRG:{
+            return Y_C_C_D_GBRG;
+        }
+        case RAW_BGGR:{
+            return Y_C_C_D_BGGR;
+        }
+        case Y_C_C_D_RGGB:{
+            return RAW_RGGB;
+        }
+        case Y_C_C_D_GRBG:{
+            return RAW_GRBG;
+        }
+        case Y_C_C_D_GBRG:{
+            return RAW_GBRG;
+        }
+        case Y_C_C_D_BGGR:{
+            return RAW_BGGR;
+        }
+        default:{
+            return UNKOWN;
+        }
     }
+}
+void convert_1p_to_4p(Img_t* pSrcImg, Img_t* pDstImg){
+    assert((pSrcImg->width & 1) == 0);
+    assert((pSrcImg->height & 1) == 0);
+    construct_img(pDstImg, 
+                  find_image_fmt(pSrcImg->imageFormat),
+                  pSrcImg->width >> 1,
+                  pSrcImg->height >> 1,
+                  SIGNED,
+                  pSrcImg->bitDepth,
+                  pSrcImg->alignment,
+                  true);
 
-    StarTetrixArg_t* pArg = (StarTetrixArg_t*)pStarTetrixArg;
-    ROI_t sInImgROI = {0, 0, 0, pInImg->width, pInImg->height}; // always
-
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, FWD_CbCr);
-
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, FWD_Y1Y2);
-
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, FWD_Delta);
-
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, FWD_Ybar);
+    KernelCfg_t sKerCfg = {NULL, // nonsense
+                           1, 1, // nonsense
+                           0, 0, // nonsense
+                           MIRROR, // nonsense
+                           2, 2, 1, 1, // in use
+                           false, NULL, false}; // nonsense
+    
+    CH tmpCh[4] = {R, Gr, Gb, B};
+    int tmpId[4] = {2, 3, 0, 1};
+    for (int i = 0; i < 4; ++i){
+        ROI_t sSrcImgROI = generate_img_roi(pSrcImg->width, pSrcImg->height, pSrcImg->imageFormat, tmpCh[i]);
+        ROI_t sDstImgROI = {tmpId[i], 0, 0, pDstImg->width, pDstImg->height};
+        sliding_window_1x1(pSrcImg, sSrcImgROI, pDstImg, sDstImgROI, sKerCfg);
+    }
 }
 
-void star_tetrix_backward(Img_t* pInImg, void* pStarTetrixArg){
+void convert_4p_to_1p(Img_t* pSrcImg, Img_t* pDstImg){
+    construct_img(pDstImg, 
+                  find_image_fmt(pSrcImg->imageFormat),
+                  pSrcImg->width << 1,
+                  pSrcImg->height << 1,
+                  SIGNED,
+                  pSrcImg->bitDepth,
+                  pSrcImg->alignment,
+                  true);
+
+    KernelCfg_t sKerCfg = {NULL, // nonsense
+                           1, 1, // nonsense
+                           0, 0, // nonsense
+                           MIRROR, // nonsense
+                           1, 1, 2, 2, // in use
+                           false, NULL, false}; // nonsense
+    
+    CH tmpCh[4] = {R, Gr, Gb, B};
+    int tmpId[4] = {2, 3, 0, 1};
+    for (int i = 0; i < 4; ++i){
+        ROI_t sSrcImgROI = {tmpId[i], 0, 0, pSrcImg->width, pSrcImg->height};
+        ROI_t sDstImgROI = generate_img_roi(pDstImg->width, pDstImg->height, pDstImg->imageFormat, tmpCh[i]);
+        sliding_window_1x1(pSrcImg, sSrcImgROI, pDstImg, sDstImgROI, sKerCfg);
+    }
+}
+
+IMG_RTN_CODE star_tetrix_forward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg){
     if (pInImg->sign != SIGNED){
         std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. returned.\n";
-        return;
+        return INVALID_INPUT;
     }
+    if( ((pInImg->width & 1) == 1) || ((pInImg->height & 1) == 1)){
+        std::cout<<"error: raw image width and height must be even, but got odd number. returned.\n";
+        return INVALID_INPUT;
+    }
+    // duplicate the input img and process the duplicated version:
+    Img_t* pTmpImg =(Img_t*)malloc(sizeof(Img_t));
+    duplicate_img(pInImg, pTmpImg);
 
     StarTetrixArg_t* pArg = (StarTetrixArg_t*)pStarTetrixArg;
-    ROI_t sInImgROI = {0, 0, 0, pInImg->width, pInImg->height}; // always
+    ROI_t sInImgROI = {0, 0, 0, pTmpImg->width, pTmpImg->height}; // always
 
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, BWD_Y2);
+    star_tetrix_lifting_step(pTmpImg, sInImgROI, pArg, FWD_CbCr);
 
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, BWD_Y1);
+    star_tetrix_lifting_step(pTmpImg, sInImgROI, pArg, FWD_Y1Y2);
 
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, BWD_GrGb);
+    star_tetrix_lifting_step(pTmpImg, sInImgROI, pArg, FWD_Delta);
 
-    star_tetrix_lifting_step(pInImg, sInImgROI, pArg, BWD_BR);
+    star_tetrix_lifting_step(pTmpImg, sInImgROI, pArg, FWD_Ybar);
+
+    convert_1p_to_4p(pTmpImg, pOutImg);
+    free(pTmpImg);
+    return SUCCEED;
+}
+
+IMG_RTN_CODE star_tetrix_backward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg){
+    if (pInImg->sign != SIGNED){
+        std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. returned.\n";
+        return INVALID_INPUT;
+    }
+
+    convert_4p_to_1p(pInImg,  pOutImg);
+
+    StarTetrixArg_t* pArg = (StarTetrixArg_t*)pStarTetrixArg;
+    ROI_t sOutImgROI = {0, 0, 0, pOutImg->width, pOutImg->height}; // always
+
+    star_tetrix_lifting_step(pOutImg, sOutImgROI, pArg, BWD_Y2);
+
+    star_tetrix_lifting_step(pOutImg, sOutImgROI, pArg, BWD_Y1);
+
+    star_tetrix_lifting_step(pOutImg, sOutImgROI, pArg, BWD_GrGb);
+
+    star_tetrix_lifting_step(pOutImg, sOutImgROI, pArg, BWD_BR);
+
+    return SUCCEED;
 }
 
 void test_star_tetrix(){
     Img_t* pInImg =(Img_t*)malloc(sizeof(Img_t));
-    IMAGE_FMT imageFormat = RAW_BGGR;
-    int width = 10;
-    int height = 10;
+    IMAGE_FMT imageFormat = RAW_RGGB;
+    int width = 12;
+    int height = 12;
     SIGN sign = SIGNED;
     int bitDepth = 16;
     int alignment = 32;
@@ -329,14 +420,28 @@ void test_star_tetrix(){
     std::cout<<"original:\n";
     view_image_data(pInImg, viewROI);
 
-    star_tetrix_forward(pInImg, (void*)pStarTetrixArg);
-    std::cout<<"after forward star-tetrix:\n";
-    view_image_data(pInImg, viewROI);
+    Img_t* pOutImg =(Img_t*)malloc(sizeof(Img_t));
+    star_tetrix_forward(pInImg, pOutImg, (void*)pStarTetrixArg);
+    std::cout<<"after forward star-tetrix, Ybar:\n";
+    ROI_t viewROI_out_0 = {0, 0, 0, pInImg->width>>1, pInImg->height>>1};
+    view_image_data(pOutImg, viewROI_out_0);
+    std::cout<<"after forward star-tetrix, Cb:\n";
+    ROI_t viewROI_out_1 = {1, 0, 0, pInImg->width>>1, pInImg->height>>1};
+    view_image_data(pOutImg, viewROI_out_1);
+    std::cout<<"after forward star-tetrix, Cr:\n";
+    ROI_t viewROI_out_2 = {2, 0, 0, pInImg->width>>1, pInImg->height>>1};
+    view_image_data(pOutImg, viewROI_out_2);
+    std::cout<<"after forward star-tetrix, Delta:\n";
+    ROI_t viewROI_out_3 = {3, 0, 0, pInImg->width>>1, pInImg->height>>1};
+    view_image_data(pOutImg, viewROI_out_3);
 
-    star_tetrix_backward(pInImg, (void*)pStarTetrixArg);
+    Img_t* pBackOutImg =(Img_t*)malloc(sizeof(Img_t));   
+    star_tetrix_backward(pOutImg, pBackOutImg, (void*)pStarTetrixArg);
     std::cout<<"after backward star-tetrix:\n";
-    view_image_data(pInImg, viewROI);
+    view_image_data(pBackOutImg, viewROI);
 
     free(pStarTetrixArg);
     destruct_img(&pInImg);
+    destruct_img(&pOutImg);
+    destruct_img(&pBackOutImg);
 }

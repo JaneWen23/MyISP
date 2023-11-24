@@ -297,7 +297,7 @@ void filter_1d_horizontal_unit(const T** px, const int xWidth,
 
     // jj is horizontal index at the output image
     int j = 0; // j is horizontal index at input image
-    for(int jj = 0; jj < outImgRoiWidth; jj += sKernelCfg.horiUpsample){ // should be jj < out_ROI_width
+    for(int jj = 0; jj < outImgRoiWidth; jj += sKernelCfg.horiUpsample){
         *(y + jj) = Formula.f((const T **)pAddrArray + j, (const T **)pKerAddr, sKernelCfg.kerWidth);
         j += sKernelCfg.horiStep;
     }
@@ -405,6 +405,69 @@ IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* 
     return SUCCEED;
 }
 
+
+template<typename T>
+void copy_pix_one_line(const uint8_t* x, uint8_t* y, const int dstRoiWidth, const KernelCfg_t& sKerCfg){
+    T* xx = (T*)x;
+    T* yy = (T*)y;  
+    // jj is horizontal index at the dst image
+    int j = 0; // j is horizontal index at src image
+    for(int jj = 0; jj < dstRoiWidth; jj += sKerCfg.horiUpsample){
+        *(yy + jj) = *(xx + j);
+        j += sKerCfg.horiStep;
+    }
+}
+
+typedef void (*F_COPY_LINE)(const uint8_t*, uint8_t*, const int, const KernelCfg_t&);
+
+IMG_RTN_CODE sliding_window_1x1(const Img_t* pSrcImg, const ROI_t& sSrcImgROI, Img_t* pDstImg, const ROI_t& sDstImgROI, const KernelCfg_t& sKerCfg){
+    // TODO: may support scalar multiplication and manipulations in the 3rd dimension
+    int srcImgStride = pSrcImg->strides[sSrcImgROI.panelId];
+    int dstImgStride = pDstImg->strides[sDstImgROI.panelId];
+    int scale = 0;
+    F_COPY_LINE f = NULL;
+    if (pDstImg->sign == UNSIGNED){
+        if (pDstImg->bitDepth <= 8){
+            scale = sizeof(uint8_t);
+            f = copy_pix_one_line<uint8_t>;
+        }
+        else if (pDstImg->bitDepth <= 16){
+            scale = sizeof(uint16_t);
+            f = copy_pix_one_line<uint16_t>;
+        }
+        else if (pDstImg->bitDepth <= 32){
+            scale = sizeof(uint32_t);
+            f = copy_pix_one_line<uint32_t>;
+        }
+    }
+    else{
+        if (pDstImg->bitDepth <= 8){
+            scale = sizeof(int8_t);
+            f = copy_pix_one_line<int8_t>;
+        }
+        else if (pDstImg->bitDepth <= 16){
+            scale = sizeof(int16_t);
+            f = copy_pix_one_line<int16_t>;
+        }
+        else if (pDstImg->bitDepth <= 32){
+            scale = sizeof(int);
+            f = copy_pix_one_line<int>;
+        }
+    }
+    
+    assert(scale > 0);
+    const uint8_t* x = pSrcImg->pImageData[sSrcImgROI.panelId] + sSrcImgROI.startRow * srcImgStride + sSrcImgROI.startCol * scale;
+    uint8_t* y = pDstImg->pImageData[sDstImgROI.panelId]+ sDstImgROI.startRow * dstImgStride + sDstImgROI.startCol * scale;
+
+    int i = 0;
+    for (int ii = 0; ii < sDstImgROI.roiHeight; ii += sKerCfg.vertUpsample){
+        f(x, y, sDstImgROI.roiWidth, sKerCfg);
+        x += sKerCfg.vertStep * srcImgStride;
+        y += sKerCfg.vertUpsample * dstImgStride;
+        i += sKerCfg.vertStep;
+    }
+    return SUCCEED;
+}
 
 
 void test_sliding_window(){

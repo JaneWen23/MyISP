@@ -14,7 +14,10 @@ typedef enum{
     RAW_GBRG,
     RAW_BGGR,
     YUV420,
-    Y_C_C_D, // the star-tetrix transformed format
+    Y_C_C_D_RGGB, // the star-tetrix transformed format, Y_C_C_D means Ybar, Cb, Cr, Delta in four panels, RGGB means it was RGGB.
+    Y_C_C_D_GRBG, // the star-tetrix transformed format, Y_C_C_D means Ybar, Cb, Cr, Delta in four panels, GRBG means it was GRBG.
+    Y_C_C_D_GBRG, // the star-tetrix transformed format, Y_C_C_D means Ybar, Cb, Cr, Delta in four panels, GBRG means it was GBRG.
+    Y_C_C_D_BGGR, // the star-tetrix transformed format, Y_C_C_D means Ybar, Cb, Cr, Delta in four panels, BGGR means it was BGGR.
     UNKOWN
 } IMAGE_FMT;
 

@@ -25,39 +25,39 @@ const char* get_image_format_name(const IMAGE_FMT imageFormat){
     switch (imageFormat){
         case MONO:{
             return "MONO";
-            break;
         }    
         case RGB:{
             return "RGB";
-            break;
         }
         case RAW_RGGB:{
             return "RAW_RGGB";
-            break;
         }
         case RAW_GRBG:{
             return "RAW_GRBG";
-            break;
         }
         case RAW_GBRG:{
             return "RAW_GBRG";
-            break;
         }
         case RAW_BGGR:{
             return "RAW_BGGR";
-            break;
         }
         case YUV420:{
             return "YUV420";
-            break;
         }
-        case Y_C_C_D:{
-            return "Y_C_C_D";
-            break;
+        case Y_C_C_D_RGGB:{
+            return "Y_C_C_D_RGGB";
+        }
+        case Y_C_C_D_GRBG:{
+            return "Y_C_C_D_GRBG";
+        }
+        case Y_C_C_D_GBRG:{
+            return "Y_C_C_D_GBRG";
+        }
+        case Y_C_C_D_BGGR:{
+            return "Y_C_C_D_BGGR";
         }
         default:{
             return "Unknown";
-            break;
         }
     }
 }
@@ -191,7 +191,10 @@ void set_strides(Img_t* pImg){
             pImg->strides[0] = pImg->strides[1] = pImg->strides[2] = bytes_per_line;
             break;
         }
-        case Y_C_C_D:{
+        case Y_C_C_D_RGGB:
+        case Y_C_C_D_GRBG:
+        case Y_C_C_D_GBRG:
+        case Y_C_C_D_BGGR:{
             pImg->strides[0] = pImg->strides[1] = pImg->strides[2] = pImg->strides[3] = bytes_per_line;
             break;
         }
@@ -230,7 +233,10 @@ IMG_RTN_CODE allocate_image_data(Img_t* pImg){
             }
             break;
         }
-        case Y_C_C_D:{
+        case Y_C_C_D_RGGB:
+        case Y_C_C_D_GRBG:
+        case Y_C_C_D_GBRG:
+        case Y_C_C_D_BGGR:{
             for (int c = 0; c < 4; c++){
                 assert(pImg->pImageData[c] == NULL); // because we set it to NULL in construct_img().
                 pImg->pImageData[c] = (uint8_t*)malloc(pImg->height * pImg->strides[c]);
