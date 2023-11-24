@@ -11,8 +11,8 @@ using namespace std;
 
 int main(){
     //test_opencv();
-    //demo_dwt();
-    test_star_tetrix();
+    demo_dwt();
+    //test_star_tetrix();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

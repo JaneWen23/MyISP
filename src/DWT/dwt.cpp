@@ -179,10 +179,13 @@ void dwt_column_synthesis(Img_t* pInImg, const DWTArg_t* pArg, const int widthTm
 
 typedef void (*FAS)(Img_t*, const DWTArg_t*, const int, const int);
 
-IMG_RTN_CODE dwt_forward(Img_t* pInImg, void* pDWTArg){
+IMG_RTN_CODE dwt_forward(Img_t* pInImg, Img_t* pOutImg, void* pDWTArg){
     DWTArg_t* pArg = (DWTArg_t*)pDWTArg;
-    int widthTmp = pInImg->width;
-    int heightTmp = pInImg->height;
+
+    duplicate_img(pInImg, pOutImg);
+
+    int widthTmp = pOutImg->width;
+    int heightTmp = pOutImg->height;
     FAS f_hori = NULL;
     FAS f_vert = NULL;
 
@@ -199,10 +202,10 @@ IMG_RTN_CODE dwt_forward(Img_t* pInImg, void* pDWTArg){
 
     for (int lv = 1; lv <= pArg->level; ++lv){ // TODO: hori and vert may have different levels!!!
         if (f_hori != NULL){
-            f_hori(pInImg, pArg, widthTmp, heightTmp);
+            f_hori(pOutImg, pArg, widthTmp, heightTmp);
         }
         if (f_vert != NULL){
-            f_vert(pInImg, pArg, widthTmp, heightTmp);
+            f_vert(pOutImg, pArg, widthTmp, heightTmp);
         }
         if (f_hori != NULL){
             widthTmp = (widthTmp + 1) >> 1;
@@ -215,12 +218,15 @@ IMG_RTN_CODE dwt_forward(Img_t* pInImg, void* pDWTArg){
 }
 
 
-IMG_RTN_CODE dwt_backward(Img_t* pInImg, void* pDWTArg){
+IMG_RTN_CODE dwt_backward(Img_t* pInImg, Img_t* pOutImg, void* pDWTArg){
     DWTArg_t* pArg = (DWTArg_t*)pDWTArg;
+    
+    duplicate_img(pInImg, pOutImg);
+    
     int* pWidthAll = (int*)malloc(sizeof(int) * pArg->level + 1);
     int* pHeightAll = (int*)malloc(sizeof(int) * pArg->level + 1);// TODO: hori and vert may have different levels!!!
-    pWidthAll[0] = pInImg->width;
-    pHeightAll[0] = pInImg->height;
+    pWidthAll[0] = pOutImg->width;
+    pHeightAll[0] = pOutImg->height;
     for (int l = 1; l < pArg->level; ++l){
         pWidthAll[l] = (pWidthAll[l-1] + 1) >> 1;
         pHeightAll[l] = (pHeightAll[l-1] + 1) >> 1;
@@ -242,10 +248,10 @@ IMG_RTN_CODE dwt_backward(Img_t* pInImg, void* pDWTArg){
 
     for (int lv = pArg->level; lv >= 1; --lv){
         if (f_vert != NULL){
-            f_vert(pInImg, pArg, pWidthAll[lv-1], pHeightAll[lv-1]); // NOTE: the order is reverse of fwd transform.
+            f_vert(pOutImg, pArg, pWidthAll[lv-1], pHeightAll[lv-1]); // NOTE: the order is reverse of fwd transform.
         }
         if (f_hori != NULL){
-            f_hori(pInImg, pArg, pWidthAll[lv-1], pHeightAll[lv-1]);
+            f_hori(pOutImg, pArg, pWidthAll[lv-1], pHeightAll[lv-1]);
         }
     }
     free(pWidthAll);
@@ -295,19 +301,25 @@ void test_dwt(){
     ROI_t viewROI = {0, 0, 0, pInImg->width, pInImg->height};
     view_image_data(pInImg, viewROI );
 
+    Img_t* pOutImg = (Img_t*)malloc(sizeof(Img_t));
 
     assert(pDWTArg->level > 0);
-    dwt_forward(pInImg, (void*)pDWTArg);
+    dwt_forward(pInImg, pOutImg, (void*)pDWTArg);
 
     
     std::cout<<"after dwt:\n";
-    view_image_data(pInImg, viewROI);
+    view_image_data(pOutImg, viewROI);
 
-    dwt_backward(pInImg, (void*)pDWTArg);
+    Img_t* pOutBackImg = (Img_t*)malloc(sizeof(Img_t));
+
+    dwt_backward(pOutImg, pOutBackImg, (void*)pDWTArg);
 
     std::cout<<"after idwt:\n";
-    view_image_data(pInImg, viewROI);
+    view_image_data(pOutBackImg, viewROI);
+
     destruct_img(&pInImg);
+    destruct_img(&pOutImg);
+    destruct_img(&pOutBackImg);
 }
 
 void demo_dwt(){
@@ -327,19 +339,25 @@ void demo_dwt(){
     pDWTArg->outImgPanelId = 0;
     config_dwt_kernels_LeGall53<int16_t>(pDWTArg, MIRROR);
 
-    dwt_forward(pImg, (void*)pDWTArg);
+    Img_t* pOutImg = (Img_t*)malloc(sizeof(Img_t));
+
+    dwt_forward(pImg, pOutImg, (void*)pDWTArg);
 
     // ROI_t viewROI = {0, 600, 600, 20, 20};
     // view_image_data(pImg, viewROI );
 
     Mat image2;
-    convert_img_t_to_cv_mat(image2, pImg);
+    convert_img_t_to_cv_mat(image2, pOutImg);
     imwrite("dwtout.png", image2);
 
-    dwt_backward(pImg, (void*)pDWTArg);
+    Img_t* pOutBackImg = (Img_t*)malloc(sizeof(Img_t));
+    dwt_backward(pOutImg, pOutBackImg, (void*)pDWTArg);
+    
     Mat image3;
-    convert_img_t_to_cv_mat(image3, pImg);
+    convert_img_t_to_cv_mat(image3, pOutBackImg);
     imwrite("idwtout.png", image3);
 
     destruct_img(&pImg);
+    destruct_img(&pOutImg);
+    destruct_img(&pOutBackImg);
 }

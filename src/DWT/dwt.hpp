@@ -30,8 +30,8 @@ typedef struct{
 void test_dwt();
 void demo_dwt();
 
-IMG_RTN_CODE dwt_forward(Img_t* pInImg, void* pAlgoArg);
-IMG_RTN_CODE dwt_backward(Img_t* pInImg, void* pDWTArg);
+IMG_RTN_CODE dwt_forward(Img_t* pInImg, Img_t* pOutImg, void* pAlgoArg);
+IMG_RTN_CODE dwt_backward(Img_t* pInImg, Img_t* pOutImg, void* pDWTArg);
 
 
 
