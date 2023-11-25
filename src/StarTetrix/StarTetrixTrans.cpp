@@ -126,9 +126,8 @@ typedef struct{
 }STKerCenter_t;
 
 const STKerCenter_t find_star_tetrix_kernel_center(const IMAGE_FMT fmt, const CH chName){
-    // ch can only be 0, 1, 2, and 3.
-    int ch = find_ch(chName);
     const STKerCenter_t centers[4] = {{1, 1}, {0, 1}, {1, 0}, {0, 0}};
+    int ch = find_ch(chName); // ch can only be 0, 1, 2, and 3.
     return centers[find_index(fmt, ch)];
 }
 
@@ -148,9 +147,8 @@ typedef struct{
 }Offset_t;
 
 const Offset_t find_star_tetrix_roi_offset(const IMAGE_FMT fmt, const CH chName){
-    // ch can only be 0, 1, 2, and 3.
-    int ch = find_ch(chName);
     const Offset_t offsets[4] = {{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+    int ch = find_ch(chName); // ch can only be 0, 1, 2, and 3.
     return offsets[find_index(fmt, ch)];
 }
 
@@ -311,7 +309,7 @@ void convert_1p_to_4p(Img_t* pSrcImg, Img_t* pDstImg){
 }
 
 void convert_4p_to_1p(Img_t* pSrcImg, Img_t* pDstImg){
-    construct_img(pDstImg, 
+    construct_img(pDstImg,
                   find_image_fmt(pSrcImg->imageFormat),
                   pSrcImg->width << 1,
                   pSrcImg->height << 1,

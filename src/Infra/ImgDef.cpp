@@ -177,7 +177,7 @@ void set_strides(Img_t* pImg){
     // the width will be 100 for both panels, and it is only a number, it does not affect actual image allocation
     // so stride[0] = 100*num_of_bytes_for_a_pixel + make_up_alignment_bytes, 
     // and stride[1] = 50*num_of_bytes_for_a_pixel + make_up_alignment_bytes
-    size_t bytes_per_line = get_next_multiple(pImg->width * (pImg->bitDepth + 7)/8, pImg->alignment);
+    int bytes_per_line = get_next_multiple(pImg->width * ((pImg->bitDepth + 7)/8), pImg->alignment);
     switch (pImg->imageFormat){
         case MONO:
         case RAW_RGGB:
@@ -336,6 +336,7 @@ bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg){
             for (int i = 0; i < pSrcImg->height; ++i){
                 for (int j = 0; j < pSrcImg->strides[c]; ++j){
                     if(*(pDstImg->pImageData[c] + i * (pSrcImg->strides[c]) + j) != *(pSrcImg->pImageData[c] + i * (pSrcImg->strides[c]) + j)){
+                        std::cout<<"not equal: at location c, i, j(bytes) = "<<c<<", "<<i<<", "<<j<<"\n";
                         return false;
                     }
                 }
