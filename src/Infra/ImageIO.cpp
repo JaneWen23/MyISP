@@ -119,7 +119,7 @@ void copy_data_from_cv_mat_to_img_t(Img_t* pImg, cv::Mat& image){
     if (pImg->imageFormat == RGB){
         for (int i = 0; i < image.rows; ++i){
             Tsrc* pCvRow = image.ptr<Tsrc>(i);
-            for (int j = 0; j < image.rows; ++j){
+            for (int j = 0; j < image.cols; ++j){
                 for (int c = 0; c < 3; ++c){
                     *((Tdst*)(pImg->pImageData[2-c] + i * pImg->strides[2-c]) + j) = *(pCvRow + j*3 + c); // cv mat is in BGR
                 }
@@ -129,7 +129,7 @@ void copy_data_from_cv_mat_to_img_t(Img_t* pImg, cv::Mat& image){
     else if (pImg->imageFormat == MONO){
         for (int i = 0; i < image.rows; ++i){
             Tsrc* pCvRow = image.ptr<Tsrc>(i);
-            for (int j = 0; j < image.rows; ++j){
+            for (int j = 0; j < image.cols; ++j){
                 *((Tdst*)(pImg->pImageData[0] + i * pImg->strides[0]) + j) = *(pCvRow + j);
             }
         }
@@ -210,22 +210,34 @@ template<typename T>
 void copy_data_from_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
     assert(pImg != NULL);
     assert(pImg->pImageData != NULL);
-    if (pImg->imageFormat == RGB){
-        for (int i = 0; i < image.rows; ++i){
-            T* pCvRow = image.ptr<T>(i);
-            for (int j = 0; j < image.rows; ++j){
-                for (int c = 0; c < 3; ++c){
-                    *(pCvRow + j*3 + c) = *((T*)(pImg->pImageData[2-c] + i * pImg->strides[2-c]) + j); // cv mat is in BGR
+    switch (pImg->imageFormat){
+        case RGB:{
+            for (int i = 0; i < image.rows; ++i){
+                T* pCvRow = image.ptr<T>(i);
+                for (int j = 0; j < image.cols; ++j){
+                    for (int c = 0; c < 3; ++c){
+                        *(pCvRow + j*3 + c) = *((T*)(pImg->pImageData[2-c] + i * pImg->strides[2-c]) + j); // cv mat is in BGR
+                    }
                 }
             }
+            break;
         }
-    }
-    else if (pImg->imageFormat == MONO){
-        for (int i = 0; i < image.rows; ++i){
-            T* pCvRow = image.ptr<T>(i);
-            for (int j = 0; j < image.rows; ++j){
-                *(pCvRow + j) = *((T*)(pImg->pImageData[0] + i * pImg->strides[0]) + j);
+        case RAW_RGGB:
+        case RAW_GRBG:
+        case RAW_GBRG:
+        case RAW_BGGR:
+        case MONO:{
+            for (int i = 0; i < image.rows; ++i){
+                T* pCvRow = image.ptr<T>(i);
+                for (int j = 0; j < image.cols; ++j){
+                    *(pCvRow + j) = *((T*)(pImg->pImageData[0] + i * pImg->strides[0]) + j);
+                }
             }
+            break;
+        }
+        default:{
+            std::cout<<"error: image format is not supported. returned.\n";
+            return;
         }
     }
 }
@@ -246,6 +258,10 @@ void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
     int type = 0;
     int typeOffset = 0;
     switch (pImg->imageFormat){
+        case RAW_RGGB:
+        case RAW_GRBG:
+        case RAW_GBRG:
+        case RAW_BGGR:
         case MONO:{
             typeOffset = 0;
             break;
@@ -255,7 +271,8 @@ void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
             break;
         }
         default:{
-            break;
+            std::cout<<"error: image format is not supported. returned.\n";
+            return;
         }
     }
     FCOPY2 f = NULL;
@@ -299,8 +316,7 @@ void test_opencv(){
 
     Mat image;
     image = imread( "anya18.png", IMREAD_COLOR );
-    if ( !image.data )
-    {
+    if ( !image.data ){
         std::cout<<"No image data \n";
     }
     // namedWindow("Display Image", WINDOW_AUTOSIZE );
@@ -347,6 +363,84 @@ void test_opencv(){
     destruct_img(&pMyImg);
 }
 
+void read_raw_to_img_t(const char* path,
+                       Img_t* pImg,
+                       const IMAGE_FMT imageFormat,
+                       const int width,
+                       const int height,
+                       const int bitDepth,
+                       const int alignment){
+    switch (imageFormat){
+        case RAW_RGGB:
+        case RAW_GRBG:
+        case RAW_GBRG:
+        case RAW_BGGR:{
+            break; // nothing is wrong, just go ahead
+        }
+        default:{
+            std::cout<<"error: image format is not raw. returned.\n";
+            return;
+        }
+    }
 
+    FILE* pFile = NULL;
+    pFile = fopen(path, "r");
+    if (pFile == NULL){
+        std::cout<<"error: fail to open the file.\n";
+        return;
+    }
+
+    construct_img(pImg, 
+                imageFormat,
+                width,
+                height,
+                UNSIGNED,
+                bitDepth,
+                alignment,
+                true);
+
+    fread(pImg->pImageData[0], sizeof(uint8_t), pImg->strides[0] * height, pFile);
+    fclose(pFile);
+}
+
+void test_read_raw(){
+    Img_t* pImg = NULL;
+    pImg =(Img_t*)malloc(sizeof(Img_t));
+    IMAGE_FMT imageFormat = RAW_RGGB;
+    int width = 4256; // 4240
+    int height = 2848; // 2832
+    int bitDepth = 16;
+    int alignment = 1; //32
+    
+    read_raw_to_img_t("../data/rawData.raw",
+                      pImg,
+                      imageFormat,
+                      width,
+                      height,
+                      bitDepth,
+                      alignment);
+
+    view_img_properties(pImg);
+
+    Mat image;
+    convert_img_t_to_cv_mat(image, pImg);
+    imwrite("raw_preview.png", image);
+    
+    Mat image2;
+    image2 = imread( "raw_preview.png", IMREAD_UNCHANGED);
+    if ( !image2.data ){
+        std::cout<<"No image data \n";
+    }
+
+    Img_t* pImg2 = NULL;
+    pImg2 =(Img_t*)malloc(sizeof(Img_t));
+    convert_cv_mat_to_img_t(image2, pImg2, alignment, false);
+
+
+    std::cout<<"is equal: "<<is_image_equal(pImg, pImg2)<<"\n";
+    destruct_img(&pImg2);
+    destruct_img(&pImg);
+
+}
 
 

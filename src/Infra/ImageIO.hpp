@@ -7,5 +7,5 @@ void convert_cv_mat_to_img_t(cv::Mat& image, Img_t* pImg, const int alignment, b
 void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg);
 
 void test_opencv();
-
+void test_read_raw();
 #endif
