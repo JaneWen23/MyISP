@@ -13,7 +13,9 @@ int main(){
     //test_opencv();
     //demo_dwt();
     //test_star_tetrix();
-    test_read_raw();
+    //test_read_raw();
+    //test_img_t_to_multiple_cv_mat();
+    demo_star_tetrix();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

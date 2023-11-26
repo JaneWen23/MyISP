@@ -12,5 +12,6 @@ typedef struct{
 IMG_RTN_CODE star_tetrix_forward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg);
 IMG_RTN_CODE star_tetrix_backward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg);
 
+void demo_star_tetrix();
 void test_star_tetrix();
 #endif

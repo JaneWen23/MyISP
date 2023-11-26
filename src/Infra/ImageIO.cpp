@@ -1,5 +1,6 @@
 #include <iostream>
 #include "ImageIO.hpp"
+#include "../Infra/RandImageGen.hpp"
 
 using namespace cv;
 
@@ -207,9 +208,9 @@ void convert_cv_mat_to_img_t(cv::Mat& image, Img_t* pImg, const int alignment, b
 }
 
 template<typename T>
-void copy_data_from_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
+void copy_data_from_img_t_to_cv_mat(cv::Mat& image, const Img_t* pImg, const int panelId = 0){ // panelId is needed only in some cases
     assert(pImg != NULL);
-    assert(pImg->pImageData != NULL);
+    assert(pImg->pImageData[0] != NULL);
     switch (pImg->imageFormat){
         case RGB:{
             for (int i = 0; i < image.rows; ++i){
@@ -235,6 +236,18 @@ void copy_data_from_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
             }
             break;
         }
+        case Y_C_C_D_RGGB:
+        case Y_C_C_D_GRBG:
+        case Y_C_C_D_GBRG:
+        case Y_C_C_D_BGGR:{
+            for (int i = 0; i < image.rows; ++i){
+                T* pCvRow = image.ptr<T>(i);
+                for (int j = 0; j < image.cols; ++j){
+                    *(pCvRow + j) = *((T*)(pImg->pImageData[panelId] + i * pImg->strides[panelId]) + j);
+                }
+            }
+            break;
+        }
         default:{
             std::cout<<"error: image format is not supported. returned.\n";
             return;
@@ -242,9 +255,9 @@ void copy_data_from_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
     }
 }
 
-typedef void (*FCOPY2)(cv::Mat&, Img_t*);
+typedef void (*FCOPY2)(cv::Mat&, const Img_t*, const int);
 
-void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
+void convert_img_t_to_cv_mat(cv::Mat& image, const Img_t* pImg, const int panelId){
     //  cv::Mat.type()
     //          C1 	C2 	C3 	C4 
     // CV_8U   0   8   16	24
@@ -258,6 +271,10 @@ void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
     int type = 0;
     int typeOffset = 0;
     switch (pImg->imageFormat){
+        case Y_C_C_D_RGGB:
+        case Y_C_C_D_GRBG:
+        case Y_C_C_D_GBRG:
+        case Y_C_C_D_BGGR:
         case RAW_RGGB:
         case RAW_GRBG:
         case RAW_GBRG:
@@ -306,7 +323,52 @@ void convert_img_t_to_cv_mat(cv::Mat& image, Img_t* pImg){
     }
     image.create(pImg->height, pImg->width, type);
     assert(f != NULL);
-    f(image, pImg);
+    f(image, pImg, panelId); // panelId is not always necessary, but when using a function pointer, it should be specified
+}
+
+void convert_img_t_to_cv_mat(cv::Mat* pCvImageArray, const Img_t* pImg){ // overloaded
+    for(int i = 0; i < MAX_NUM_P; ++i){
+        if (pImg->pImageData[i] != NULL){
+            convert_img_t_to_cv_mat(*(pCvImageArray+i), pImg, i); // original
+        }
+    }
+}
+
+void read_raw_to_img_t(const char* path,
+                       Img_t* pImg,
+                       const IMAGE_FMT imageFormat,
+                       const int width,
+                       const int height,
+                       const int bitDepth,
+                       const int alignment){
+    switch (imageFormat){
+        case RAW_RGGB:
+        case RAW_GRBG:
+        case RAW_GBRG:
+        case RAW_BGGR:{
+            break; // nothing is wrong, just go ahead
+        }
+        default:{
+            std::cout<<"error: image format is not raw. returned.\n";
+            return;
+        }
+    }
+    FILE* pFile = NULL;
+    pFile = fopen(path, "r");
+    if (pFile == NULL){
+        std::cout<<"error: fail to open the file.\n";
+        return;
+    }
+    construct_img(pImg, 
+                imageFormat,
+                width,
+                height,
+                UNSIGNED,
+                bitDepth,
+                alignment,
+                true);
+    fread(pImg->pImageData[0], sizeof(uint8_t), pImg->strides[0] * height, pFile);
+    fclose(pFile);
 }
 
 
@@ -363,44 +425,51 @@ void test_opencv(){
     destruct_img(&pMyImg);
 }
 
-void read_raw_to_img_t(const char* path,
-                       Img_t* pImg,
-                       const IMAGE_FMT imageFormat,
-                       const int width,
-                       const int height,
-                       const int bitDepth,
-                       const int alignment){
-    switch (imageFormat){
-        case RAW_RGGB:
-        case RAW_GRBG:
-        case RAW_GBRG:
-        case RAW_BGGR:{
-            break; // nothing is wrong, just go ahead
-        }
-        default:{
-            std::cout<<"error: image format is not raw. returned.\n";
-            return;
-        }
-    }
-
-    FILE* pFile = NULL;
-    pFile = fopen(path, "r");
-    if (pFile == NULL){
-        std::cout<<"error: fail to open the file.\n";
-        return;
-    }
+void test_img_t_to_multiple_cv_mat(){
+    Img_t* pImg =(Img_t*)malloc(sizeof(Img_t));
+    IMAGE_FMT imageFormat = Y_C_C_D_RGGB;
+    int width = 6;
+    int height = 6;
+    SIGN sign = SIGNED;
+    int bitDepth = 16;
+    int alignment = 32;
+    bool allocateImage = true; 
 
     construct_img(pImg, 
-                imageFormat,
-                width,
-                height,
-                UNSIGNED,
-                bitDepth,
-                alignment,
-                true);
+                  imageFormat,
+                  width,
+                  height,
+                  sign,
+                  bitDepth,
+                  alignment,
+                  allocateImage); 
 
-    fread(pImg->pImageData[0], sizeof(uint8_t), pImg->strides[0] * height, pFile);
-    fclose(pFile);
+    ValCfg_t sValCfg = {pImg->sign, rand_num_uniform, {0, 49, 0, 0}};
+
+    set_value(pImg, sValCfg);
+
+    
+    std::cout<<"original:\n";
+    for (int i = 0; i < 4; ++i){
+        ROI_t viewROI = {i, 0, 0, pImg->width, pImg->height};
+        view_image_data(pImg, viewROI);
+        std::cout<<"\n";
+    }
+
+    Mat pCvImageArray[4];
+    convert_img_t_to_cv_mat(pCvImageArray, pImg);
+
+    std::cout<<"convert to cv mat:\n";
+    for (int a = 0; a < 4; ++a){
+        for (int i = 0; i < pImg->height; ++i){
+            for (int j = 0; j < pImg->width; ++j){
+                std::cout<<" "<<pCvImageArray[a].at<int16_t>(i,j);
+            }
+            std::cout<<"\n";
+        }
+        std::cout<<"\n";
+    }
+
 }
 
 void test_read_raw(){
