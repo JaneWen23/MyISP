@@ -433,7 +433,7 @@ void test_star_tetrix(){
     ROI_t viewROI_out_3 = {3, 0, 0, pInImg->width>>1, pInImg->height>>1};
     view_image_data(pOutImg, viewROI_out_3);
 
-    Img_t* pBackOutImg =(Img_t*)malloc(sizeof(Img_t));   
+    Img_t* pBackOutImg =(Img_t*)malloc(sizeof(Img_t));
     star_tetrix_backward(pOutImg, pBackOutImg, (void*)pStarTetrixArg);
     std::cout<<"after backward star-tetrix:\n";
     view_image_data(pBackOutImg, viewROI);
@@ -469,9 +469,19 @@ void demo_star_tetrix(){
 
     Mat pCvImageArray[4];
     convert_img_t_to_cv_mat(pCvImageArray, pOutImg);
-
-    imwrite("star_tetrix_Ybar.png", pCvImageArray[0]);
+    
+    imwrite("star_tetrix_Ybar.tiff", pCvImageArray[0]); // .tiff: is to handle the signed uint16. because it is not easy to change to unsigned here.
     imwrite("star_tetrix_Cb.png", pCvImageArray[1]);
     imwrite("star_tetrix_Cr.png", pCvImageArray[2]);
     imwrite("star_tetrix_Delta.png", pCvImageArray[3]);
+
+    Img_t* pBackOutImg =(Img_t*)malloc(sizeof(Img_t));
+    star_tetrix_backward(pOutImg, pBackOutImg, (void*)pStarTetrixArg);
+
+    std::cout<<"is equal: "<<is_image_equal(pInImg, pBackOutImg)<<"\n";
+
+    pBackOutImg->sign = UNSIGNED; // to make cv mat happy
+    Mat image;
+    convert_img_t_to_cv_mat(image, pBackOutImg);
+    imwrite("star_tetrix_backward.png", image);
 }
