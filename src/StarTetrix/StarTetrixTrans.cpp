@@ -114,8 +114,8 @@ const int find_index(const IMAGE_FMT fmt, const int ch){
             return 3 - ch; // 0 1 2 3 --> 3 2 1 0
         }
         default:{
-            std::cout<<"error: image format is not supported. returned.\n";
-            return -1;
+            std::cout<<"error: image format is not supported. exited.\n";
+            exit(1);
         }
     }
 }
@@ -336,12 +336,12 @@ void convert_4p_to_1p(Img_t* pSrcImg, Img_t* pDstImg){
 
 IMG_RTN_CODE star_tetrix_forward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg){
     if (pInImg->sign != SIGNED){
-        std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. returned.\n";
-        return INVALID_INPUT;
+        std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. exited.\n";
+        exit(1);
     }
     if( ((pInImg->width & 1) == 1) || ((pInImg->height & 1) == 1)){
-        std::cout<<"error: raw image width and height must be even, but got odd number. returned.\n";
-        return INVALID_INPUT;
+        std::cout<<"error: raw image width and height must be even, but got odd number. exited.\n";
+        exit(1);
     }
     // duplicate the input img and process the duplicated version:
     Img_t* pTmpImg =(Img_t*)malloc(sizeof(Img_t));
@@ -365,8 +365,9 @@ IMG_RTN_CODE star_tetrix_forward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetri
 
 IMG_RTN_CODE star_tetrix_backward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg){
     if (pInImg->sign != SIGNED){
-        std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. returned.\n";
+        std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. exited.\n";
         return INVALID_INPUT;
+        exit(1);
     }
 
     convert_4p_to_1p(pInImg,  pOutImg);
@@ -470,10 +471,10 @@ void demo_star_tetrix(){
     Mat pCvImageArray[4];
     convert_img_t_to_cv_mat(pCvImageArray, pOutImg);
     
-    imwrite("star_tetrix_Ybar.tiff", pCvImageArray[0]); // .tiff: is to handle the signed uint16. because it is not easy to change to unsigned here.
-    imwrite("star_tetrix_Cb.png", pCvImageArray[1]);
-    imwrite("star_tetrix_Cr.png", pCvImageArray[2]);
-    imwrite("star_tetrix_Delta.png", pCvImageArray[3]);
+    imwrite("../dump/star_tetrix_Ybar.png", pCvImageArray[0]-512); // -512 to look good
+    imwrite("../dump/star_tetrix_Cb.png", pCvImageArray[1]+256); // +256 to look good
+    imwrite("../dump/star_tetrix_Cr.png", pCvImageArray[2]+256); // +256 to look good
+    imwrite("../dump/star_tetrix_Delta.png", pCvImageArray[3]);
 
     Img_t* pBackOutImg =(Img_t*)malloc(sizeof(Img_t));
     star_tetrix_backward(pOutImg, pBackOutImg, (void*)pStarTetrixArg);
@@ -483,5 +484,5 @@ void demo_star_tetrix(){
     pBackOutImg->sign = UNSIGNED; // to make cv mat happy
     Mat image;
     convert_img_t_to_cv_mat(image, pBackOutImg);
-    imwrite("star_tetrix_backward.png", image);
+    imwrite("../dump/star_tetrix_backward.png", image);
 }

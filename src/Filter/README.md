@@ -38,7 +38,7 @@ sliding_window() is a function to implement 1D and 2D image filtering with a fin
     const ROI_t& sOutImgROI, 
     const KernelCfg_t& sKernelCfg
 
-The input / output image and the ROI structures are defined in "ImgDef.cpp" and they are easy to understand. (The output image ROI means to )
+The input / output image and the ROI structures are defined in "ImgDef.cpp" and they are easy to understand. (The output image ROI determines where to place the output. the combine usage with "kernel center" is powerful when dealing with filtering operations starting from an add sample, which is frequently appeared in wavelet transform and star-tetrix transform.)
 
 Up to 32-bit bit-depth is supported, regardless of signed or unsigned and input / output image should be integers (currently it does not support float types). 
 
@@ -51,8 +51,8 @@ The KernelCfg structure defines the kernel itself, filter behaviors, and the opt
     *    uint8_t* pKernel; // pointer to kernel data; may convert to any type when used; can be NULL if no explicit kernel.
     *    int kerHeight; // if no explicit kernel, this is equivalently window height, minimum is 1
     *    int kerWidth; // if no explicit kernel, this is equivalently window width, minimum is 1
-    *    int horiCenter; // horizontal center (if explicit kernel)
-    *    int vertCenter; // vertical center (if explicit kernel)
+    *    int horiCenter; // horizontal center (if explicit kernel) (determines where the padding schemes will be performed; kernel center will be placed "onto" the row 0, col 0 of the input image and then start to pad.)
+    *    int vertCenter; // vertical center (if explicit kernel) (determines where the padding schemes will be performed)
 
 * members about the filtering behaviors:
 

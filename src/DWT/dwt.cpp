@@ -324,7 +324,7 @@ void test_dwt(){
 
 void demo_dwt(){
     Mat image;
-    image = imread( "anya18.png", IMREAD_GRAYSCALE );
+    image = imread( "../data/anya18.png", IMREAD_GRAYSCALE );
     if ( !image.data )
     {
         std::cout<<"No image data \n";
@@ -348,14 +348,14 @@ void demo_dwt(){
 
     Mat image2;
     convert_img_t_to_cv_mat(image2, pOutImg);
-    imwrite("dwtout.png", image2);
+    imwrite("../dump/dwtout.png", image2);
 
     Img_t* pOutBackImg = (Img_t*)malloc(sizeof(Img_t));
     dwt_backward(pOutImg, pOutBackImg, (void*)pDWTArg);
     
     Mat image3;
     convert_img_t_to_cv_mat(image3, pOutBackImg);
-    imwrite("idwtout.png", image3);
+    imwrite("../dump/idwtout.png", image3);
 
     destruct_img(&pImg);
     destruct_img(&pOutImg);

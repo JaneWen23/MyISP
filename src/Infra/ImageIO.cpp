@@ -249,8 +249,8 @@ void copy_data_from_img_t_to_cv_mat(cv::Mat& image, const Img_t* pImg, const int
             break;
         }
         default:{
-            std::cout<<"error: image format is not supported. returned.\n";
-            return;
+            std::cout<<"error: image format is not supported. exited.\n";
+            exit(1);
         }
     }
 }
@@ -288,8 +288,8 @@ void convert_img_t_to_cv_mat(cv::Mat& image, const Img_t* pImg, const int panelI
             break;
         }
         default:{
-            std::cout<<"error: image format is not supported. returned.\n";
-            return;
+            std::cout<<"error: image format is not supported. exited.\n";
+            exit(1);
         }
     }
     FCOPY2 f = NULL;
@@ -303,8 +303,8 @@ void convert_img_t_to_cv_mat(cv::Mat& image, const Img_t* pImg, const int panelI
             f = copy_data_from_img_t_to_cv_mat<uint16_t>;
         }
         else if (pImg->bitDepth <= 32){
-            std::cout<< "error: cv mat does not support uint32_t. returned.\n";
-            return;
+            std::cout<< "error: cv mat does not support uint32_t. exited.\n";
+            exit(1);
         }
     }
     else{
@@ -349,15 +349,15 @@ void read_raw_to_img_t(const char* path,
             break; // nothing is wrong, just go ahead
         }
         default:{
-            std::cout<<"error: image format is not raw. returned.\n";
-            return;
+            std::cout<<"error: image format is not raw. exited.\n";
+            exit(1);
         }
     }
     FILE* pFile = NULL;
     pFile = fopen(path, "r");
     if (pFile == NULL){
-        std::cout<<"error: fail to open the file.\n";
-        return;
+        std::cout<<"error: fail to open the file. exited\n";
+        exit(1);
     }
     construct_img(pImg, 
                 imageFormat,
@@ -377,7 +377,7 @@ void test_opencv(){
     //Mat image(15, 15, CV_32SC1, Scalar(-8));
 
     Mat image;
-    image = imread( "anya18.png", IMREAD_COLOR );
+    image = imread( "../data/anya18.png", IMREAD_COLOR );
     if ( !image.data ){
         std::cout<<"No image data \n";
     }
@@ -420,7 +420,7 @@ void test_opencv(){
     // std::cout<<" row, col:" << image2.rows <<" "<<image2.cols <<"\n";
     // std::cout<<" type:" << image2.type() <<"\n";
 
-    imwrite("out.png", image2);
+    imwrite("../dump/out.png", image2);
     
     destruct_img(&pMyImg);
 }
@@ -493,10 +493,10 @@ void test_read_raw(){
 
     Mat image;
     convert_img_t_to_cv_mat(image, pImg);
-    imwrite("raw_preview.png", image);
+    imwrite("../dump/raw_preview.png", image);
     
     Mat image2;
-    image2 = imread( "raw_preview.png", IMREAD_UNCHANGED);
+    image2 = imread( "../dump/raw_preview.png", IMREAD_UNCHANGED);
     if ( !image2.data ){
         std::cout<<"No image data \n";
     }
