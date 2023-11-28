@@ -30,7 +30,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "miDebuggerPath": "/usr/bin/gdb"
+            "miDebuggerPath": "gdb"
         }
     ]
 }

@@ -15,7 +15,10 @@ int main(){
     //test_star_tetrix();
     //test_read_raw();
     //test_img_t_to_multiple_cv_mat();
-    demo_star_tetrix();
+    //demo_star_tetrix();
+    char* p = (char*)malloc(10);
+    free(p);
+    p[0] = 1;
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

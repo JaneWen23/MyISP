@@ -15,6 +15,7 @@
                 "-g",
                 "${file}",
                 "-o",
+                "-fsanitize=address", // ASAN
                 "-fopenmp", // not yet in use
                 "${fileDirname}/${fileBasenameNoExtension}",
             ],
