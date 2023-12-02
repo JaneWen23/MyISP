@@ -242,6 +242,21 @@ void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
                 view_image_data_packed(pImg, sViewROI);
                 break;
             }
+            case YUV420:{
+                assert(sViewROI.panelId == 1012);
+                ROI_t sTmpROI = sViewROI;
+                sTmpROI.panelId = 0;
+                view_image_data_planar(pImg, sTmpROI);
+                sTmpROI.panelId = 1;
+                sTmpROI.startRow = sViewROI.startRow >> 1;
+                sTmpROI.startCol = sViewROI.startCol >> 1;
+                sTmpROI.roiHeight = sViewROI.roiHeight >> 1;
+                sTmpROI.roiWidth = sViewROI.roiWidth >> 1;
+                view_image_data_planar(pImg, sTmpROI);
+                sTmpROI.panelId = 2;
+                view_image_data_planar(pImg, sTmpROI);
+                break;
+            }
             default:{
                 int cNum = 0;
                 ROI_t sTmpROI = sViewROI;
