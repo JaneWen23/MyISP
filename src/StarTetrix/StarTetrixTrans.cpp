@@ -304,7 +304,7 @@ void convert_1p_to_4p(Img_t* pSrcImg, Img_t* pDstImg){
     for (int i = 0; i < 4; ++i){
         ROI_t sSrcImgROI = generate_img_roi(pSrcImg->width, pSrcImg->height, pSrcImg->imageFormat, tmpCh[i]);
         ROI_t sDstImgROI = {tmpId[i], 0, 0, pDstImg->width, pDstImg->height};
-        sliding_window_1x1(pSrcImg, sSrcImgROI, pDstImg, sDstImgROI, sKerCfg);
+        image_sampling(pSrcImg, sSrcImgROI, pDstImg, sDstImgROI, sKerCfg);
     }
 }
 
@@ -330,7 +330,7 @@ void convert_4p_to_1p(Img_t* pSrcImg, Img_t* pDstImg){
     for (int i = 0; i < 4; ++i){
         ROI_t sSrcImgROI = {tmpId[i], 0, 0, pSrcImg->width, pSrcImg->height};
         ROI_t sDstImgROI = generate_img_roi(pDstImg->width, pDstImg->height, pDstImg->imageFormat, tmpCh[i]);
-        sliding_window_1x1(pSrcImg, sSrcImgROI, pDstImg, sDstImgROI, sKerCfg);
+        image_sampling(pSrcImg, sSrcImgROI, pDstImg, sDstImgROI, sKerCfg);
     }
 }
 
