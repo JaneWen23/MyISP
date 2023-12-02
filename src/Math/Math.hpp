@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 template<typename T>
-const T dot_product(const T* a, const T* b, const int vecLen){ // not in use
+const T dot_product(const T* a, const T* b, const int vecLen){
     T res = 0;
     int i = 0;
     // parallel computation, maybe
@@ -121,6 +121,30 @@ const T StarTetrix_bwd_Y2(const T** a, const T** b = NULL, const int vecLen = 9)
 template<typename T>
 struct Formulas_T{
     const T (*f)(const T**, const T**, const int);
+}; // note: cannot typedef, because there is no type yet.
+
+
+template<typename T>
+const T color_correction(const T** a, const T** colorMatRows, const int idx){
+    // "**a" is the addr of channel 0 (panel 0).
+    return (**(a) * (*colorMatRows[idx]) + **(a+1) * (*colorMatRows[idx]+1) + **(a+2) * (*colorMatRows[idx]+2)) >> 8;
+}
+
+template<typename T>
+const T rgb_to_yuv_bt709(const T** a, const T** b, const int idx){
+    // "**a" is the addr of channel 0 (panel 0).
+    const T colorMatRow1[3] = {66, 129, 25};
+    const T colorMatRow2[3] = {-38, -74, 112};
+    const T colorMatRow3[3] = {112, -94, -18};
+    const T delta[3] = {128, 128, 128}; // may use another name
+    const T offsets[3] = {16, 218, 128}; // may use another name
+    const T* colorMatRows[3] = {colorMatRow1, colorMatRow2, colorMatRow3};
+    return ((**(a) * (*colorMatRows[idx]) + **(a+1) * (*colorMatRows[idx]+1) + **(a+2) * (*colorMatRows[idx]+2) + delta[idx]) >> 8) + offsets[idx];
+}
+
+template<typename T>
+struct Formulas_1x1_T{
+    const T (*f1x1)(const T**, const T**, const int);
 }; // note: cannot typedef, because there is no type yet.
 
 #endif
