@@ -464,10 +464,12 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
                 for (int c = 0; c < MAX_NUM_P; ++c){
                     heights[c] = pSrcImg->height; // if there are less than MAX_NUM_P panels, just do not use.
                 }
+                break;
             }
             case YUV420:{
                 heights[0] = pSrcImg->height;
                 heights[1] = heights[2] = pSrcImg->height >> 1;
+                break;
             }
             default:{
                 std::cout<<"error: image format is not supported. exited.\n";
