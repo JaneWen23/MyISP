@@ -103,7 +103,7 @@ void test_rand_image_gen(){
     std::srand(std::time(NULL)); // only need once (maybe for each distribution). how to encapsulate?
 
 
-    Img_t* pMyImg = NULL; // initialze
+    Img_t* pMyImg = NULL; // initialize
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB;
     size_t width = 50;
