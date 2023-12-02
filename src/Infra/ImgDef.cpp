@@ -100,31 +100,16 @@ void view_img_properties(const Img_t* pImg){
 }
 
 template<typename T>
-void print_data(uint8_t* pData){
-    std::cout<<"\t"<< + *((T*)(pData)); // "+" is to make output as digit, not as char
+void print_data_single(uint8_t* pData){
+    std::cout<< + *((T*)(pData)); // "+" is to make output as digit, not as char
 }
 
 typedef void (*FP)(uint8_t*);
 
-void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
+void view_image_data_planar(const Img_t* pImg, const ROI_t& sViewROI){
+    assert(sViewROI.panelId < MAX_NUM_P);
     if(pImg->pImageData[sViewROI.panelId] == NULL){
         std::cout<<"error: the panel to view is not allocated yet. returned.\n";
-        return;
-    }
-    if(sViewROI.startRow > pImg->height){
-        std::cout<<"error: start row to view is greater than image height. returned.\n";
-        return;
-    }
-    if(sViewROI.startCol > pImg->width){
-        std::cout<<"error: start column to view is greater than image width. returned.\n";
-        return;
-    }
-    if(sViewROI.startRow + sViewROI.roiHeight > pImg->height){
-        std::cout<<"error: end row to view excesses the image height. returned.\n";
-        return;
-    }
-    if(sViewROI.startCol + sViewROI.roiWidth > pImg->width){
-        std::cout<<"error: end column to view excesses the image width. returned.\n";
         return;
     }
 
@@ -132,38 +117,155 @@ void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
     int scale = 0;
     if (pImg->sign == UNSIGNED){
         if (pImg->bitDepth <= 8){
-            f = print_data<uint8_t>;
+            f = print_data_single<uint8_t>;
             scale = sizeof(uint8_t);
         }
         else if (pImg->bitDepth <= 16){
-            f = print_data<uint16_t>;
+            f = print_data_single<uint16_t>;
             scale = sizeof(uint16_t);
         }
         else if (pImg->bitDepth <= 32){
-            f = print_data<uint32_t>;
+            f = print_data_single<uint32_t>;
             scale = sizeof(uint32_t);
         }
     }
     else {
         if (pImg->bitDepth <= 8){
-            f = print_data<int8_t>;
+            f = print_data_single<int8_t>;
             scale = sizeof(int8_t);
         }
         else if (pImg->bitDepth <= 16){
-            f = print_data<int16_t>;
+            f = print_data_single<int16_t>;
             scale = sizeof(int16_t);
         }
         else if (pImg->bitDepth <= 32){
-            f = print_data<int>;
+            f = print_data_single<int>;
             scale = sizeof(int);
         }
     }
 
-    for (int j = sViewROI.startRow; j < sViewROI.startRow + sViewROI.roiHeight; ++j){
-        for (int i = sViewROI.startCol; i < sViewROI.startCol + sViewROI.roiWidth; ++i){
-            f(pImg->pImageData[sViewROI.panelId] + j*pImg->strides[sViewROI.panelId] + i*scale);
+    uint8_t* pData = NULL; // addr of data
+    std::cout<<"panel "<<sViewROI.panelId<<":\n";
+    for (int i = sViewROI.startRow; i < sViewROI.startRow + sViewROI.roiHeight; ++i){
+        pData = pImg->pImageData[sViewROI.panelId] + i*pImg->strides[sViewROI.panelId] + sViewROI.startCol * scale; // TODO: YUV starting row&col!!!!!
+        for (int j = sViewROI.startCol; j < sViewROI.startCol + sViewROI.roiWidth; ++j){
+            std::cout<<"\t";
+            f(pData);
+            pData += scale;
         }
         std::cout<<'\n';
+    }
+}
+
+void view_image_data_packed(const Img_t* pImg, const ROI_t& sViewROI){
+    assert(sViewROI.panelId >= MAX_NUM_P);
+    assert(pImg->imageFormat == RGB); // currently only support RGB
+    int cNum = 3; // currently set to 3 for RGB
+    FP f = NULL;
+    int scale = 0;
+    if (pImg->sign == UNSIGNED){
+        if (pImg->bitDepth <= 8){
+            f = print_data_single<uint8_t>;
+            scale = sizeof(uint8_t);
+        }
+        else if (pImg->bitDepth <= 16){
+            f = print_data_single<uint16_t>;
+            scale = sizeof(uint16_t);
+        }
+        else if (pImg->bitDepth <= 32){
+            f = print_data_single<uint32_t>;
+            scale = sizeof(uint32_t);
+        }
+    }
+    else {
+        if (pImg->bitDepth <= 8){
+            f = print_data_single<int8_t>;
+            scale = sizeof(int8_t);
+        }
+        else if (pImg->bitDepth <= 16){
+            f = print_data_single<int16_t>;
+            scale = sizeof(int16_t);
+        }
+        else if (pImg->bitDepth <= 32){
+            f = print_data_single<int>;
+            scale = sizeof(int);
+        }
+    }
+
+    uint8_t* addr[MAX_NUM_P] = {NULL}; // addr of data
+    for (int i = sViewROI.startRow; i < sViewROI.startRow + sViewROI.roiHeight; ++i){
+        for (int c = 0; c < cNum; ++c){
+            addr[c] = pImg->pImageData[c] + i * pImg->strides[c] + sViewROI.startCol * scale;
+        }
+        for (int j = sViewROI.startCol; j < sViewROI.startCol + sViewROI.roiWidth; ++j){
+            std::cout<<"\t(";
+            for (int c = 0; c < cNum; ++c){
+                f(addr[c]);
+                std::cout<<",";
+            }
+            std::cout<<")";
+            for (int c = 0; c < cNum; ++c){
+                addr[c] += scale;
+            }
+        }
+        std::cout<<'\n';
+    }
+}
+
+void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
+    //check validity:
+    if(sViewROI.startRow > pImg->height){
+        std::cout<<"error: start_row to view is greater than image height. exited.\n";
+        exit(1);
+    }
+    if(sViewROI.startCol > pImg->width){
+        std::cout<<"error: start_column to view is greater than image width. exited.\n";
+        exit(1);
+    }
+    if(sViewROI.startRow + sViewROI.roiHeight > pImg->height){
+        std::cout<<"error: end_row to view excesses the image height. exited.\n";
+        exit(1);
+    }
+    if(sViewROI.startCol + sViewROI.roiWidth > pImg->width){
+        std::cout<<"error: end_column to view excesses the image width. exited.\n";
+        exit(1);
+    }
+
+    if (sViewROI.panelId < MAX_NUM_P){
+        view_image_data_planar(pImg, sViewROI);
+        return;
+    } 
+    else {
+        switch (pImg->imageFormat){
+            case RGB:{
+                assert(sViewROI.panelId == 1012);
+                view_image_data_packed(pImg, sViewROI);
+                break;
+            }
+            default:{
+                int cNum = 0;
+                ROI_t sTmpROI = sViewROI;
+                switch (sViewROI.panelId){
+                    case 10123:{
+                        cNum = 4;
+                        break;
+                    }
+                    case 1012:{
+                        cNum = 3;
+                        break;
+                    }
+                    default:{
+                        std::cout<<"error: currently the panelId is not supported. exited.\n";
+                        exit(1);
+                    }
+                }
+                for (int c = 0; c < cNum; ++c){
+                    sTmpROI.panelId = c;
+                    view_image_data_planar(pImg, sTmpROI);
+                }
+                break;
+            }
+        }
     }
 }
 
@@ -197,6 +299,10 @@ void set_strides(Img_t* pImg){
         case Y_C_C_D_BGGR:{
             pImg->strides[0] = pImg->strides[1] = pImg->strides[2] = pImg->strides[3] = bytes_per_line;
             break;
+        }
+        case YUV420:{
+            pImg->strides[0] = bytes_per_line;
+            pImg->strides[1] = pImg->strides[2] = get_next_multiple((pImg->width>>1) * ((pImg->bitDepth + 7)/8), pImg->alignment);
         }
         default:
             break;
@@ -246,6 +352,22 @@ IMG_RTN_CODE allocate_image_data(Img_t* pImg){
             }
             break;
         }
+        case YUV420:{
+            assert(pImg->pImageData[0] == NULL);
+            assert(pImg->pImageData[1] == NULL);
+            assert(pImg->pImageData[2] == NULL);
+            pImg->pImageData[0] = (uint8_t*)malloc(pImg->height * pImg->strides[0]);
+            //pImg->pImageData[1] = (uint8_t*)malloc(pImg->height * pImg->strides[1]);
+            //pImg->pImageData[2] = (uint8_t*)malloc(pImg->height * pImg->strides[2]);
+            pImg->pImageData[1] = (uint8_t*)malloc((pImg->height>>1) * pImg->strides[1]);
+            pImg->pImageData[2] = (uint8_t*)malloc((pImg->height>>1) * pImg->strides[2]);
+            for (int c = 0; c < 3; c++){
+                if (pImg->pImageData[c] == NULL){
+                    return ALLOCATION_FAIL;
+                }
+            }
+            break;
+        }
         default:
             return ALLOCATION_FAIL;
     }
@@ -262,7 +384,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
                             const bool allocateImage){
     // takes in args to set up the properties of the img type; 
     if (pImg == NULL){
-        std::cout<<"Img_t object is not allocated.\n";
+        std::cout<<"error: Img_t object is not allocated.\n";
         return ALLOCATION_FAIL;
     }
     pImg->imageFormat = imageFormat;
@@ -273,7 +395,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
     pImg->alignment = alignment;
  
     if (alignment == 0){
-        std::cout<<" alignment should be >= 1 but got 0 instead.\n";
+        std::cout<<" error: alignment should be >= 1 but got 0 instead.\n";
         return INVALID_INPUT;
     }
     set_strides(pImg);
@@ -282,7 +404,7 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
     }  
     if (allocateImage){
         if (allocate_image_data(pImg) != SUCCEED){
-            std::cout<<"image is not successfully allocated.\n";
+            std::cout<<"error: image is not successfully allocated.\n";
             return ALLOCATION_FAIL;
         }
     }
@@ -293,15 +415,15 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
     // dose NOT set ROI because ROI size is in pixel (each pixel may take 1, 2 or 4 bytes), 
     // but the Img_t cannot handle different data types.
     if (pSrcImg == NULL){
-        std::cout<<"source Img_t object is not allocated.\n";
+        std::cout<<"error: source Img_t object is not allocated.\n";
         return ALLOCATION_FAIL;
     }
     if (pSrcImg->pImageData[0] == NULL){
-        std::cout<<"source image is not reachable, maybe it is not allocated.\n";
+        std::cout<<"error: source image is not reachable, maybe it is not allocated.\n";
         return ALLOCATION_FAIL;
     }
     if (pDstImg == NULL){
-        std::cout<<"destination Img_t object is not allocated.\n";
+        std::cout<<"error: destination Img_t object is not allocated.\n";
         return ALLOCATION_FAIL;
     }
     if (construct_img(pDstImg, 
@@ -312,10 +434,34 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
                     pSrcImg->bitDepth,
                     pSrcImg->alignment,
                     true) == SUCCEED){
-        // copy image data
+        int heights[MAX_NUM_P] = {0};
+        switch (pSrcImg->imageFormat){
+            case MONO:
+            case RGB:
+            case RAW_RGGB:
+            case RAW_GRBG:
+            case RAW_GBRG:
+            case RAW_BGGR:
+            case Y_C_C_D_RGGB:
+            case Y_C_C_D_GRBG:
+            case Y_C_C_D_GBRG:
+            case Y_C_C_D_BGGR:{
+                for (int c = 0; c < MAX_NUM_P; ++c){
+                    heights[c] = pSrcImg->height; // if there are less than MAX_NUM_P panels, just do not use.
+                }
+            }
+            case YUV420:{
+                heights[0] = pSrcImg->height;
+                heights[1] = heights[2] = pSrcImg->height >> 1;
+            }
+            default:{
+                std::cout<<"error: image format is not supported. exited.\n";
+                exit(1);
+            }
+        }
         for (int c = 0; c < MAX_NUM_P; ++c){
-            if (pSrcImg->pImageData[0] != NULL){
-                for (int i = 0; i < pSrcImg->height; ++i){
+            if (pSrcImg->pImageData[c] != NULL){
+                for (int i = 0; i < heights[c]; ++i){
                     for (int j = 0; j < pSrcImg->strides[c]; ++j){
                         *(pDstImg->pImageData[c] + i * (pSrcImg->strides[c]) + j) = *(pSrcImg->pImageData[c] + i * (pSrcImg->strides[c]) + j);
                     }
@@ -324,7 +470,7 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
         }
     }
     else{
-        std::cout<<"destination image not allocated successfully.\n";
+        std::cout<<"error: destination image not allocated successfully.\n";
         return ALLOCATION_FAIL;
     }
     return SUCCEED;
