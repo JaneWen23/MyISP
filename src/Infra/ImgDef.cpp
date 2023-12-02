@@ -147,7 +147,7 @@ void view_image_data_planar(const Img_t* pImg, const ROI_t& sViewROI){
     uint8_t* pData = NULL; // addr of data
     std::cout<<"panel "<<sViewROI.panelId<<":\n";
     for (int i = sViewROI.startRow; i < sViewROI.startRow + sViewROI.roiHeight; ++i){
-        pData = pImg->pImageData[sViewROI.panelId] + i*pImg->strides[sViewROI.panelId] + sViewROI.startCol * scale; // TODO: YUV starting row&col!!!!!
+        pData = pImg->pImageData[sViewROI.panelId] + i*pImg->strides[sViewROI.panelId] + sViewROI.startCol * scale;
         for (int j = sViewROI.startCol; j < sViewROI.startCol + sViewROI.roiWidth; ++j){
             std::cout<<"\t";
             f(pData);

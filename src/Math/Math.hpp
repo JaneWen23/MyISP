@@ -127,7 +127,7 @@ struct Formulas_T{
 template<typename T>
 const T color_correction(const T** a, const T** colorMatRows, const int idx){
     // "**a" is the addr of channel 0 (panel 0).
-    return (**(a) * (*colorMatRows[idx]) + **(a+1) * (*colorMatRows[idx]+1) + **(a+2) * (*colorMatRows[idx]+2)) >> 8;
+    return (**(a) * (*colorMatRows[idx]) + **(a+1) * (*(colorMatRows[idx]+1)) + **(a+2) * (*(colorMatRows[idx]+2))) >> 8;
 }
 
 template<typename T>
@@ -139,7 +139,7 @@ const T rgb_to_yuv_bt709(const T** a, const T** b, const int idx){
     const T delta[3] = {128, 128, 128}; // may use another name
     const T offsets[3] = {16, 218, 128}; // may use another name
     const T* colorMatRows[3] = {colorMatRow1, colorMatRow2, colorMatRow3};
-    return ((**(a) * (*colorMatRows[idx]) + **(a+1) * (*colorMatRows[idx]+1) + **(a+2) * (*colorMatRows[idx]+2) + delta[idx]) >> 8) + offsets[idx];
+    return ((**(a) * (*colorMatRows[idx]) + **(a+1) * (*(colorMatRows[idx]+1)) + **(a+2) * (*(colorMatRows[idx]+2)) + delta[idx]) >> 8) + offsets[idx];
 }
 
 template<typename T>

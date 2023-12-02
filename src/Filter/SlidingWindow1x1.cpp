@@ -40,7 +40,7 @@ const int find_output_ch_yuv420(int* cList, const int panelId, const int ii, con
 
 typedef const int (*FCH)(int*, const int, const int, const int);
 
-void set_in_img_iter_manipulation(const IMAGE_FMT fmt, FMAP* f_hori, FMAP* f_vert){
+void set_img_iter_manipulation(const IMAGE_FMT fmt, FMAP* f_hori, FMAP* f_vert){
         switch (fmt){
         case RGB:{
             f_hori[0] = f_hori[1] = f_hori[2] = iter_map3;
@@ -62,38 +62,16 @@ void set_in_img_iter_manipulation(const IMAGE_FMT fmt, FMAP* f_hori, FMAP* f_ver
 }
 
 
-void set_out_img_iter_manipulation(const IMAGE_FMT fmt, FMAP* g_hori, FMAP* g_vert){
-    switch (fmt){
-        case RGB:{
-            g_hori[0] = g_hori[1] = g_hori[2] = iter_map3;
-            g_vert[0] = g_vert[1] = g_vert[2] = iter_map1;
-            break;
-        }
-        case YUV420:{
-            g_vert[0] = iter_map1;
-            g_vert[1] = g_vert[2] = iter_map2;
-            g_hori[0] = iter_map3;
-            g_hori[1] = g_hori[2] = iter_map4;
-            break;
-        }
-        default:{
-            std::cout<<"error: output image format not supported. exited.\n";
-            exit(1);
-        }
-    }
-}
-
-
-void set_output_ch_manipulation(const int panelId, const IMAGE_FMT fmt, FCH f_ch){
+void set_output_ch_manipulation(const int panelId, const IMAGE_FMT fmt, FCH* pf_ch){
     if (panelId < MAX_NUM_P){ // single panel is chosen
-        f_ch = find_output_ch_user;
+        *pf_ch = find_output_ch_user;
     } 
     else if (panelId == 1012){ // panel 0, 1, and 2
         if (fmt == RGB){
-            f_ch = find_output_ch_rgb;
+            *pf_ch = find_output_ch_rgb;
         }
         else if (fmt == YUV420){
-            f_ch = find_output_ch_yuv420;
+            *pf_ch = find_output_ch_yuv420;
         }
     }
     else{
@@ -118,26 +96,24 @@ void perform_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, co
 
     for (int ii = 0; ii < sOutImgROI.roiHeight; ii += sKerCfg.vertUpsample){ // ii is row index of output image
         // start addr of row i:
-        yAddr[0] = (T*)(pOutImg->pImageData[0] + g_vert[0](ii)* pOutImg->strides[0]);
-        yAddr[1] = (T*)(pOutImg->pImageData[1] + g_vert[1](ii)* pOutImg->strides[1]);
-        yAddr[2] = (T*)(pOutImg->pImageData[2] + g_vert[2](ii)* pOutImg->strides[2]);
-        xAddr[0] = (T*)(pOutImg->pImageData[0] + f_vert[0](i) * pInImg->strides[0]);
-        xAddr[1] = (T*)(pOutImg->pImageData[1] + f_vert[1](i) * pInImg->strides[1]);
-        xAddr[2] = (T*)(pOutImg->pImageData[2] + f_vert[2](i) * pInImg->strides[2]);
+        yAddr[0] = (T*)(pOutImg->pImageData[0] + g_vert[0](ii)* pOutImg->strides[0]) + g_vert[0](sOutImgROI.startCol);
+        yAddr[1] = (T*)(pOutImg->pImageData[1] + g_vert[1](ii)* pOutImg->strides[1]) + g_vert[1](sOutImgROI.startCol);
+        yAddr[2] = (T*)(pOutImg->pImageData[2] + g_vert[2](ii)* pOutImg->strides[2]) + g_vert[2](sOutImgROI.startCol);
+        xAddr[0] = (T*)(pInImg->pImageData[0] + f_vert[0](i) * pInImg->strides[0]) + f_vert[0](sInImgROI.startCol);
+        xAddr[1] = (T*)(pInImg->pImageData[1] + f_vert[1](i) * pInImg->strides[1]) + f_vert[1](sInImgROI.startCol);
+        xAddr[2] = (T*)(pInImg->pImageData[2] + f_vert[2](i) * pInImg->strides[2]) + f_vert[2](sInImgROI.startCol);
         for (int jj = 0; jj < sOutImgROI.roiWidth; jj += sKerCfg.horiUpsample){ // jj is column index of output image
             // YUV420/422 is not well-defined with step and upsample, so, if any of them is not 1 for YUV420/422, the behavior might be strange.
-            yAddr[0] += g_hori[0](jj) + sKerCfg.horiUpsample; // should increment AFTER operation!!!
-            yAddr[1] += g_hori[1](jj) + sKerCfg.horiUpsample;
-            yAddr[2] += g_hori[2](jj) + sKerCfg.horiUpsample;
-            xAddr[0] += f_hori[0](j) + sKerCfg.horiStep;
-            xAddr[1] += f_hori[1](j) + sKerCfg.horiStep;
-            xAddr[2] += f_hori[2](j) + sKerCfg.horiStep;
-
             outChNum = f_ch(cList, sOutImgROI.panelId, ii, jj);
             for(int c = 0; c < outChNum; ++c){
                 *(yAddr[cList[c]]) = Formula.f1x1((const T**)xAddr, (const T**)sKerCfg.pKernel, cList[c]);
             }
-            
+            yAddr[0] += g_hori[0](jj) * sKerCfg.horiUpsample;
+            yAddr[1] += g_hori[1](jj) * sKerCfg.horiUpsample;
+            yAddr[2] += g_hori[2](jj) * sKerCfg.horiUpsample;
+            xAddr[0] += f_hori[0](j) * sKerCfg.horiStep;
+            xAddr[1] += f_hori[1](j) * sKerCfg.horiStep;
+            xAddr[2] += f_hori[2](j) * sKerCfg.horiStep;
             j += sKerCfg.horiStep;
         }
         i += sKerCfg.vertStep;
@@ -157,11 +133,11 @@ IMG_RTN_CODE sliding_window_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img
     FMAP f_vert[3] = {NULL}; // manipulate input image iterator to grab a pixel
     FMAP g_hori[3] = {NULL}; // manipulate output image iterator to grab a pixel
     FMAP g_vert[3] = {NULL}; // manipulate output image iterator to grab a pixel
-    FCH f_ch = NULL;
+    FCH f_ch[1] = {NULL};
     F f = NULL;
 
-    set_in_img_iter_manipulation(pInImg->imageFormat, f_hori, f_vert);
-    set_out_img_iter_manipulation(pOutImg->imageFormat, g_hori, g_vert);
+    set_img_iter_manipulation(pInImg->imageFormat, f_hori, f_vert); // in img
+    set_img_iter_manipulation(pOutImg->imageFormat, g_hori, g_vert); // out img
     set_output_ch_manipulation(sOutImgROI.panelId, pOutImg->imageFormat, f_ch);
 
     if (pOutImg->sign == UNSIGNED){
@@ -188,7 +164,7 @@ IMG_RTN_CODE sliding_window_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img
     }
 
     f(pInImg, sInImgROI, pOutImg, sOutImgROI, 
-      f_hori, f_vert, g_hori, g_vert, f_ch, 
+      f_hori, f_vert, g_hori, g_vert, f_ch[0], 
       sKerCfg);
 
     return SUCCEED;
@@ -196,7 +172,7 @@ IMG_RTN_CODE sliding_window_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img
 
 void test_sliding_window_1x1(){
     Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
-    IMAGE_FMT imageFormat = YUV420;
+    IMAGE_FMT imageFormat = RGB;
     int width = 4;
     int height = 4;
     SIGN sign = SIGNED;
@@ -222,42 +198,107 @@ void test_sliding_window_1x1(){
     ROI_t viewROI_1 = {1012,0,0,width,height}; // 1012 means panel 0, 1, 2 are all chosen
     view_image_data(pImg1, viewROI_1);
 
-    // Img_t* pImg2 =(Img_t*)malloc(sizeof(Img_t));
-    // construct_img(pImg2, 
-    //               imageFormat,
-    //               width,
-    //               height,
-    //               sign,
-    //               bitDepth,
-    //               alignment,
-    //               allocateImage);
+    Img_t* pImg2 =(Img_t*)malloc(sizeof(Img_t));
+    construct_img(pImg2, 
+                  imageFormat,
+                  width,
+                  height,
+                  sign,
+                  bitDepth,
+                  alignment,
+                  allocateImage);
 
-    // Formulas_1x1_T<int> Fml;
-    // Fml.f1x1 = color_correction;
-    // const int colorMatRow1[3] = {278, -10, -8};
-    // const int colorMatRow2[3] = {-12, 269, -8};
-    // const int colorMatRow3[3] = {-10, -3, 272};
-    // //NOTE: should make sure that sum of column is unit one (256 or so)
-    // const int* colorMatRows[3] = {colorMatRow1, colorMatRow2, colorMatRow3};
-    // const KernelCfg_t sKernelCfg = {(uint8_t*)colorMatRows, // in use
-    //                                 1, 1, 0, 0, // don't care for 1x1 window
-    //                                 ZEROPADDING, // nonsense
-    //                                 1, 1, 1, 1, // usually keep them all 1's for 1x1 window
-    //                                 false,  // nonsense
-    //                                 (void*)Fml.f1x1, // in use
-    //                                 false // nonsense
-    //                                 };
+    Formulas_1x1_T<int> Fml;
+    Fml.f1x1 = color_correction;
+    const int colorMatRow1[3] = {278, -10, -8};
+    const int colorMatRow2[3] = {-12, 269, -8};
+    const int colorMatRow3[3] = {-10, -3, 272};
+    //NOTE: should make sure that sum of column is unit one (256 or so)
+    const int* colorMatRows[3] = {colorMatRow1, colorMatRow2, colorMatRow3};
+    const KernelCfg_t sKernelCfg = {(uint8_t*)colorMatRows, // in use
+                                    1, 1, 0, 0, // don't care for 1x1 window
+                                    ZEROPADDING, // nonsense
+                                    1, 1, 1, 1, // usually keep them all 1's for 1x1 window
+                                    false,  // nonsense
+                                    (void*)Fml.f1x1, // in use
+                                    false // nonsense
+                                    };
 
-    // ROI_t sInImgROI = {1012, 0, 0, width, height}; // 1012 means panel 0, 1, 2 are all chosen
-    // ROI_t sOutImgROI = {1012, 0, 0, width, height};
+    ROI_t sInImgROI = {1012, 0, 0, width, height}; // 1012 means panel 0, 1, 2 are all chosen
+    ROI_t sOutImgROI = {1012, 0, 0, width, height};
 
 
-    // sliding_window_1x1(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
+    sliding_window_1x1(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
 
-    // std::cout<<"filtered:\n";
-    // ROI_t viewROI_2 = {1012,0,0,width,height};
-    // view_image_data(pImg2, viewROI_2);
+    std::cout<<"filtered:\n";
+    ROI_t viewROI_2 = {1012,0,0,width,height};
+    view_image_data(pImg2, viewROI_2);
 
-    // destruct_img(&pImg1);
-    // destruct_img(&pImg2);
+    destruct_img(&pImg1);
+    destruct_img(&pImg2);
+}
+
+
+void test_sliding_window_1x1_2(){
+    Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
+    IMAGE_FMT imageFormat = RGB;
+    int width = 4;
+    int height = 4;
+    SIGN sign = SIGNED;
+    int bitDepth = 32;
+    int alignment = 32;
+    bool allocateImage = true;
+
+    construct_img(pImg1, 
+                  imageFormat,
+                  width,
+                  height,
+                  sign,
+                  bitDepth,
+                  alignment,
+                  allocateImage);
+    
+    ValCfg_t sValCfg = {pImg1->sign, rand_num_uniform, {0, 49, 0, 0}};
+
+    set_value(pImg1, sValCfg);
+    view_img_properties(pImg1);
+
+    std::cout<<"original:\n";
+    ROI_t viewROI_1 = {1012,0,0,width,height}; // 1012 means panel 0, 1, 2 are all chosen
+    view_image_data(pImg1, viewROI_1);
+
+    Img_t* pImg2 =(Img_t*)malloc(sizeof(Img_t));
+    construct_img(pImg2, 
+                  YUV420,
+                  width,
+                  height,
+                  sign,
+                  bitDepth,
+                  alignment,
+                  allocateImage);
+
+    Formulas_1x1_T<int> Fml;
+    Fml.f1x1 = rgb_to_yuv_bt709;
+
+    const KernelCfg_t sKernelCfg = {NULL, // 
+                                    1, 1, 0, 0, // don't care for 1x1 window
+                                    ZEROPADDING, // nonsense
+                                    1, 1, 1, 1, // usually keep them all 1's for 1x1 window
+                                    false,  // nonsense
+                                    (void*)Fml.f1x1, // in use
+                                    false // nonsense
+                                    };
+
+    ROI_t sInImgROI = {1012, 0, 0, width, height}; // 1012 means panel 0, 1, 2 are all chosen
+    ROI_t sOutImgROI = {1012, 0, 0, width, height};
+
+
+    sliding_window_1x1(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
+
+    std::cout<<"filtered:\n";
+    ROI_t viewROI_2 = {1012,0,0,width,height};
+    view_image_data(pImg2, viewROI_2);
+
+    destruct_img(&pImg1);
+    destruct_img(&pImg2);
 }
