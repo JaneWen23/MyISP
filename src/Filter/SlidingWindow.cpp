@@ -358,6 +358,8 @@ typedef void (*FP_FILT)(const uint8_t*, const int, const int, const int,
 IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg){
     assert(pInImg != NULL);
     assert(pOutImg != NULL);
+    assert(sInImgROI.panelId < MAX_NUM_P);
+    assert(sOutImgROI.panelId < MAX_NUM_P);
     int inImgStride = pInImg->strides[sInImgROI.panelId];
     int outImgStride = pOutImg->strides[sOutImgROI.panelId];
     int scale = 0;
@@ -407,7 +409,7 @@ IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* 
 
 
 template<typename T>
-void copy_pix_one_line(const uint8_t* x, uint8_t* y, const int dstRoiWidth, const KernelCfg_t& sKerCfg){
+void sampling_one_line(const uint8_t* x, uint8_t* y, const int dstRoiWidth, const KernelCfg_t& sKerCfg){
     T* xx = (T*)x;
     T* yy = (T*)y;  
     // jj is horizontal index at the dst image
@@ -420,8 +422,12 @@ void copy_pix_one_line(const uint8_t* x, uint8_t* y, const int dstRoiWidth, cons
 
 typedef void (*F_COPY_LINE)(const uint8_t*, uint8_t*, const int, const KernelCfg_t&);
 
-IMG_RTN_CODE sliding_window_1x1(const Img_t* pSrcImg, const ROI_t& sSrcImgROI, Img_t* pDstImg, const ROI_t& sDstImgROI, const KernelCfg_t& sKerCfg){
-    // TODO: may support scalar multiplication and manipulations in the 3rd dimension
+IMG_RTN_CODE image_sampling(const Img_t* pSrcImg, const ROI_t& sSrcImgROI, Img_t* pDstImg, const ROI_t& sDstImgROI, const KernelCfg_t& sKerCfg){
+    // 1p_to_1p only. just copy & paste, no filter applied.
+    // for example, in star-tetrix, 1p_to_4p is actually 1p_to_1p by 4 times, 4p_to_1p is also 1p_to_1p by 4 times.
+    // if rgb image copy and paste with strides + upsample, may also realized by 1p_to_1p.
+    // because copy&paste is such an operation that EXACT one panel(or channel) gets mapped to EXACT one panel(or channel)
+
     int srcImgStride = pSrcImg->strides[sSrcImgROI.panelId];
     int dstImgStride = pDstImg->strides[sDstImgROI.panelId];
     int scale = 0;
@@ -429,29 +435,29 @@ IMG_RTN_CODE sliding_window_1x1(const Img_t* pSrcImg, const ROI_t& sSrcImgROI, I
     if (pDstImg->sign == UNSIGNED){
         if (pDstImg->bitDepth <= 8){
             scale = sizeof(uint8_t);
-            f = copy_pix_one_line<uint8_t>;
+            f = sampling_one_line<uint8_t>;
         }
         else if (pDstImg->bitDepth <= 16){
             scale = sizeof(uint16_t);
-            f = copy_pix_one_line<uint16_t>;
+            f = sampling_one_line<uint16_t>;
         }
         else if (pDstImg->bitDepth <= 32){
             scale = sizeof(uint32_t);
-            f = copy_pix_one_line<uint32_t>;
+            f = sampling_one_line<uint32_t>;
         }
     }
     else{
         if (pDstImg->bitDepth <= 8){
             scale = sizeof(int8_t);
-            f = copy_pix_one_line<int8_t>;
+            f = sampling_one_line<int8_t>;
         }
         else if (pDstImg->bitDepth <= 16){
             scale = sizeof(int16_t);
-            f = copy_pix_one_line<int16_t>;
+            f = sampling_one_line<int16_t>;
         }
         else if (pDstImg->bitDepth <= 32){
             scale = sizeof(int);
-            f = copy_pix_one_line<int>;
+            f = sampling_one_line<int>;
         }
     }
     
@@ -525,9 +531,7 @@ void test_sliding_window(){
     // (uint8_t*)h, 1, 5, 2, 0, ZEROPADDING, 1, 1, 1, 1, false, (void*)pMyFml.f, true};
 
     ROI_t sInImgROI = {0, 0, 0, width, height};
-    ROI_t sOutImgROI = {0, 0, 0, width, height}; // TODO: may create a helper function to find ROI (???) based on kernel; 
-    // TODO: create a helper function for out img width height and kernel step
-
+    ROI_t sOutImgROI = {0, 0, 0, width, height};
 
 
     sliding_window(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
