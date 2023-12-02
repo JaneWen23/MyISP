@@ -72,13 +72,28 @@ IMG_RTN_CODE set_value(Img_t* pImg, const ValCfg_t& sValCfg){
         }
     }
 
-    // if not YUV:
-    for (int c = 0; c < MAX_NUM_P; c++){
-        if (pImg->pImageData[c] != NULL){
-            f(pImg, sValCfg, c, pImg->height, pImg->width);
+    switch (pImg->imageFormat){
+        case YUV420:{
+            if (pImg->pImageData[0] != NULL){
+                f(pImg, sValCfg, 0, pImg->height, pImg->width);
+            }
+            if (pImg->pImageData[1] != NULL){
+                f(pImg, sValCfg, 1, pImg->height>>1, pImg->width>>1);
+            }
+            if (pImg->pImageData[2] != NULL){
+                f(pImg, sValCfg, 2, pImg->height>>1, pImg->width>>1);
+            }
+            break;
+        }
+        default:{
+            for (int c = 0; c < MAX_NUM_P; c++){
+                if (pImg->pImageData[c] != NULL){
+                    f(pImg, sValCfg, c, pImg->height, pImg->width);
+                }
+            }
+            break;
         }
     }
-    // YUV: different panels may have different height and width
 
     return SUCCEED;
 }
