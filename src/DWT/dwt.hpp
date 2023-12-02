@@ -34,6 +34,25 @@ IMG_RTN_CODE dwt_forward(Img_t* pInImg, Img_t* pOutImg, void* pAlgoArg);
 IMG_RTN_CODE dwt_backward(Img_t* pInImg, Img_t* pOutImg, void* pDWTArg);
 
 
+template<typename T>
+const T LeGall53_fwd_predict(const T** a, const T** b = NULL, const int vecLen = 3){
+    return **(a+1) - ((**a + **(a+2))>>1);
+}
+
+template<typename T>
+const T LeGall53_fwd_update(const T** a, const T** b = NULL, const int vecLen = 3){
+    return **(a+1) + ((**a + **(a+2))>>2);
+}
+
+template<typename T>
+const T LeGall53_bwd_predict(const T** a, const T** b = NULL, const int vecLen = 3){
+    return **(a+1) + ((**a + **(a+2))>>1);
+}
+
+template<typename T>
+const T LeGall53_bwd_update(const T** a, const T** b = NULL, const int vecLen = 3){
+    return **(a+1) - ((**a + **(a+2))>>2);
+}
 
 template<typename T>
 void config_dwt_kernels_LeGall53(DWTArg_t* pDWTArg, const PADDING& padding){
@@ -79,7 +98,6 @@ void config_dwt_kernels_LeGall53(DWTArg_t* pDWTArg, const PADDING& padding){
     pDWTArg->sBwdVertKerCfg[0] = sKernelCfg_bwd_vert_u;
     pDWTArg->sBwdVertKerCfg[1] = sKernelCfg_bwd_vert_p;
 }
-
 
 
 #endif

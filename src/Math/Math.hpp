@@ -50,26 +50,6 @@ const T my_formula(const T** a, const T** b, const int vecLen){
     return res;
 }
 
-template<typename T>
-const T LeGall53_fwd_predict(const T** a, const T** b = NULL, const int vecLen = 3){
-    return **(a+1) - ((**a + **(a+2))>>1);
-}
-
-template<typename T>
-const T LeGall53_fwd_update(const T** a, const T** b = NULL, const int vecLen = 3){
-    return **(a+1) + ((**a + **(a+2))>>2);
-}
-
-template<typename T>
-const T LeGall53_bwd_predict(const T** a, const T** b = NULL, const int vecLen = 3){
-    return **(a+1) + ((**a + **(a+2))>>1);
-}
-
-template<typename T>
-const T LeGall53_bwd_update(const T** a, const T** b = NULL, const int vecLen = 3){
-    return **(a+1) - ((**a + **(a+2))>>2);
-}
-
 
 template<typename T>
 struct Formulas_T{
