@@ -9,6 +9,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Infra DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/DWT DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/StarTetrix DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Filter DIR_PROJECT_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/CSC DIR_PROJECT_SRC)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXXFLAGS} -std=c++11 -O0 -fsanitize=address")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
