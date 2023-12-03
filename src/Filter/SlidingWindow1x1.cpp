@@ -89,8 +89,8 @@ void perform_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, co
     T* yAddr[MAX_NUM_P] = {NULL}; // stores the starting addresses of panel 0, 1, 2, ...;
     int i = 0; // i is row index of input image
     int j = 0; // j is column index of input image
-    Formulas_1x1_T<T> Formula;
-    Formula.f1x1 = (decltype(Formula.f1x1))sKerCfg.formula;
+    Formulas_T<T> Formula;
+    Formula.f = (decltype(Formula.f))sKerCfg.formula;
     int cList[MAX_NUM_P] = {0}; // output to which channels (panels)
     int outChNum = 0; // how many channels (panels) to output
 
@@ -106,7 +106,7 @@ void perform_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, co
             // YUV420/422 is not well-defined with step and upsample, so, if any of them is not 1 for YUV420/422, the behavior might be strange.
             outChNum = f_ch(cList, sOutImgROI.panelId, ii, jj);
             for(int c = 0; c < outChNum; ++c){
-                *(yAddr[cList[c]]) = Formula.f1x1((const T**)xAddr, (const T**)sKerCfg.pKernel, cList[c]);
+                *(yAddr[cList[c]]) = Formula.f((const T**)xAddr, (const T**)sKerCfg.pKernel, cList[c]);
             }
             yAddr[0] += g_hori[0](jj) * sKerCfg.horiUpsample;
             yAddr[1] += g_hori[1](jj) * sKerCfg.horiUpsample;

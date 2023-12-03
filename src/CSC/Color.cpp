@@ -40,8 +40,8 @@ void ccm_prototype(){
                   alignment,
                   allocateImage);
 
-    Formulas_1x1_T<int> Fml;
-    Fml.f1x1 = color_correction;
+    Formulas_T<int> Fml;
+    Fml.f = color_correction;
     const int colorMatRow1[3] = {278, -10, -8};
     const int colorMatRow2[3] = {-12, 269, -8};
     const int colorMatRow3[3] = {-10, -3, 272};
@@ -52,7 +52,7 @@ void ccm_prototype(){
                                     ZEROPADDING, // nonsense
                                     1, 1, 1, 1, // usually keep them all 1's for 1x1 window
                                     false,  // nonsense
-                                    (void*)Fml.f1x1, // in use
+                                    (void*)Fml.f, // in use
                                     false // nonsense
                                     };
 
@@ -109,15 +109,15 @@ void rgb_to_yuv420_prototype(){
                   alignment,
                   allocateImage);
 
-    Formulas_1x1_T<int> Fml;
-    Fml.f1x1 = rgb_to_yuv_bt709;
+    Formulas_T<int> Fml;
+    Fml.f = rgb_to_yuv_bt709;
 
     const KernelCfg_t sKernelCfg = {NULL, // 
                                     1, 1, 0, 0, // don't care for 1x1 window
                                     ZEROPADDING, // nonsense
                                     1, 1, 1, 1, // usually keep them all 1's for 1x1 window
                                     false,  // nonsense
-                                    (void*)Fml.f1x1, // in use
+                                    (void*)Fml.f, // in use
                                     false // nonsense
                                     };
 
@@ -133,3 +133,5 @@ void rgb_to_yuv420_prototype(){
     destruct_img(&pImg1);
     destruct_img(&pImg2);
 }
+
+// TODO: WBGain, RGB GAMMA, Y GAMMA

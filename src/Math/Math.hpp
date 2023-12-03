@@ -59,9 +59,5 @@ struct Formulas_T{
 
 
 
-template<typename T>
-struct Formulas_1x1_T{
-    const T (*f1x1)(const T**, const T**, const int);
-}; // note: cannot typedef, because there is no type yet.
 
 #endif
