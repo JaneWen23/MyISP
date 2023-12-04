@@ -5,9 +5,9 @@
 #include "../Filter/SlidingWindow.hpp"
 
 typedef struct {
-    int colorMatRow1[3]; // NOTE: defined as int, the "largest" datatype, to prevent addr overflows.
-    int colorMatRow2[3]; // NOTE: defined as int, the "largest" datatype, to prevent addr overflows.
-    int colorMatRow3[3]; // NOTE: defined as int, the "largest" datatype, to prevent addr overflows.
+    int colorMatRow1[3];
+    int colorMatRow2[3];
+    int colorMatRow3[3];
 } CCMArg_t;
 
 

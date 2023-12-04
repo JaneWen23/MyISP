@@ -45,7 +45,7 @@ typedef void (*FCFG)(KernelCfg_t*, const uint8_t**);
 void config_ccm_kernel_exact(KernelCfg_t* pKerCfg, uint8_t* pColorMat, uint8_t** pColorMatRows, const void* pCCMArg, const SIGN sign, const int bitDepth){
     FMAN g = NULL;
     FCFG f = NULL;
-    if (sign == UNSIGNED){ // TODO: CCM dose not support unsigned type!!
+    if (sign == UNSIGNED){
         std::cout<<"error: CCM does not support unsigned data types. exited.\n";
         exit(1);
     }
