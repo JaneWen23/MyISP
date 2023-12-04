@@ -18,8 +18,8 @@ int main(){
     //test_read_raw();
     //test_img_t_to_multiple_cv_mat();
     //demo_star_tetrix();
-    //ccm_prototype();
-    rgb_to_yuv420_prototype();
+    test_ccm();
+    //rgb_to_yuv420_prototype();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

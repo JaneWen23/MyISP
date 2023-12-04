@@ -4,6 +4,18 @@
 #include "../Infra/ImgDef.hpp"
 #include "../Filter/SlidingWindow.hpp"
 
+typedef struct {
+    int colorMatRow1[3]; // NOTE: defined as int, the "largest" datatype, to prevent addr overflows.
+    int colorMatRow2[3]; // NOTE: defined as int, the "largest" datatype, to prevent addr overflows.
+    int colorMatRow3[3]; // NOTE: defined as int, the "largest" datatype, to prevent addr overflows.
+} CCMArg_t;
+
+
+void ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg);
+void test_ccm();
+void rgb_to_yuv420_prototype();
+
+
 template<typename T>
 const T color_correction(const T** a, const T** colorMatRows, const int idx){
     // "**a" is the addr of channel 0 (panel 0).
@@ -21,8 +33,5 @@ const T rgb_to_yuv_bt709(const T** a, const T** b, const int idx){
     const T* colorMatRows[3] = {colorMatRow1, colorMatRow2, colorMatRow3};
     return ((**(a) * (*colorMatRows[idx]) + **(a+1) * (*(colorMatRows[idx]+1)) + **(a+2) * (*(colorMatRows[idx]+2)) + delta[idx]) >> 8) + offsets[idx];
 }
-
-void ccm_prototype();
-void rgb_to_yuv420_prototype();
 
 #endif
