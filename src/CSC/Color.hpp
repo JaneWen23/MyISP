@@ -5,10 +5,15 @@
 #include "../Filter/SlidingWindow.hpp"
 
 typedef struct {
-    int colorMatRow1[3];
-    int colorMatRow2[3];
-    int colorMatRow3[3];
+    int colorMatRow1[3]; // data type here is only for storing the CCM values. does not affect actual data type in operation.
+    int colorMatRow2[3]; // data type here is only for storing the CCM values. does not affect actual data type in operation.
+    int colorMatRow3[3]; // data type here is only for storing the CCM values. does not affect actual data type in operation.
 } CCMArg_t;
+
+
+typedef struct {
+    void* color_conversion_formula;
+} CSCArg_t;
 
 
 void ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg);

@@ -134,6 +134,7 @@ IMG_RTN_CODE sliding_window_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img
     FMAP g_hori[3] = {NULL}; // manipulate output image iterator to grab a pixel
     FMAP g_vert[3] = {NULL}; // manipulate output image iterator to grab a pixel
     FCH f_ch[1] = {NULL};
+    // or "FCH* f_ch = (FCH*)malloc(sizeof(FCH))" works, too. but malloc needs to free. don't like it.
     F f = NULL;
 
     set_img_iter_manipulation(pInImg->imageFormat, f_hori, f_vert); // in img

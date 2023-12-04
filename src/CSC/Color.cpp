@@ -3,7 +3,7 @@
 
 
 template<typename T>
-void value_manipulation(uint8_t* pColorMat, uint8_t** pColorMatRows, const void* pCCMArg){
+void ccm_value_manipulation(uint8_t* pColorMat, uint8_t** pColorMatRows, const void* pCCMArg){
     CCMArg_t* pArg = (CCMArg_t*)pCCMArg;
     for (int j = 0; j < 3; ++j){
         *((T*)pColorMat + j) = (T)(*(pArg->colorMatRow1 + j));
@@ -51,15 +51,15 @@ void config_ccm_kernel_exact(KernelCfg_t* pKerCfg, uint8_t* pColorMat, uint8_t**
     }
     else{
         if (bitDepth <= 8){
-            g = value_manipulation<int8_t>;
+            g = ccm_value_manipulation<int8_t>;
             f = config_ccm_kernel<int8_t>;
         }
         else if (bitDepth <= 16){
-            g = value_manipulation<int16_t>;
+            g = ccm_value_manipulation<int16_t>;
             f = config_ccm_kernel<int16_t>;
         }
         else if (bitDepth <= 32){
-            g = value_manipulation<int>;
+            g = ccm_value_manipulation<int>;
             f = config_ccm_kernel<int>;
         }
     }
@@ -74,11 +74,12 @@ void ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg){
     KernelCfg_t* pKerCfg = (KernelCfg_t*)malloc(sizeof(KernelCfg_t));
     uint8_t* pColorMat = (uint8_t*)malloc(9 * sizeof(int)); // 3 rows, 3 columns; not all are used since actual data type may be int16
     uint8_t* pColorMatRows[3*sizeof(int)] = {NULL};
-
     config_ccm_kernel_exact(pKerCfg, pColorMat, pColorMatRows, pCCMArg, pOutImg->sign, pOutImg->bitDepth);
+
     // config the in and out img ROI:
     ROI_t sInImgROI = {1012, 0, 0, pInImg->width, pInImg->height};
     ROI_t sOutImgROI = {1012, 0, 0, pOutImg->width, pOutImg->height};
+
     // apply the 1x1 sliding window:
     sliding_window_1x1(pInImg, sInImgROI, pOutImg, sOutImgROI, *pKerCfg);
     free(pKerCfg);
@@ -140,6 +141,24 @@ void test_ccm(){
     destruct_img(&pImg2);
 }
 
+void rgb_to_yuv420(const Img_t* pInImg, Img_t* pOutImg, const void* pCSCArg){
+    CSCArg_t* pArg = (CSCArg_t*)pCSCArg;
+
+    const KernelCfg_t sKernelCfg = {NULL, // 
+                                    1, 1, 0, 0, // don't care for 1x1 window
+                                    ZEROPADDING, // nonsense
+                                    1, 1, 1, 1, // usually keep them all 1's for 1x1 window
+                                    false,  // nonsense
+                                    pArg->color_conversion_formula, // in use
+                                    false // nonsense
+                                    };
+
+    ROI_t sInImgROI = {1012, 0, 0, pInImg->width, pInImg->height};
+    ROI_t sOutImgROI = {1012, 0, 0, pOutImg->width, pOutImg->height};
+
+    sliding_window_1x1(pInImg, sInImgROI, pOutImg, sOutImgROI, sKernelCfg);
+}
+
 void rgb_to_yuv420_prototype(){
     Img_t* pImg1 =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB;
@@ -181,19 +200,19 @@ void rgb_to_yuv420_prototype(){
     Formulas_T<int> Fml;
     Fml.f = rgb_to_yuv_bt709;
 
-    const KernelCfg_t sKernelCfg = {NULL, // 
-                                    1, 1, 0, 0, // don't care for 1x1 window
-                                    ZEROPADDING, // nonsense
-                                    1, 1, 1, 1, // usually keep them all 1's for 1x1 window
-                                    false,  // nonsense
-                                    (void*)Fml.f, // in use
-                                    false // nonsense
-                                    };
+    // const KernelCfg_t sKernelCfg = {NULL, // 
+    //                                 1, 1, 0, 0, // don't care for 1x1 window
+    //                                 ZEROPADDING, // nonsense
+    //                                 1, 1, 1, 1, // usually keep them all 1's for 1x1 window
+    //                                 false,  // nonsense
+    //                                 (void*)Fml.f, // in use
+    //                                 false // nonsense
+    //                                 };
 
-    ROI_t sInImgROI = {1012, 0, 0, width, height}; // 1012 means panel 0, 1, 2 are all chosen
-    ROI_t sOutImgROI = {1012, 0, 0, width, height};
+    // ROI_t sInImgROI = {1012, 0, 0, width, height}; // 1012 means panel 0, 1, 2 are all chosen
+    // ROI_t sOutImgROI = {1012, 0, 0, width, height};
 
-    sliding_window_1x1(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
+    // sliding_window_1x1(pImg1, sInImgROI, pImg2, sOutImgROI, sKernelCfg);
 
     std::cout<<"filtered:\n";
     ROI_t viewROI_2 = {1012,0,0,width,height};
