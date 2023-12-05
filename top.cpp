@@ -7,8 +7,14 @@
 #include "src/Infra/ImageIO.hpp"
 #include "src/StarTetrix/StarTetrixTrans.hpp"
 #include "src/CSC/Color.hpp"
+#include <functional>
 
-using namespace std;
+
+std::function<int(int)> callback;
+
+int func1(int a){
+    return 10 * a;
+}
 
 int main(){
     //test_opencv();
@@ -18,8 +24,10 @@ int main(){
     //test_read_raw();
     //test_img_t_to_multiple_cv_mat();
     //demo_star_tetrix();
-    test_ccm();
+    //test_ccm();
     //rgb_to_yuv420_prototype();
+    callback = func1;
+    std::cout<< callback(3)<<"\n";
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;
