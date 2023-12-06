@@ -6,6 +6,7 @@
 #include "src/Filter/SlidingWindow.hpp"
 #include "src/Infra/ImageIO.hpp"
 #include "src/StarTetrix/StarTetrixTrans.hpp"
+#include "src/Demo/demo.hpp"
 #include "src/CSC/Color.hpp"
 #include <functional>
 

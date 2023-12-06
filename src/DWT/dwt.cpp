@@ -2,10 +2,8 @@
 #include <iostream>
 #include "../Filter/SlidingWindow.hpp"
 #include "../Infra/RandImageGen.hpp"
-#include "../Infra/ImageIO.hpp"
 #include "dwt.hpp"
 
-using namespace cv;
 
 template<typename T>
 void dwt_horizontal_swap(uint8_t* pData, const int strideInPix, const int i, const int j){
@@ -322,42 +320,3 @@ void test_dwt(){
     destruct_img(&pOutBackImg);
 }
 
-void demo_dwt(){
-    Mat image;
-    image = imread( "../data/anya18.png", IMREAD_GRAYSCALE );
-    if ( !image.data )
-    {
-        std::cout<<"No image data \n";
-    }
-    Img_t* pImg =(Img_t*)malloc(sizeof(Img_t));
-    convert_cv_mat_to_img_t(image, pImg, 32, true, SIGNED, 16);
-
-    DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    pDWTArg->level = 1;
-    pDWTArg->orient = TWO_DIMENSIONAL;
-    pDWTArg->inImgPanelId = 0;
-    pDWTArg->outImgPanelId = 0;
-    config_dwt_kernels_LeGall53<int16_t>(pDWTArg, MIRROR);
-
-    Img_t* pOutImg = (Img_t*)malloc(sizeof(Img_t));
-
-    dwt_forward(pImg, pOutImg, (void*)pDWTArg);
-
-    // ROI_t viewROI = {0, 600, 600, 20, 20};
-    // view_image_data(pImg, viewROI );
-
-    Mat image2;
-    convert_img_t_to_cv_mat(image2, pOutImg);
-    imwrite("../dump/dwtout.png", image2);
-
-    Img_t* pOutBackImg = (Img_t*)malloc(sizeof(Img_t));
-    dwt_backward(pOutImg, pOutBackImg, (void*)pDWTArg);
-    
-    Mat image3;
-    convert_img_t_to_cv_mat(image3, pOutBackImg);
-    imwrite("../dump/idwtout.png", image3);
-
-    destruct_img(&pImg);
-    destruct_img(&pOutImg);
-    destruct_img(&pOutBackImg);
-}
