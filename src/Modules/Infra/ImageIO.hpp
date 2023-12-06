@@ -5,6 +5,7 @@
 
 typedef struct{
     char* path;
+    int frameInd; // read i-th frame, i >= 0
     IMAGE_FMT imageFormat;
     int width;
     int height;
@@ -18,7 +19,8 @@ IMG_RTN_CODE read_raw_to_img_t(const char* path,
                        const int width,
                        const int height,
                        const int bitDepth,
-                       const int alignment);
+                       const int alignment,
+                       int frameInd = 0);
 
 IMG_RTN_CODE read_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg);
 

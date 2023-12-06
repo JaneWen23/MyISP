@@ -1,13 +1,13 @@
 #include <iostream>
-#include "src/Infra/ImgDef.hpp"
-#include "src/Math/Math.hpp"
-#include "src/Infra/RandImageGen.hpp"
-#include "src/DWT/dwt.hpp"
-#include "src/Filter/SlidingWindow.hpp"
-#include "src/Infra/ImageIO.hpp"
-#include "src/StarTetrix/StarTetrixTrans.hpp"
+#include "src/Modules/Infra/ImgDef.hpp"
+#include "src/Modules/Math/Math.hpp"
+#include "src/Modules/Infra/RandImageGen.hpp"
+#include "src/Modules/DWT/dwt.hpp"
+#include "src/Modules/Filter/SlidingWindow.hpp"
+#include "src/Modules/Infra/ImageIO.hpp"
+#include "src/Modules/StarTetrix/StarTetrixTrans.hpp"
 #include "src/Demo/demo.hpp"
-#include "src/CSC/Color.hpp"
+#include "src/Modules/CSC/Color.hpp"
 #include <functional>
 
 

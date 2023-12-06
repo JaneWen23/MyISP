@@ -9,7 +9,10 @@ IMG_RTN_CODE read_raw_to_img_t(const char* path,
                        const int width,
                        const int height,
                        const int bitDepth,
-                       const int alignment){
+                       const int alignment,
+                       int frameInd){
+    // NOTE: frameInd is optional and default is 0, 
+    // meaning that read from the beginning (0th frame) of the file
     switch (imageFormat){
         case RAW_RGGB:
         case RAW_GRBG:
@@ -36,21 +39,26 @@ IMG_RTN_CODE read_raw_to_img_t(const char* path,
                 bitDepth,
                 alignment,
                 true);
-    fread(pImg->pImageData[0], sizeof(uint8_t), pImg->strides[0] * height, pFile);
+    long int frameSize = pImg->strides[0] * height; // how many bytes in one frame
+    fseek(pFile, frameSize, SEEK_SET);
+    fread(pImg->pImageData[0], sizeof(uint8_t), frameSize, pFile);
     fclose(pFile);
     return SUCCEED;
 }
 
 
 IMG_RTN_CODE read_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg){
-    // read raw stream; add an option: rewind.
-    // user specify how many frames to read;
-    // if frame number greater than raw stream actual frame number, rewind should be enabled.
-    // read one frame at a time
-
-    // pInImg should be NULL, since no input yet
+    // pInImg should be NULL since no input yet
     assert(pInImg == NULL);
-    //
-    
+    ReadRawArg_t* pArg = (ReadRawArg_t*)pReadRawArg;
+    read_raw_to_img_t(pArg->path,
+                       pOutImg,
+                       pArg->imageFormat,
+                       pArg->width,
+                       pArg->height,
+                       pArg->bitDepth,
+                       pArg->alignment,
+                       pArg->frameInd);
+
     return SUCCEED;
 }

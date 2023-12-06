@@ -1,6 +1,6 @@
 #include "OpenCV.hpp"
-#include "../Infra/RandImageGen.hpp"
-#include "../Infra/ImageIO.hpp"
+#include "../Modules/Infra/RandImageGen.hpp"
+#include "../Modules/Infra/ImageIO.hpp"
 
 using namespace cv;
 
