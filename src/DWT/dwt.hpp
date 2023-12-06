@@ -29,8 +29,8 @@ typedef struct{
 
 void test_dwt();
 
-IMG_RTN_CODE dwt_forward(Img_t* pInImg, Img_t* pOutImg, void* pAlgoArg);
-IMG_RTN_CODE dwt_backward(Img_t* pInImg, Img_t* pOutImg, void* pDWTArg);
+IMG_RTN_CODE dwt_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pAlgoArg);
+IMG_RTN_CODE dwt_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pDWTArg);
 
 
 template<typename T>

@@ -69,7 +69,7 @@ void config_ccm_kernel_exact(KernelCfg_t* pKerCfg, uint8_t* pColorMat, uint8_t**
 
 
 
-void ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg){
+IMG_RTN_CODE ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg){
     // config the 1x1 kernel:
     KernelCfg_t* pKerCfg = (KernelCfg_t*)malloc(sizeof(KernelCfg_t));
     uint8_t* pColorMat = (uint8_t*)malloc(9 * sizeof(int)); // 3 rows, 3 columns; not all are used since actual data type may be int16
@@ -84,6 +84,7 @@ void ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg){
     sliding_window_1x1(pInImg, sInImgROI, pOutImg, sOutImgROI, *pKerCfg);
     free(pKerCfg);
     free(pColorMat);
+    return SUCCEED;
 }
 
 

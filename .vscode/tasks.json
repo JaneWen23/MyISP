@@ -8,11 +8,11 @@
                 "-fcolor-diagnostics",
                 "-fansi-escape-codes",
                 "-std=c++11",
-                "-I$(brew --prefix opencv)/include/opencv4", //???
-                "-L$(brew --prefix opencv)/lib", //???
-                "-lopencv_core", //???
-                "-lopencv_imgcodecs", //???
-                "-lopencv_highgui", //???
+                // "-I$(brew --prefix opencv)/include/opencv4", //???
+                // "-L$(brew --prefix opencv)/lib", //???
+                // "-lopencv_core", //???
+                // "-lopencv_imgcodecs", //???
+                // "-lopencv_highgui", //???
                 "-g",
                 "${file}",
                 "-o",

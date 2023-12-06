@@ -3,7 +3,7 @@
 #include "../Infra/RandImageGen.hpp"
 
 
-void read_raw_to_img_t(const char* path,
+IMG_RTN_CODE read_raw_to_img_t(const char* path,
                        Img_t* pImg,
                        const IMAGE_FMT imageFormat,
                        const int width,
@@ -38,6 +38,19 @@ void read_raw_to_img_t(const char* path,
                 true);
     fread(pImg->pImageData[0], sizeof(uint8_t), pImg->strides[0] * height, pFile);
     fclose(pFile);
+    return SUCCEED;
 }
 
 
+IMG_RTN_CODE read_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg){
+    // read raw stream; add an option: rewind.
+    // user specify how many frames to read;
+    // if frame number greater than raw stream actual frame number, rewind should be enabled.
+    // read one frame at a time
+
+    // pInImg should be NULL, since no input yet
+    assert(pInImg == NULL);
+    //
+    
+    return SUCCEED;
+}

@@ -9,8 +9,8 @@ typedef struct{
     int Wb;
 } StarTetrixArg_t;
 
-IMG_RTN_CODE star_tetrix_forward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg);
-IMG_RTN_CODE star_tetrix_backward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg);
+IMG_RTN_CODE star_tetrix_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pStarTetrixArg);
+IMG_RTN_CODE star_tetrix_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pStarTetrixArg);
 
 void test_star_tetrix();
 

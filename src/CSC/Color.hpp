@@ -16,7 +16,7 @@ typedef struct {
 } CSCArg_t;
 
 
-void ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg);
+IMG_RTN_CODE ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg);
 void test_ccm();
 void rgb_to_yuv420_prototype();
 

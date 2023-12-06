@@ -306,7 +306,7 @@ void convert_1p_to_4p(Img_t* pSrcImg, Img_t* pDstImg){
     }
 }
 
-void convert_4p_to_1p(Img_t* pSrcImg, Img_t* pDstImg){
+void convert_4p_to_1p(const Img_t* pSrcImg, Img_t* pDstImg){
     construct_img(pDstImg,
                   find_image_fmt(pSrcImg->imageFormat),
                   pSrcImg->width << 1,
@@ -332,7 +332,7 @@ void convert_4p_to_1p(Img_t* pSrcImg, Img_t* pDstImg){
     }
 }
 
-IMG_RTN_CODE star_tetrix_forward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg){
+IMG_RTN_CODE star_tetrix_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pStarTetrixArg){
     if (pInImg->sign != SIGNED){
         std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. exited.\n";
         exit(1);
@@ -361,7 +361,7 @@ IMG_RTN_CODE star_tetrix_forward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetri
     return SUCCEED;
 }
 
-IMG_RTN_CODE star_tetrix_backward(Img_t* pInImg, Img_t* pOutImg, void* pStarTetrixArg){
+IMG_RTN_CODE star_tetrix_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pStarTetrixArg){
     if (pInImg->sign != SIGNED){
         std::cout<<"error: Star-Tetrix transform must be a signed type, but got unsigned type. exited.\n";
         return INVALID_INPUT;
