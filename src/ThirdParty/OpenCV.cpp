@@ -445,10 +445,10 @@ void test_read_raw(){
     Img_t* pImg = NULL;
     pImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RAW_RGGB;
-    int width = 4256; // 4240
-    int height = 2848; // 2832
+    int width = 4256;
+    int height = 2848;
     int bitDepth = 16;
-    int alignment = 1; //32
+    int alignment = 1;
     
     read_raw_to_img_t("../data/rawData.raw",
                       pImg,

@@ -40,14 +40,14 @@ IMG_RTN_CODE read_raw_to_img_t(const char* path,
                 alignment,
                 true);
     long int frameSize = pImg->strides[0] * height; // how many bytes in one frame
-    fseek(pFile, frameSize, SEEK_SET);
+    fseek(pFile, frameInd * frameSize, SEEK_SET);
     fread(pImg->pImageData[0], sizeof(uint8_t), frameSize, pFile);
     fclose(pFile);
     return SUCCEED;
 }
 
 
-IMG_RTN_CODE read_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg){
+IMG_RTN_CODE read_raw_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg){
     // pInImg should be NULL since no input yet
     assert(pInImg == NULL);
     ReadRawArg_t* pArg = (ReadRawArg_t*)pReadRawArg;
