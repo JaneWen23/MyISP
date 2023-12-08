@@ -8,6 +8,7 @@
 #include "src/Modules/StarTetrix/StarTetrixTrans.hpp"
 #include "src/Demo/demo.hpp"
 #include "src/Modules/CSC/Color.hpp"
+#include "src/Pipeline/pipeline.hpp"
 #include <functional>
 
 
@@ -25,8 +26,9 @@ int main(){
     //demo_star_tetrix();
     //test_ccm();
     //rgb_to_yuv420_prototype();
-    callback = ccm;
+    //callback = ccm;
     //std::cout<< callback(pInImg, pOutImg, pCCMArg)<<"\n";
+    test_pipeline();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

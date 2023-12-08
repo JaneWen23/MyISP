@@ -4,7 +4,7 @@
 
 
 typedef struct{
-    char* path;
+    const char* path;
     int frameInd; // read i-th frame, i >= 0
     IMAGE_FMT imageFormat;
     int width;

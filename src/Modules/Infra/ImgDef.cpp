@@ -493,6 +493,8 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
     return SUCCEED;
 }
 
+// TODO: crop_image()
+
 bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg){ // TODO: add option to compare "visible" only
     for (int c = 0; c < MAX_NUM_P; ++c){
         if (pSrcImg->pImageData[0] != NULL){
