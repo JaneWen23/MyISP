@@ -2,7 +2,7 @@
 #include "../Modules/Infra/ImageIO.hpp"
 #include "../ThirdParty/OpenCV.hpp"
 
-const char* get_module_name(MODULE_ENUM m){
+const char* get_module_name(const MODULE_ENUM m){
     switch(m){
         case ISP_VIN:{
             return "ISP_VIN";
@@ -25,9 +25,9 @@ const char* get_module_name(MODULE_ENUM m){
     }
 }
 
-Pipeline::Pipeline(int startFrameInd, int frameNum, Img_t& sImg){
-    _startFrameInd = startFrameInd;
-    _frameNum = frameNum;
+Pipeline::Pipeline(Img_t& sImg){
+    // _startFrameInd = startFrameInd;
+    // _frameNum = frameNum;
     _sInImg = sImg;
     for(int c = 0; c < MAX_NUM_P; ++c){
         _sOutImg.pImageData[c] = NULL;
@@ -47,11 +47,26 @@ Pipeline::~Pipeline(){
             _sOutImg.pImageData[c] = NULL;
         }
     }
- 
+}
+
+bool Pipeline::is_pipe_valid_till_now(Module_t& sModule){
+    // if _pipe is empty, nothing will go wrong
+    if (!_pipe.empty()){
+        if(_pipe.back().outBitDepth != sModule.inBitDepth){return false;}
+        if(_pipe.back().outFmt != sModule.inFmt){return false;}
+        if(_pipe.back().outSign != sModule.inSign){return false;}
+    }
+    return true;
 }
 
 void Pipeline::add_module_to_pipe(Module_t& sModule){
-    _pipe.push_back(sModule);
+    if(is_pipe_valid_till_now(sModule)){
+        _pipe.push_back(sModule);
+    }
+    else{
+        std::cout<<"error: last module's output does not match with the input of current module. exited.\n";
+        exit(1);
+    }
 }
 
 void Pipeline::print_pipe(){
@@ -59,16 +74,6 @@ void Pipeline::print_pipe(){
     for (it = _pipe.begin(); it != _pipe.end(); ++it){
         std::cout<< get_module_name((*it).moduleEnum)<<"\n";
     }
-}
-
-void Pipeline::init_pipe(){
-    // init all modules in the pipeline:
-    
-    // modules are configured ahead of pipeline
-
-
-    // first we should add module to pipe, then we can init pipe
-    //
 }
 
 void Pipeline::set_in_img_t(Module_t& sModule){
@@ -89,14 +94,19 @@ void Pipeline::move_data(){
 }
 
 void Pipeline::run_pipe(){
-    // if pipe is not initialized, should not run.
-    std::list<Module_t>::iterator it;
-    for (it = _pipe.begin(); it != _pipe.end(); ++it){
-        set_in_img_t(*it);
-        move_data();
-        (*it).run_function(&_sInImg, &_sOutImg, (*it).pArg);
-        // maybe dump??
-        dump();
+    if (!_pipe.empty()){
+        std::list<Module_t>::iterator it;
+        for (it = _pipe.begin(); it != _pipe.end(); ++it){
+            set_in_img_t(*it);
+            move_data();
+            (*it).run_function(&_sInImg, &_sOutImg, (*it).pArg);
+            // then check if out img types are consistent with sModule outs'
+            // TODO:  maybe dump?? "EOF end of frame"
+            dump();
+        }
+    }
+    else{
+        std::cout<<"warning: pipeline is empty. nothing processed.\n";
     }
 }
 
@@ -106,14 +116,21 @@ void Pipeline::dump(){
     imwrite("../dump/xxx.png", image); // TODO: file name??
 }
 
-// for each frame:
-// run_pipe()
-// update _frameInd, update sVinArg.frameInd
+
+// void Pipeline::frame_run_pipe(){
+//     for(_currentFrameInd = _startFrameInd; _currentFrameInd < _startFrameInd + _frameNum; ++_currentFrameInd){
+//         run_pipe();
+//         // update parameter config, especially sVinArg.frameInd
+//         // if config specifies what arguments for a specific frame, just use config
+//         // if config not specified, use adapted
+//         // if none of the above, keep unchanged
+//     }
+// }
 
 void test_pipeline(){
     ReadRawArg_t sVinArg = {
         "../data/rawData.raw", //const char* path;
-        0, //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME
+        0, //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
         RAW_RGGB, //IMAGE_FMT imageFormat;
         4256, //int width;
         2848, //int height;
@@ -135,11 +152,17 @@ void test_pipeline(){
         read_raw_frame
     };
 
-    Img_t* pInitImg = (Img_t*)malloc(sizeof(Img_t));
-    construct_img(pInitImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false);
-    Pipeline myPipe(0, 1, *pInitImg);
+    Img_t* pInitInImg = (Img_t*)malloc(sizeof(Img_t));
+    construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
+    Pipeline myPipe(*pInitInImg);
     myPipe.add_module_to_pipe(sVinModule); // TODO: should be a cfg file to tell what modules to add
     myPipe.print_pipe();
     myPipe.run_pipe();
-    destruct_img(&pInitImg);
+    destruct_img(&pInitInImg);
 }
+// different loops: use different module arg configs, but same pipe
+// config may be nested
+// loop {frame [module serial]}
+// or, no loop, just frame; loop is treated like another object so it needs another config
+// is it necessary to construct pipe with frame start ind and frame number?
+// can these be included in config file??

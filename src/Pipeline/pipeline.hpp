@@ -33,26 +33,28 @@ typedef struct{
 
 class Pipeline{
     public:
-        Pipeline(int startFrameInd, int frameNum, Img_t& sImg);
+        Pipeline(Img_t& sImg);
         ~Pipeline();
         void add_module_to_pipe(Module_t& sModule);
         void print_pipe();
-        void init_pipe();
         void run_pipe(); // for each frame, run the pipe
         void dump();
+       //void frame_run_pipe();
+        //void loop_run_pipe(); // TODO: maybe "loop" is a different object??? only thing need take care of is the dumped file name
 
     private:
-        void set_in_img_t(Module_t& sModule); // set _sInImg according to current running sModule and the private members
+        bool is_pipe_valid_till_now(Module_t& sModule);
+        void set_in_img_t(Module_t& sModule); // set _sInImg according to current running sModule
         void move_data();
 
     private:
         Img_t _sInImg;
         Img_t _sOutImg;
-        int _startFrameInd;
-        int _frameNum;
-        int _currentFrameInd;
+        // int _startFrameInd; // remove?
+        // int _frameNum;
+        // int _currentFrameInd; // make local variable?
         std::list<Module_t> _pipe;
-        bool _isPipeAvailable;
+        // loop start, total loops, current loop
 };
 
 void test_pipeline();
