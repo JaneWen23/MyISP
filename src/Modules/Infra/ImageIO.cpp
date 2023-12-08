@@ -48,8 +48,7 @@ IMG_RTN_CODE read_raw_to_img_t(const char* path,
 
 
 IMG_RTN_CODE read_raw_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg){
-    // pInImg should be NULL since no input yet
-    assert(pInImg == NULL);
+    // pInImg: don't care.
     ReadRawArg_t* pArg = (ReadRawArg_t*)pReadRawArg;
     read_raw_to_img_t(pArg->path,
                        pOutImg,

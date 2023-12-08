@@ -33,24 +33,26 @@ typedef struct{
 
 class Pipeline{
     public:
-        Pipeline(int startFrameInd, int frameNum);
+        Pipeline(int startFrameInd, int frameNum, Img_t& sImg);
         ~Pipeline();
         void add_module_to_pipe(Module_t& sModule);
         void print_pipe();
         void init_pipe();
-        void set_img_t(); // set _sInImg according to current running sModule and the private members
-        void run_pipe();
+        void run_pipe(); // for each frame, run the pipe
+        void dump();
 
     private:
-        int _width;
-        int _height;
-        int _alignment;
+        void set_in_img_t(Module_t& sModule); // set _sInImg according to current running sModule and the private members
+        void move_data();
+
+    private:
         Img_t _sInImg;
         Img_t _sOutImg;
         int _startFrameInd;
         int _frameNum;
         int _currentFrameInd;
         std::list<Module_t> _pipe;
+        bool _isPipeAvailable;
 };
 
 void test_pipeline();
