@@ -180,7 +180,10 @@ typedef void (*FAS)(Img_t*, const DWTArg_t*, const int, const int);
 IMG_RTN_CODE dwt_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pDWTArg){
     DWTArg_t* pArg = (DWTArg_t*)pDWTArg;
 
-    duplicate_img(pInImg, pOutImg);
+    if (pInImg != pOutImg){
+        // in img and out img are intentionally different images
+        duplicate_img(pInImg, pOutImg);
+    }
 
     int widthTmp = pOutImg->width;
     int heightTmp = pOutImg->height;
@@ -219,7 +222,9 @@ IMG_RTN_CODE dwt_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pDWTAr
 IMG_RTN_CODE dwt_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pDWTArg){
     DWTArg_t* pArg = (DWTArg_t*)pDWTArg;
     
-    duplicate_img(pInImg, pOutImg);
+    if (pInImg != pOutImg){
+        duplicate_img(pInImg, pOutImg);
+    }
     
     int* pWidthAll = (int*)malloc(sizeof(int) * pArg->level + 1);
     int* pHeightAll = (int*)malloc(sizeof(int) * pArg->level + 1);// TODO: hori and vert may have different levels!!!

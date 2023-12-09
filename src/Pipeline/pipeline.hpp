@@ -3,41 +3,13 @@
 
 #include <iostream>
 #include <list>
-#include <functional>
-#include "../Modules/Infra/ImgDef.hpp"
-#include "../Modules/Infra/ImageIO.hpp"
+#include "../Modules/PipelineModules/PipelineModules.hpp"
 
-
-typedef enum {
-    ISP_VIN,
-    ISP_BLC,
-    ISP_DMS,
-    ISP_WB,
-    ISP_CCM,
-    ISP_RGB2YUV
-} MODULE_ENUM;
 
 typedef struct{
-    MODULE_ENUM moduleEnum;
-    IMAGE_FMT inFmt;
-    IMAGE_FMT outFmt;
-    int inBitDepth;
-    int outBitDepth;
-    SIGN inSign;
-    SIGN outSign;
-    void* pArg;
-    std::function<IMG_RTN_CODE(Img_t*, Img_t*, void*)> run_function;
-} Module_t;
-
-typedef struct{
-    ReadRawArg_t sReadRawArg;
-
-} Arg_t;
-
-typedef struct{
-    // startFrameInd, frameNum
+    // startFrameInd, frameNum, rewind
     // module name list in order
-    // 
+    // which modules will change args? how to update args??
     // new pArg's for every frame, or necessary frames
 } PipeCfg_t;
 
@@ -58,6 +30,7 @@ class Pipeline{
     private:
         Img_t _sInImg;
         Img_t _sOutImg;
+        // const char* namePrefix ???
 
     protected:
         std::list<Module_t> _pipe;
@@ -73,6 +46,7 @@ class StreamPipeline : public Pipeline{
     private:
         int _startFrameInd;
         int _frameNum;
+        // const char* namePrefix_2 ???
 };
 
 void test_pipeline();

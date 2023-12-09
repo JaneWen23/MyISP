@@ -6,6 +6,9 @@ const char* get_module_name(const MODULE_ENUM m){
         case ISP_VIN:{
             return "ISP_VIN";
         }
+        case ISP_COMPRESSION:{
+            return "ISP_COMPRESSION";
+        }
         case ISP_BLC:{
             return "ISP_BLC";
         }
@@ -21,7 +24,11 @@ const char* get_module_name(const MODULE_ENUM m){
         case ISP_RGB2YUV:{
             return "ISP_RGB2YUV";
         }
+        default:{
+            return "UNKNOWN ISP MODULE";
+        }
     }
+    return "";
 }
 
 Pipeline::Pipeline(Img_t& sImg){
@@ -69,7 +76,7 @@ void Pipeline::add_module_to_pipe(Module_t& sModule){
 void Pipeline::print_pipe(){
     std::list<Module_t>::iterator it;
     for (it = _pipe.begin(); it != _pipe.end(); ++it){
-        std::cout<< get_module_name((*it).moduleEnum)<<"\n";
+        std::cout<< get_module_name((*it).module)<<"\n";
     }
 }
 
@@ -168,16 +175,10 @@ void test_pipeline(){
     construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
     Pipeline myPipe(*pInitInImg);
     myPipe.add_module_to_pipe(sVinModule); // TODO: should be a cfg file to tell what modules to add // this is "config pipe"; also need to config frames and loops
-    // maybe we should add a function to generate ReadRawArg according to cfg
-    // and things to generate ReadRawArg will be the Vin arg
-    // i.e., ReadRaw is wrapped inside Vin
-    // ReadRawArg is just a private struct and need not to known by pipeline
-    // Vin now is related to the frames, i.e., higher level than pipeline
-    // 
+
     myPipe.print_pipe();
     myPipe.run_pipe();
-    // pipe update config (update sModule.pArg)
-    // then run pipe again
+
     destruct_img(&pInitInImg);
 }
 // different loops: use different module arg configs, but same pipe

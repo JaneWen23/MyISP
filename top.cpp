@@ -6,6 +6,7 @@
 #include "src/Modules/Filter/SlidingWindow.hpp"
 #include "src/Modules/Infra/ImageIO.hpp"
 #include "src/Modules/StarTetrix/StarTetrixTrans.hpp"
+#include "src/Modules/Compression/MyJXS.hpp"
 #include "src/Demo/demo.hpp"
 #include "src/Modules/CSC/Color.hpp"
 #include "src/Pipeline/pipeline.hpp"
@@ -28,7 +29,8 @@ int main(){
     //rgb_to_yuv420_prototype();
     //callback = ccm;
     //std::cout<< callback(pInImg, pOutImg, pCCMArg)<<"\n";
-    test_pipeline();
+    //test_pipeline();
+    test_my_jxs();
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;
