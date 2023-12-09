@@ -5,6 +5,7 @@
 #include <list>
 #include <functional>
 #include "../Modules/Infra/ImgDef.hpp"
+#include "../Modules/Infra/ImageIO.hpp"
 
 
 typedef enum {
@@ -28,8 +29,17 @@ typedef struct{
     std::function<IMG_RTN_CODE(Img_t*, Img_t*, void*)> run_function;
 } Module_t;
 
-// store all arguments to all modules
-// if a module actually includes two modules, what should be done?
+typedef struct{
+    ReadRawArg_t sReadRawArg;
+
+} Arg_t;
+
+typedef struct{
+    // startFrameInd, frameNum
+    // module name list in order
+    // 
+    // new pArg's for every frame, or necessary frames
+} PipeCfg_t;
 
 class Pipeline{
     public:
@@ -37,10 +47,8 @@ class Pipeline{
         ~Pipeline();
         void add_module_to_pipe(Module_t& sModule);
         void print_pipe();
-        void run_pipe(); // for each frame, run the pipe
+        void run_pipe(); // run pipeline for a single frame
         void dump();
-       //void frame_run_pipe();
-        //void loop_run_pipe(); // TODO: maybe "loop" is a different object??? only thing need take care of is the dumped file name
 
     private:
         bool is_pipe_valid_till_now(Module_t& sModule);
@@ -50,11 +58,21 @@ class Pipeline{
     private:
         Img_t _sInImg;
         Img_t _sOutImg;
-        // int _startFrameInd; // remove?
-        // int _frameNum;
-        // int _currentFrameInd; // make local variable?
+
+    protected:
         std::list<Module_t> _pipe;
-        // loop start, total loops, current loop
+};
+
+class StreamPipeline : public Pipeline{
+    public:
+        StreamPipeline(Img_t& sImg); // maybe add cfg to parameter list
+        ~StreamPipeline();
+        void frames_run_pipe(); // maybe another name??
+    private:
+        void update_module_args(int frameInd);//should input cfg
+    private:
+        int _startFrameInd;
+        int _frameNum;
 };
 
 void test_pipeline();
