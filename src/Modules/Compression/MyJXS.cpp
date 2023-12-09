@@ -65,6 +65,16 @@ IMG_RTN_CODE my_jxs_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pM
     return SUCCEED;
 }
 
+
+IMG_RTN_CODE my_jxs_pipe_sim(const Img_t* pInImg, Img_t* pOutImg, const void* pMyJXSArg){
+    Img_t* pTmpImg = (Img_t*)malloc(sizeof(Img_t));
+    my_jxs_forward(pInImg, pTmpImg, pMyJXSArg);
+    my_jxs_backward(pTmpImg, pOutImg, pMyJXSArg);
+    destruct_img(&pTmpImg);
+    return SUCCEED;
+}
+
+
 void test_my_jxs(){
     Img_t* pInImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RAW_RGGB;
@@ -107,27 +117,34 @@ void test_my_jxs(){
     pMyJXSArg->sStarTetrixArg = sStarTetrixArg;
     pMyJXSArg->sDWTArg = sDWTArg;
 
-    my_jxs_forward(pInImg, pOutImg, pMyJXSArg);
 
     std::cout<<"original:\n";
     ROI_t viewROI = {0, 0, 0, pInImg->width, pInImg->height};
     view_image_data(pInImg, viewROI );
 
-    std::cout<<"filtered:\n";
-    ROI_t viewROI2 = {10123, 0, 0, pOutImg->width, pOutImg->height};
-    view_image_data(pOutImg, viewROI2);
+    // my_jxs_forward(pInImg, pOutImg, pMyJXSArg);
+
+    // std::cout<<"filtered:\n";
+    // ROI_t viewROI2 = {10123, 0, 0, pOutImg->width, pOutImg->height};
+    // view_image_data(pOutImg, viewROI2);
+    // view_img_properties(pOutImg);
+
+    // Img_t* pBackImg = (Img_t*)malloc(sizeof(Img_t));
+    // my_jxs_backward(pOutImg, pBackImg, pMyJXSArg);
+
+    // std::cout<<"recovered:\n";
+    // ROI_t viewROI3 = {0, 0, 0, pBackImg->width, pBackImg->height};
+    // view_image_data(pBackImg, viewROI3);
+    // view_img_properties(pBackImg);
+
+    my_jxs_pipe_sim(pInImg, pOutImg, pMyJXSArg);
+
+    std::cout<<"pipe out:\n";
+    ROI_t viewROI3 = {0, 0, 0, pOutImg->width, pOutImg->height};
+    view_image_data(pOutImg, viewROI3);
     view_img_properties(pOutImg);
-
-    Img_t* pBackImg = (Img_t*)malloc(sizeof(Img_t));
-    my_jxs_backward(pOutImg, pBackImg, pMyJXSArg);
-
-
-    std::cout<<"filtered:\n";
-    ROI_t viewROI3 = {0, 0, 0, pBackImg->width, pBackImg->height};
-    view_image_data(pBackImg, viewROI3);
-    view_img_properties(pBackImg);
 
     destruct_img(&pInImg);
     destruct_img(&pOutImg);
-    destruct_img(&pBackImg);
+    //destruct_img(&pBackImg);
 }

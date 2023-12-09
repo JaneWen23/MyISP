@@ -8,10 +8,7 @@
 #include <functional>
 #include "../Infra/ImgDef.hpp"
 #include "../Infra/ImageIO.hpp"
-#include "../Infra/RandImageGen.hpp"
-#include "../DWT/dwt.hpp"
-#include "../Filter/SlidingWindow.hpp"
-#include "../StarTetrix/StarTetrixTrans.hpp"
+#include "../Compression/MyJXS.hpp"
 #include "../CSC/Color.hpp"
 
 typedef enum {
@@ -38,9 +35,7 @@ typedef struct{
 
 typedef struct{ // interation of the Arg_t's; does not necessarily match the isp modules
     ReadRawArg_t sVinArg;
-    StarTetrixArg_t sStarTetrixArg;
-    DWTArg_t sDWTArg;
-    // may add compression arg, then delete above two.
+    MyJXSArg_t sCompressionArg;
     CCMArg_t sCCMArg;
 } Args_t;
 

@@ -17,15 +17,15 @@ Module_t isp_vin_module_cfg(Args_t& sArgs){
 
 Module_t isp_compression_module_cfg(Args_t& sArgs){
     Module_t sCompressionModule ={
-        ISP_VIN,
+        ISP_COMPRESSION,
         RAW_RGGB,
         RAW_RGGB,
         16,
         16,
         SIGNED, // TODO: may need some converter, from unsigned to signed
         SIGNED,
-        &(sArgs.sVinArg), // TODO: modify;
-        read_raw_frame // TODO: modify;
+        &(sArgs.sCompressionArg),
+        my_jxs_pipe_sim
     };
     return sCompressionModule;
 }
@@ -61,15 +61,14 @@ void test_pipeline_modules(){
         (void*)pStarTetrixArg,
         star_tetrix_forward
     };
+    DWTArg_t sDWTArg;
+    sDWTArg.level = 2;
+    sDWTArg.orient = TWO_DIMENSIONAL;
+    sDWTArg.inImgPanelId = 0;
+    sDWTArg.outImgPanelId = 0;
+    config_dwt_kernels_LeGall53<int16_t>(&sDWTArg, MIRROR);
 
-
-    DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    pDWTArg->level = 2;
-    pDWTArg->orient = TWO_DIMENSIONAL;
-    pDWTArg->inImgPanelId = 0;
-    pDWTArg->outImgPanelId = 0;
-    config_dwt_kernels_LeGall53<int>(pDWTArg, MIRROR);
-    DWTArg_t sDWTArg = *pDWTArg;
+    MyJXSArg_t sCompressionArg = {sStarTetrixArg, sDWTArg};
 
 
     CCMArg_t sCCMArg = {
@@ -99,8 +98,7 @@ void test_pipeline_modules(){
 
         // DO THIS:
         sVinArg,
-        sStarTetrixArg,
-        sDWTArg,
-        sCCMArg
+        sCompressionArg,
+        //sCCMArg
     };
 }

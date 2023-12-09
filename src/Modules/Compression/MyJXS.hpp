@@ -11,7 +11,9 @@ typedef struct{
 } MyJXSArg_t;
 
 IMG_RTN_CODE my_jxs_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pMyJXSArg);
-IMG_RTN_CODE my_jxs_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pMyJXSArg);
+IMG_RTN_CODE my_jxs_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pMyJXSArg);
+IMG_RTN_CODE my_jxs_pipe_sim(const Img_t* pInImg, Img_t* pOutImg, const void* pMyJXSArg); // this is forward + backward
+
 void test_my_jxs();
 
 #endif
