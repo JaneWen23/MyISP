@@ -31,6 +31,37 @@ const char* get_module_name(const MODULE_ENUM m){
     return "";
 }
 
+void* find_arg_for_func(Args_t& sArgs, MODULE_ENUM m){
+    switch (m){
+        case ISP_VIN:{
+            return &(sArgs.sVinArg);
+        }
+        case ISP_COMPRESSION:{
+            return &(sArgs.sCompressionArg);
+        }
+        case ISP_BLC:{
+            break;
+        }
+        case ISP_DMS:{
+            break;
+        }
+        case ISP_WB:{
+            break;
+        }
+        case ISP_CCM:{
+            return &(sArgs.sCCMArg);
+        }
+        case ISP_RGB2YUV:{
+            break;
+        }
+        default:{
+            std::cout<<"error: cannot find arguments for this function to run. exited.\n";
+            exit(1);
+        }
+    }
+    return NULL; // this is nonsense. just because it needs a return value.
+}
+
 Pipeline::Pipeline(Img_t& sImg){
     _sInImg = sImg;
     for(int c = 0; c < MAX_NUM_P; ++c){
@@ -97,14 +128,14 @@ void Pipeline::move_data(){
     }
 }
 
-void Pipeline::run_pipe(){
+void Pipeline::run_pipe(Args_t& sArgs){
     if (!_pipe.empty()){
         std::list<Module_t>::iterator it;
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
             set_in_img_t(*it);
             move_data();
-            (*it).run_function(&_sInImg, &_sOutImg, (*it).pArg);
-            // then check if out img types are consistent with sModule outs'
+            (*it).run_function(&_sInImg, &_sOutImg, find_arg_for_func(sArgs, (*it).module));
+            // TODO: then check if out img types are consistent with sModule outs'
             // TODO:  maybe dump?? "EOF end of frame"
             dump();
         }
@@ -133,13 +164,14 @@ void StreamPipeline::update_module_args(int frameInd){
     std::list<Module_t>::iterator it;
     for (it = _pipe.begin(); it != _pipe.end(); ++it){
         //(*it).pArg = 
+        // TODO
     }
 }
 
-void StreamPipeline::frames_run_pipe(){
+void StreamPipeline::frames_run_pipe(Args_t& sArgs){
     for(int i = _startFrameInd; i < _startFrameInd + _frameNum; ++i){
         update_module_args(i); // should consider behavioral consistency with Pipeline, when frameNum = 1: RawStream has update_module_args but Pipeline does not.
-        run_pipe();
+        run_pipe(sArgs);
         // if config specifies what arguments for a specific frame, just use config
         // if config not specified, use adapted
         // if none of the above, keep unchanged
@@ -157,7 +189,42 @@ void test_pipeline(){
         1, //int alignment;
     };
 
-    ReadRawArg_t* pVinArg = &sVinArg;
+    StarTetrixArg_t sStarTetrixArg = {
+        1,
+        2
+    };
+    StarTetrixArg_t* pStarTetrixArg = &sStarTetrixArg;
+    Module_t sStarTetrixModule = {
+        ISP_VIN,
+        RAW_RGGB,
+        RAW_RGGB,
+        16,
+        16,
+        UNSIGNED,
+        UNSIGNED,
+        star_tetrix_forward
+    };
+    DWTArg_t sDWTArg;
+    sDWTArg.level = 2;
+    sDWTArg.orient = TWO_DIMENSIONAL;
+    sDWTArg.inImgPanelId = 0;
+    sDWTArg.outImgPanelId = 0;
+    config_dwt_kernels_LeGall53<int16_t>(&sDWTArg, MIRROR);
+
+    MyJXSArg_t sCompressionArg = {sStarTetrixArg, sDWTArg};
+
+    CCMArg_t sCCMArg = {
+        {278, -10, -8},
+        {-12, 269, -8},
+        {-10, -3, 272},
+    };
+
+
+    Args_t sArgs = {
+        sVinArg,
+        sCompressionArg,
+        sCCMArg
+    };
     
     Module_t sVinModule ={
         ISP_VIN,
@@ -167,21 +234,16 @@ void test_pipeline(){
         16,
         UNSIGNED,
         UNSIGNED,
-        (void*)pVinArg,
         read_raw_frame
     };
 
     Img_t* pInitInImg = (Img_t*)malloc(sizeof(Img_t));
     construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
     Pipeline myPipe(*pInitInImg);
-    myPipe.add_module_to_pipe(sVinModule); // TODO: should be a cfg file to tell what modules to add // this is "config pipe"; also need to config frames and loops
+    myPipe.add_module_to_pipe(sVinModule);
 
     myPipe.print_pipe();
-    myPipe.run_pipe();
+    myPipe.run_pipe(sArgs);
 
     destruct_img(&pInitInImg);
 }
-// different loops: use different module arg configs, but same pipe
-// config may be nested
-// loop {frame [module serial]}
-// or, no loop, just frame; loop is treated like another object so it needs another config

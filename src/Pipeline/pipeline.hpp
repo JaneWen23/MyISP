@@ -3,15 +3,15 @@
 
 #include <iostream>
 #include <list>
+#include "../Modules/Infra/ImgDef.hpp"
 #include "../Modules/PipelineModules/PipelineModules.hpp"
 
-
 typedef struct{
-    // startFrameInd, frameNum, rewind
-    // module name list in order
-    // which modules will change args? how to update args??
-    // new pArg's for every frame, or necessary frames
-} PipeCfg_t;
+    // the integration of all run-time arguments
+    ReadRawArg_t sVinArg;
+    MyJXSArg_t sCompressionArg;
+    CCMArg_t sCCMArg;
+} Args_t;
 
 class Pipeline{
     public:
@@ -19,7 +19,7 @@ class Pipeline{
         ~Pipeline();
         void add_module_to_pipe(Module_t& sModule);
         void print_pipe();
-        void run_pipe(); // run pipeline for a single frame
+        void run_pipe(Args_t& sArgs); // run pipeline for a single frame
         void dump();
 
     private:
@@ -40,9 +40,9 @@ class StreamPipeline : public Pipeline{
     public:
         StreamPipeline(Img_t& sImg); // maybe add cfg to parameter list
         ~StreamPipeline();
-        void frames_run_pipe(); // maybe another name??
+        void frames_run_pipe(Args_t& sArgs); // TODO: maybe another name??
     private:
-        void update_module_args(int frameInd);//should input cfg
+        void update_module_args(int frameInd);//TODO: move out of class.
     private:
         int _startFrameInd;
         int _frameNum;

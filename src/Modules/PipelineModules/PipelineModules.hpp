@@ -22,6 +22,15 @@ typedef enum {
 } MODULE_ENUM;
 
 typedef struct{
+    // defines the structure of pipeline; does not care about data and arguments.
+    MODULE_ENUM module;
+    IMAGE_FMT outFmt;
+    int outBitDepth;
+    SIGN outSign; // TODO: usually UNSIGNED in pipeline. it's just that some of my modules have sign.
+} PipeCfg_t; // TODO: maybe another name, like user module cfg, do not use pipe. pipe should be an array of this.
+
+typedef struct{
+    // this struct is usually inferred from PipeCfg_t
     MODULE_ENUM module;
     IMAGE_FMT inFmt;
     IMAGE_FMT outFmt;
@@ -29,22 +38,10 @@ typedef struct{
     int outBitDepth;
     SIGN inSign;
     SIGN outSign;
-    void* pArg;
-    std::function<IMG_RTN_CODE(Img_t*, Img_t*, void*)> run_function;
+    std::function<IMG_RTN_CODE(const Img_t*, Img_t*, const void*)> run_function;
 } Module_t;
 
-typedef struct{ // interation of the Arg_t's; does not necessarily match the isp modules
-    ReadRawArg_t sVinArg;
-    MyJXSArg_t sCompressionArg;
-    CCMArg_t sCCMArg;
-} Args_t;
 
-Module_t isp_vin_module_cfg(Args_t& sArgs); // must match the isp module
-Module_t isp_compression_module_cfg(Args_t& sArgs);
-Module_t isp_blc_module_cfg(Args_t& sArgs);
-Module_t isp_dms_module_cfg(Args_t& sArgs);
-Module_t isp_wb_module_cfg(Args_t& sArgs);
-Module_t isp_ccm_module_cfg(Args_t& sArgs);
-Module_t isp_rgb2yuv_module_cfg(Args_t& sArgs);
+Module_t config_isp_module(PipeCfg_t& sPipeCfg, PipeCfg_t& sPipeCfgLast); // must match with the isp module
 
 #endif
