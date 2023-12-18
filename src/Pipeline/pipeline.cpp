@@ -3,6 +3,9 @@
 
 const char* get_module_name(const MODULE_ENUM m){
     switch(m){
+        case ISP_NONE:{
+            return "ISP_NONE";
+        }
         case ISP_VIN:{
             return "ISP_VIN";
         }
@@ -194,16 +197,7 @@ void test_pipeline(){
         2
     };
     StarTetrixArg_t* pStarTetrixArg = &sStarTetrixArg;
-    Module_t sStarTetrixModule = {
-        ISP_VIN,
-        RAW_RGGB,
-        RAW_RGGB,
-        16,
-        16,
-        UNSIGNED,
-        UNSIGNED,
-        star_tetrix_forward
-    };
+
     DWTArg_t sDWTArg;
     sDWTArg.level = 2;
     sDWTArg.orient = TWO_DIMENSIONAL;
@@ -218,6 +212,7 @@ void test_pipeline(){
         {-12, 269, -8},
         {-10, -3, 272},
     };
+    //======================================================
 
 
     Args_t sArgs = {
@@ -228,6 +223,7 @@ void test_pipeline(){
     
     Module_t sVinModule ={
         ISP_VIN,
+        ISP_NONE,
         RAW_RGGB,
         RAW_RGGB,
         16,
@@ -235,6 +231,18 @@ void test_pipeline(){
         UNSIGNED,
         UNSIGNED,
         read_raw_frame
+    };
+
+    Module_t sCompressionModule ={
+        ISP_COMPRESSION,
+        ISP_VIN,
+        RAW_RGGB,
+        RAW_RGGB,
+        16,
+        16,
+        UNSIGNED,
+        SIGNED,
+        my_jxs_pipe_sim
     };
 
     Img_t* pInitInImg = (Img_t*)malloc(sizeof(Img_t));

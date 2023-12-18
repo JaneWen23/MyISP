@@ -1,7 +1,7 @@
 #include "demo.hpp"
-#include "../Modules/Infra/ImageIO.hpp"
-#include "../Modules/StarTetrix/StarTetrixTrans.hpp"
-#include "../Modules/DWT/dwt.hpp"
+#include "../Algos/Infra/ImageIO.hpp"
+#include "../Algos/StarTetrix/StarTetrixTrans.hpp"
+#include "../Algos/DWT/dwt.hpp"
 
 using namespace cv;
 

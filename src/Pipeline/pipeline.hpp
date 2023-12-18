@@ -3,8 +3,10 @@
 
 #include <iostream>
 #include <list>
-#include "../Modules/Infra/ImgDef.hpp"
-#include "../Modules/PipelineModules/PipelineModules.hpp"
+#include "../Algos/Infra/ImgDef.hpp"
+#include "../Modules/PipelineModules.hpp"
+
+#define MAX_NUM_PARALLEL_MODULES 4
 
 typedef struct{
     // the integration of all run-time arguments
@@ -30,7 +32,8 @@ class Pipeline{
     private:
         Img_t _sInImg;
         Img_t _sOutImg;
-        // const char* namePrefix ???
+        Img_t _buffered[MAX_NUM_PARALLEL_MODULES - 1];
+        // TODO: const char* namePrefix ???
 
     protected:
         std::list<Module_t> _pipe;
@@ -42,7 +45,7 @@ class StreamPipeline : public Pipeline{
         ~StreamPipeline();
         void frames_run_pipe(Args_t& sArgs); // TODO: maybe another name??
     private:
-        void update_module_args(int frameInd);//TODO: move out of class.
+        void update_module_args(int frameInd);//TODO: to be finished, update gars every frame.
     private:
         int _startFrameInd;
         int _frameNum;
