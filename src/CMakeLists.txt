@@ -8,13 +8,16 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Math DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Infra DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/DWT DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/StarTetrix DIR_PROJECT_SRC)
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Compression DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Filter DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Color DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/ThirdParty DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Demo DIR_PROJECT_SRC)
+
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Modules/ISP_COMPRESSION DIR_PROJECT_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Modules/PipelineModules DIR_PROJECT_SRC)
+
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Pipeline DIR_PROJECT_SRC)
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/PipelineModules DIR_PROJECT_SRC)
+
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXXFLAGS} -std=c++17 -O3 -fsanitize=address")

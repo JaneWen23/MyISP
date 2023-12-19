@@ -167,7 +167,8 @@ void StreamPipeline::update_module_args(int frameInd){
     std::list<Module_t>::iterator it;
     for (it = _pipe.begin(); it != _pipe.end(); ++it){
         //(*it).pArg = 
-        // TODO
+        // TODO: two ways to update args. one is c-model simulation mode, just set values when module runs;
+        // the other is to read from a series of toml files for every frame, and override the values set by module.
     }
 }
 

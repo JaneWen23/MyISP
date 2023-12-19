@@ -8,7 +8,7 @@
 #include <functional>
 #include "../Algos/Infra/ImgDef.hpp"
 #include "../Algos/Infra/ImageIO.hpp"
-#include "../Algos/Compression/MyJXS.hpp"
+#include "../Modules/ISP_COMPRESSION/MyJXS.hpp"
 #include "../Algos/Color/Color.hpp"
 
 typedef enum {
@@ -47,7 +47,6 @@ typedef struct{
     SIGN inSign;
     SIGN outSign;
     std::function<IMG_RTN_CODE(const Img_t*, Img_t*, const void*)> run_function; //TODO: what if a module needs two input images?
-    // TODO: maybe, module function is different than function's function
 } Module_t;
 
 // Update 20231218
@@ -58,15 +57,25 @@ typedef struct{
 // and a module output may be used by multiple modules
 // "module's function is different than Algo's function"
 // need to design module's interface
-// still generate one output Img_t (shared pointer), but input img and arg are in lists
-// the execution of a module is just the function as said above
+// still generate one output Img_t (shared pointer), but input img is in list
+// about the args: module arg may contain algo arg and more, for example, some adaptive args between two algos.
+// and the args should contain the items to be memorized, like, adaptive n-tap filter coefficients => n numbers should be in args.
+// modules should also take care of the adaptation of args during the running of stream,
+// so, there are two functions in a module, one is the execution of this frame, the other is update of args.
+// so, the output should be an outImg and updatedArg
+
 // the first input image should be the "main" image that being active during whole pipeline processing
 // the pipeline should contain one main image and some buffered images. 
 // only in the context of pipeline, need people to consider where to store the images.
-// modules may also contain inFmt, outFmt, inBitDepth, outBitDepth, inSign, outSign
+// the inFmt, outFmt, ... : modules do not contain these info, but need to check every input's fmt and output fmt
+// some algo are restricted to a certain fmt, so module needs to ensure that fmt is correct.
+// modules i/o should be unsigned only. need to convert to unsigned if algo produces signed results.
+
+// what algos can be packed into a module: algos in serial, or just the one algo;
+// two parallel algos should not be packed into one module, they should be two modules with proper names.
 // modules may not contain the info about next or last module
-// in the module interface, check_input_fmt() and check_output_fmt() must be performed.
-// 
+// if pipeline needs 12 bits but algo needs more bits and sign: when algo finished, convert back to 12-bit unsigned.
+// pipeline at construction: check in fmt of this module and out fmt of the last module. (what if two input formats?)
 
 Module_t generate_isp_module(PipeUnit_t& sPipeUnit, PipeUnit_t& sPipeUnitLast);
 void test_pipeline_modules();

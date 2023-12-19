@@ -2,8 +2,8 @@
 #define _MY_JXS_H
 
 //#include "../Infra/ImgDef.hpp"
-#include "../StarTetrix/StarTetrixTrans.hpp"
-#include "../DWT/dwt.hpp"
+#include "../../Algos/StarTetrix/StarTetrixTrans.hpp"
+#include "../../Algos/DWT/dwt.hpp"
 
 typedef struct{
     StarTetrixArg_t sStarTetrixArg;
