@@ -46,18 +46,3 @@ IMG_RTN_CODE read_raw_to_img_t(const char* path,
     return SUCCEED;
 }
 
-
-IMG_RTN_CODE read_raw_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg){
-    // pInImg: don't care.
-    ReadRawArg_t* pArg = (ReadRawArg_t*)pReadRawArg;
-    read_raw_to_img_t(pArg->path,
-                       pOutImg,
-                       pArg->imageFormat,
-                       pArg->width,
-                       pArg->height,
-                       pArg->bitDepth,
-                       pArg->alignment,
-                       pArg->frameInd);
-
-    return SUCCEED;
-}

@@ -1,13 +1,14 @@
 #include "PipelineModules.hpp"
 
 
-std::function<IMG_RTN_CODE(const Img_t*, Img_t*, const void*)> find_func_to_run(MODULE_ENUM m){
+
+std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_to_run(MODULE_ENUM m){
     switch (m){
         case ISP_VIN:{
-            return read_raw_frame;
+            return isp_vin;
         }
         case ISP_COMPRESSION:{
-            return my_jxs_pipe_sim;
+            return isp_compression;
         }
         case ISP_BLC:{
             break;
@@ -19,7 +20,7 @@ std::function<IMG_RTN_CODE(const Img_t*, Img_t*, const void*)> find_func_to_run(
             break;
         }
         case ISP_CCM:{
-            return ccm;
+            return isp_ccm;
         }
         case ISP_RGB2YUV:{
             break;
@@ -29,7 +30,8 @@ std::function<IMG_RTN_CODE(const Img_t*, Img_t*, const void*)> find_func_to_run(
             exit(1);
         }
     }
-    return read_raw_frame; // this is nonsense. just because it needs a return value.
+    std::cout<<"error: cannot find function for the module. exited.\n";
+    exit(1);
 }
 
 

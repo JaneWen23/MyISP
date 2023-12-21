@@ -6,7 +6,7 @@
 #include "src/Algos/Filter/SlidingWindow.hpp"
 #include "src/Algos/Infra/ImageIO.hpp"
 #include "src/Algos/StarTetrix/StarTetrixTrans.hpp"
-#include "src/Algos/Compression/MyJXS.hpp"
+#include "src/Modules/ISP_COMPRESSION/MyJXS.hpp"
 #include "src/Demo/demo.hpp"
 #include "src/Algos/Color/Color.hpp"
 #include "src/Pipeline/pipeline.hpp"

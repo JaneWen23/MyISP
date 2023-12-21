@@ -22,6 +22,5 @@ IMG_RTN_CODE read_raw_to_img_t(const char* path,
                        const int alignment,
                        int frameInd = 0);
 
-IMG_RTN_CODE read_raw_frame(const Img_t* pInImg, Img_t* pOutImg, const void* pReadRawArg);
 
 #endif

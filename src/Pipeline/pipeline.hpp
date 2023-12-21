@@ -4,16 +4,16 @@
 #include <iostream>
 #include <list>
 #include "../Algos/Infra/ImgDef.hpp"
-#include "../Modules/PipelineModules.hpp"
+#include "../Modules/COMMON/PipelineModules.hpp"
 
-#define MAX_NUM_PARALLEL_MODULES 4
+// #define MAX_NUM_PARALLEL_MODULES 4
 
 typedef struct{
     // the integration of all run-time arguments
     ReadRawArg_t sVinArg;
-    MyJXSArg_t sCompressionArg;
+    MArg_Compression_t sCompressionArg;
     CCMArg_t sCCMArg;
-} Args_t;
+} PipeArgs_t;
 
 class Pipeline{
     public:
@@ -21,7 +21,7 @@ class Pipeline{
         ~Pipeline();
         void add_module_to_pipe(Module_t& sModule);
         void print_pipe();
-        void run_pipe(Args_t& sArgs); // run pipeline for a single frame
+        void run_pipe(PipeArgs_t& sArgs); // run pipeline for a single frame
         void dump();
 
     private:
@@ -30,9 +30,8 @@ class Pipeline{
         void move_data();
 
     private:
-        Img_t _sInImg;
+        ImgPtrs_t _sInImgPtrs;
         Img_t _sOutImg;
-        Img_t _buffered[MAX_NUM_PARALLEL_MODULES - 1];
         // TODO: const char* namePrefix ???
 
     protected:
@@ -43,7 +42,7 @@ class StreamPipeline : public Pipeline{
     public:
         StreamPipeline(Img_t& sImg); // maybe add cfg to parameter list
         ~StreamPipeline();
-        void frames_run_pipe(Args_t& sArgs); // TODO: maybe another name??
+        void frames_run_pipe(PipeArgs_t& sArgs); // TODO: maybe another name??
     private:
         void update_module_args(int frameInd);//TODO: to be finished, update gars every frame.
     private:

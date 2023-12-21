@@ -70,9 +70,20 @@ void config_ccm_kernel_exact(KernelCfg_t* pKerCfg, uint8_t* pColorMat, uint8_t**
 
 
 IMG_RTN_CODE ccm(const Img_t* pInImg, Img_t* pOutImg, const void* pCCMArg){
+    // color correction matrix has sign, so the input image should also be signed,
+    // this is determined by the nature that two different typed variables cannot be operated.
+    if (pInImg->sign != SIGNED){
+        std::cout<<"error: please convert input image sign to SIGNED before pass to ccm(). exited.\n";
+        exit(1);
+    }
+    if (pOutImg->sign != SIGNED){
+        pOutImg->sign = SIGNED;
+        std::cout<<"warning: ccm() output image sign is set to SIGNED because input image and color matrix are signed.\n";
+    }
+
     // config the 1x1 kernel:
     KernelCfg_t* pKerCfg = (KernelCfg_t*)malloc(sizeof(KernelCfg_t));
-    uint8_t* pColorMat = (uint8_t*)malloc(9 * sizeof(int)); // 3 rows, 3 columns; not all are used since actual data type may be int16
+    uint8_t* pColorMat = (uint8_t*)malloc(9 * sizeof(int)); // 3 rows, 3 columns; not all are used since actual data type might be int16 or less
     uint8_t* pColorMatRows[3*sizeof(int)] = {NULL};
     config_ccm_kernel_exact(pKerCfg, pColorMat, pColorMatRows, pCCMArg, pOutImg->sign, pOutImg->bitDepth);
 
@@ -127,9 +138,9 @@ void test_ccm(){
                   allocateImage);
 
     const CCMArg_t CCMArg = {
-        {278, -10, -8},
-        {-12, 269, -8},
-        {-10, -3, 272},
+        {278, -12, -10},
+        {-10, 269, -3},
+        {-8, -8, 272},
     };
 
     ccm(pImg1, pImg2, (void*)&CCMArg);

@@ -6,10 +6,11 @@
 // and they are "packages" of other modules in Modules.
 
 #include <functional>
-#include "../Algos/Infra/ImgDef.hpp"
-#include "../Algos/Infra/ImageIO.hpp"
-#include "../Modules/ISP_COMPRESSION/MyJXS.hpp"
-#include "../Algos/Color/Color.hpp"
+#include "common.hpp"
+#include "../../Algos/Infra/ImageIO.hpp"
+#include "../../Modules/ISP_VIN/Vin.hpp"
+#include "../../Modules/ISP_COMPRESSION/MyJXS.hpp"
+#include "../../Modules/ISP_CCM/ccm.hpp"
 
 typedef enum {
     ISP_NONE,
@@ -21,6 +22,7 @@ typedef enum {
     ISP_CCM,
     ISP_RGB2YUV
 } MODULE_ENUM;
+
 
 typedef struct{
     // defines the structure of pipeline; does not care about data and arguments.
@@ -46,23 +48,23 @@ typedef struct{
     int outBitDepth;
     SIGN inSign;
     SIGN outSign;
-    std::function<IMG_RTN_CODE(const Img_t*, Img_t*, const void*)> run_function; //TODO: what if a module needs two input images?
+    std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> run_function; //TODO: what if a module needs two input images?
 } Module_t;
 
 // Update 20231218
 // forget the above. need to rethink about the modules in pipeline
 // it is certain that a pipeline topology is a DAG (Directional Acyclic Graph)
 // a module in a DAG is a node, so,
-// a module may have uncertain number of inputs (i.e., input images and their arguments)
+// a module may have uncertain number of input images
 // and a module output may be used by multiple modules
 // "module's function is different than Algo's function"
-// need to design module's interface
+// module's interface:
 // still generate one output Img_t (shared pointer), but input img is in list
-// about the args: module arg may contain algo arg and more, for example, some adaptive args between two algos.
+// about the args: "module arg" may contain algo arg and more, for example, some adaptive args between two algos.
 // and the args should contain the items to be memorized, like, adaptive n-tap filter coefficients => n numbers should be in args.
 // modules should also take care of the adaptation of args during the running of stream,
-// so, there are two functions in a module, one is the execution of this frame, the other is update of args.
-// so, the output should be an outImg and updatedArg
+// so, the module function may contain: 1, execution of this frame, and 2, update of args.
+// so, the output should be an outImg and updatedArg (maybe update arg in the same place)
 
 // the first input image should be the "main" image that being active during whole pipeline processing
 // the pipeline should contain one main image and some buffered images. 
