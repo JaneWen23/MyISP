@@ -11,5 +11,19 @@ typedef struct{ // input images for a module
     Img_t* pAddlImg3; // additional image 3
 } ImgPtrs_t;
 
+typedef enum {
+    ISP_NONE,
+    ISP_VIN,
+    ISP_COMPRESSION,
+    ISP_BLC,
+    ISP_DMS,
+    ISP_WB,
+    ISP_CCM,
+    ISP_RGB2YUV
+} MODULE_ENUM;
+
+const char* get_module_name(const MODULE_ENUM m);
+void signed_to_unsigned_img(Img_t* pImg);
+void unsigned_to_signed_img(Img_t* pImg);
 
 #endif

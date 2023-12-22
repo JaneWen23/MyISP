@@ -7,21 +7,9 @@
 
 #include <functional>
 #include "common.hpp"
-#include "../../Algos/Infra/ImageIO.hpp"
 #include "../../Modules/ISP_VIN/Vin.hpp"
 #include "../../Modules/ISP_COMPRESSION/MyJXS.hpp"
 #include "../../Modules/ISP_CCM/ccm.hpp"
-
-typedef enum {
-    ISP_NONE,
-    ISP_VIN,
-    ISP_COMPRESSION,
-    ISP_BLC,
-    ISP_DMS,
-    ISP_WB,
-    ISP_CCM,
-    ISP_RGB2YUV
-} MODULE_ENUM;
 
 
 typedef struct{
@@ -72,11 +60,17 @@ typedef struct{
 // the inFmt, outFmt, ... : modules do not contain these info, but need to check every input's fmt and output fmt
 // some algo are restricted to a certain fmt, so module needs to ensure that fmt is correct.
 // modules i/o should be unsigned only. need to convert to unsigned if algo produces signed results.
+// this gives rise to the problem of bit-depth conversion, since signed <==> unsigned may be complicated.
+// and bit depth conversion may or may not cause the change of data type in cpp.
+// however, we need to take care of these two cases.
+
+// the pipeline itself may not determine "pipeline bit depth" independently; the bit depth should be determined by
+// combination of sensor bit depth and each module's format and sign(defined by algo).
+// pipeline bit depth is just a result of the modules' bit depth.
 
 // what algos can be packed into a module: algos in serial, or just the one algo;
 // two parallel algos should not be packed into one module, they should be two modules with proper names.
 // modules may not contain the info about next or last module
-// if pipeline needs 12 bits but algo needs more bits and sign: when algo finished, convert back to 12-bit unsigned.
 // pipeline at construction: check in fmt of this module and out fmt of the last module. (what if two input formats?)
 
 Module_t generate_isp_module(PipeUnit_t& sPipeUnit, PipeUnit_t& sPipeUnitLast);

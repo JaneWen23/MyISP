@@ -24,7 +24,11 @@ int main(){
     //demo_star_tetrix();
     //test_ccm(); 
     //test_pipeline();
-    test_my_jxs();
+    //test_my_jxs();
+    std::cout<< INT32_MAX <<"\n";
+    std::cout<< UINT32_MAX <<"\n";
+    std::cout<< INT16_MAX <<"\n";
+    std::cout<< UINT16_MAX <<"\n";
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

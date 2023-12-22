@@ -9,6 +9,7 @@
 typedef struct{
     StarTetrixArg_t sStarTetrixArg;
     DWTArg_t sDWTArg;
+    // more...
 } MArg_Compression_t;
 
 

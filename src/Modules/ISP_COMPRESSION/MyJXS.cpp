@@ -65,15 +65,19 @@ IMG_RTN_CODE my_jxs_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pM
     return SUCCEED;
 }
 
-// TODO
-// check image format before execution
+
 IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMyJXSArg){
+    sInImgPtrs.pMainImg->sign = SIGNED;
+
     Img_t* pTmpImg = (Img_t*)malloc(sizeof(Img_t));
     my_jxs_forward(sInImgPtrs.pMainImg, pTmpImg, pMyJXSArg);
     my_jxs_backward(pTmpImg, pOutImg, pMyJXSArg);
     destruct_img(&pTmpImg);
-    // the module execution will not update any arguments, i.e., pMyJXSArg will not be changed by this func.
-    // but arguments may be changed by the provided arguments from toml latter.
+    // currently, the module execution will not update any arguments, i.e., pMyJXSArg will not be changed by this func.
+    // there may be some adaptive parameters if perform a "real" compression algo (;TODO)
+    // also, arguments may be changed by the provided arguments from toml latter.
+
+    pOutImg->sign = UNSIGNED;
     return SUCCEED;
 }
 

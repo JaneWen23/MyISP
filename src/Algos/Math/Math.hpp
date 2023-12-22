@@ -21,7 +21,7 @@ const T dot_product(const T* a, const T* b, const int vecLen){
 }
 
 template<typename T>
-const T dot_product(const T** a, const T** b, const int vecLen){ // in use
+const T dot_product(const T** a, const T** b, const int vecLen){
     // "T** a" is to help handel the padded signal.
     // "T** b" is to help handel the flipped kernel.
     T res = 0;
@@ -57,7 +57,7 @@ struct Formulas_T{
 }; // note: cannot typedef, because there is no type yet.
 
 
-
+// find max, find min??
 
 
 #endif

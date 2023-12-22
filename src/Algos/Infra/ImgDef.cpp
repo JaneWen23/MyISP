@@ -284,6 +284,26 @@ void view_image_data(const Img_t* pImg, const ROI_t& sViewROI){
     }
 }
 
+const int get_num_of_bytes_per_pixel(int bitDepth){
+    if (bitDepth < 1){
+        std::cout<< "error: bit depth cannot be less than 1. exited.\n";
+        exit(1);
+    }
+    if (bitDepth <= 8){
+        return 1;
+    }
+    else if (bitDepth <= 16){
+        return 2;
+    }
+    else if (bitDepth <= 32){
+        return 4;
+    }
+    else{
+        std::cout<< "the bit depth is not supported. exited.\n";
+        exit(1);
+    }
+}
+
 void set_strides(Img_t* pImg){
     // strides are initiated by zeros.
     for (int c = 0; c < MAX_NUM_P; c++){
@@ -294,7 +314,7 @@ void set_strides(Img_t* pImg){
     // the width will be 100 for both panels, and it is only a number, it does not affect actual image allocation
     // so stride[0] = 100*num_of_bytes_for_a_pixel + make_up_alignment_bytes, 
     // and stride[1] = 50*num_of_bytes_for_a_pixel + make_up_alignment_bytes
-    int bytes_per_line = get_next_multiple(pImg->width * ((pImg->bitDepth + 7)/8), pImg->alignment);
+    int bytes_per_line = get_next_multiple(pImg->width * get_num_of_bytes_per_pixel(pImg->bitDepth), pImg->alignment);
     switch (pImg->imageFormat){
         case MONO:
         case RAW_RGGB:
@@ -317,7 +337,7 @@ void set_strides(Img_t* pImg){
         }
         case YUV420:{
             pImg->strides[0] = bytes_per_line;
-            pImg->strides[1] = pImg->strides[2] = get_next_multiple((pImg->width>>1) * ((pImg->bitDepth + 7)/8), pImg->alignment);
+            pImg->strides[1] = pImg->strides[2] = get_next_multiple((pImg->width>>1) * get_num_of_bytes_per_pixel(pImg->bitDepth), pImg->alignment);
         }
         default:
             break;
@@ -494,6 +514,29 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
 }
 
 // TODO: crop_image()
+
+IMG_RTN_CODE change_img_bitDepth(const Img_t* pSrcImg, const int dstBitDepth, bool createNew, Img_t* pDstImg){
+    if (pSrcImg == NULL){
+        std::cout<<"error: source Img_t object is not allocated.\n";
+        return ALLOCATION_FAIL;
+    }
+    if (createNew){
+        if (pDstImg == NULL){
+            std::cout<<"error: createNew is true, but destination Img_t object is not allocated.\n";
+            return ALLOCATION_FAIL;
+        }
+    }
+
+    // do not discuss sign. only discuss bit depth. because data are stored in uint8.
+
+    // first discuss whether need to change data type or not,
+    // if not, just change pSrcImg->bitDepth
+    // if need to change data type, two cases:
+    // 1) do not create new: re-allocate the imageData, then copy the data, then free original imageData
+    // 2) create new: construct img_t, then copy the data, then free original imageData
+
+    return SUCCEED;
+}
 
 bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg){ // TODO: add option to compare "visible" only
     for (int c = 0; c < MAX_NUM_P; ++c){
