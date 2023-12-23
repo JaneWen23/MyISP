@@ -25,10 +25,9 @@ int main(){
     //test_ccm(); 
     //test_pipeline();
     //test_my_jxs();
-    std::cout<< INT32_MAX <<"\n";
-    std::cout<< UINT32_MAX <<"\n";
-    std::cout<< INT16_MAX <<"\n";
-    std::cout<< UINT16_MAX <<"\n";
+
+    test_img_def();
+
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

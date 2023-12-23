@@ -446,6 +446,48 @@ IMG_RTN_CODE construct_img( Img_t* pImg,
     return SUCCEED;
 }
 
+void find_heights_or_widths(const Img_t* pImg, char option, int* values){
+    // option = 'h', means to find heights
+    // option = 'w', means to find widths
+    int tmp = 0;
+    switch (option){
+        case 'h':{
+            tmp = pImg->height;
+            break;
+        }
+        case 'w':{
+            tmp = pImg->width;
+            break;
+        }
+    }
+    switch (pImg->imageFormat){
+        case MONO:
+        case RGB:
+        case RAW_RGGB:
+        case RAW_GRBG:
+        case RAW_GBRG:
+        case RAW_BGGR:
+        case Y_C_C_D_RGGB:
+        case Y_C_C_D_GRBG:
+        case Y_C_C_D_GBRG:
+        case Y_C_C_D_BGGR:{
+            for (int c = 0; c < MAX_NUM_P; ++c){
+                values[c] = tmp; // if there are less than MAX_NUM_P panels, just do not use.
+            }
+            break;
+        }
+        case YUV420:{
+            values[0] = tmp;
+            values[1] = values[2] = tmp >> 1;
+            break;
+        }
+        default:{
+            std::cout<<"error: image format is not supported. exited.\n";
+            exit(1);
+        }
+    }
+}
+
 IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
     // dose NOT set ROI because ROI size is in pixel (each pixel may take 1, 2 or 4 bytes), 
     // but the Img_t cannot handle different data types.
@@ -470,32 +512,7 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
                     pSrcImg->alignment,
                     true) == SUCCEED){
         int heights[MAX_NUM_P] = {0};
-        switch (pSrcImg->imageFormat){
-            case MONO:
-            case RGB:
-            case RAW_RGGB:
-            case RAW_GRBG:
-            case RAW_GBRG:
-            case RAW_BGGR:
-            case Y_C_C_D_RGGB:
-            case Y_C_C_D_GRBG:
-            case Y_C_C_D_GBRG:
-            case Y_C_C_D_BGGR:{
-                for (int c = 0; c < MAX_NUM_P; ++c){
-                    heights[c] = pSrcImg->height; // if there are less than MAX_NUM_P panels, just do not use.
-                }
-                break;
-            }
-            case YUV420:{
-                heights[0] = pSrcImg->height;
-                heights[1] = heights[2] = pSrcImg->height >> 1;
-                break;
-            }
-            default:{
-                std::cout<<"error: image format is not supported. exited.\n";
-                exit(1);
-            }
-        }
+        find_heights_or_widths(pSrcImg, 'h', heights);
         for (int c = 0; c < MAX_NUM_P; ++c){
             if (pSrcImg->pImageData[c] != NULL){
                 for (int i = 0; i < heights[c]; ++i){
@@ -515,25 +532,105 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
 
 // TODO: crop_image()
 
-IMG_RTN_CODE change_img_bitDepth(const Img_t* pSrcImg, const int dstBitDepth, bool createNew, Img_t* pDstImg){
-    if (pSrcImg == NULL){
+template<typename Tsrc, typename Tdst>
+void copy_pix_with_type(uint8_t* pSrc, uint8_t* pDst){
+    Tsrc tmp = *((Tsrc*)pSrc);
+    //*(Tdst*)pDst = static_cast<Tdst>(tmp);
+    *(Tdst*)pDst = (Tdst)tmp;
+}
+typedef void (*FCOPYPIX)(uint8_t*, uint8_t*);
+
+template<typename Tsrc>
+FCOPYPIX choose_copy_pix_func(int dstTypeBytes){
+    switch (dstTypeBytes){
+        case 1:{
+            return copy_pix_with_type<Tsrc, uint8_t>;
+        }
+        case 2:{
+            return copy_pix_with_type<Tsrc, uint16_t>;
+        }
+        case 4:{
+            return copy_pix_with_type<Tsrc, uint32_t>;
+        } // no problem to use unsigned types, because only bit depth matters
+        default:{
+            std::cout<<"error: choose_copy_pix_func(): data type not supported. exited.\n";
+        }
+    }
+    return NULL;
+}
+
+IMG_RTN_CODE change_img_bitDepth(Img_t* pImg, const int dstBitDepth){
+    if (pImg == NULL){
         std::cout<<"error: source Img_t object is not allocated.\n";
         return ALLOCATION_FAIL;
-    }
-    if (createNew){
-        if (pDstImg == NULL){
-            std::cout<<"error: createNew is true, but destination Img_t object is not allocated.\n";
-            return ALLOCATION_FAIL;
-        }
     }
 
     // do not discuss sign. only discuss bit depth. because data are stored in uint8.
 
     // first discuss whether need to change data type or not,
-    // if not, just change pSrcImg->bitDepth
-    // if need to change data type, two cases:
-    // 1) do not create new: re-allocate the imageData, then copy the data, then free original imageData
-    // 2) create new: construct img_t, then copy the data, then free original imageData
+    // if not, just change pImg->bitDepth, done.
+    // if need to change data type:
+    // re-allocate the imageData, then copy the data, then free original imageData
+
+    int srcBitDepth = pImg->bitDepth;
+    int srcTypeBytes = get_num_of_bytes_per_pixel(srcBitDepth);
+    int dstTypeBytes = get_num_of_bytes_per_pixel(dstBitDepth);
+    if (srcTypeBytes == dstTypeBytes){
+        pImg->bitDepth = dstBitDepth;
+    }
+    else{
+        uint8_t* pSrcImageData[MAX_NUM_P] = {NULL};
+        int srcStrides[MAX_NUM_P] = {0};
+        for (int c = 0; c < MAX_NUM_P; ++c){
+            pSrcImageData[c] = pImg->pImageData[c];
+            srcStrides[c] = pImg->strides[c];
+            pImg->pImageData[c] = NULL;
+            pImg->strides[c] = 0;
+        }
+        pImg->bitDepth = dstBitDepth;
+        set_strides(pImg);
+        allocate_image_data(pImg);
+        int heights[MAX_NUM_P] = {0};
+        find_heights_or_widths(pImg, 'h', heights); // dst heights
+        int widths[MAX_NUM_P] = {0};
+        find_heights_or_widths(pImg, 'w', widths); // dst widths
+        
+
+        FCOPYPIX f = NULL;
+        switch (srcTypeBytes){
+            case 1:{
+                f = choose_copy_pix_func<uint8_t>(dstTypeBytes);
+                break;
+            }
+            case 2:{
+                f = choose_copy_pix_func<uint16_t>(dstTypeBytes);
+                break;
+            }
+            case 4:{
+                f = choose_copy_pix_func<uint32_t>(dstTypeBytes);
+                break;
+            }
+        }
+        
+        for (int c = 0; c < MAX_NUM_P; ++c){
+            uint8_t* pDstRow = pImg->pImageData[c];
+            uint8_t* pSrcRow = pSrcImageData[c];
+            if (pImg->pImageData[c] != NULL){
+                for (int i = 0; i < heights[c]; ++i){
+                    int jj = 0;
+                    for (int j = 0; j < widths[c] * dstTypeBytes; j += dstTypeBytes){
+                        f(pSrcRow + jj, pDstRow + j);
+                        jj += srcTypeBytes;
+                    }
+                    pDstRow += pImg->strides[c];
+                    pSrcRow += srcStrides[c];
+                }
+            }
+        }
+        for (int c = 0; c < MAX_NUM_P; ++c){
+            free(pSrcImageData[c]);
+        }
+    }
 
     return SUCCEED;
 }
@@ -583,9 +680,9 @@ void test_img_def(){
     Img_t* pMyImg = NULL; // initialize
     pMyImg =(Img_t*)malloc(sizeof(Img_t));
     IMAGE_FMT imageFormat = RGB;
-    int width = 50;
-    int height = 30;
-    int bitDepth = 16;
+    int width = 5;
+    int height = 6;
+    int bitDepth = 9;
     int alignment = 16;
     if (construct_img(pMyImg, 
                 imageFormat,
@@ -598,33 +695,24 @@ void test_img_def(){
         std::cout<<"ok\n";
     }
 
-    view_img_properties(pMyImg);
-
-    // try to use the image:
-    uint16_t* pMyData_p0 = NULL;
-    pMyData_p0 = (uint16_t*)(pMyImg->pImageData[0]);
-    if (pMyData_p0 == NULL){
-        return;
-    }
-    for (int i = 0; i < pMyImg->height; ++i){
-        for (int j = 0; j < pMyImg->width; ++j){
-            *(pMyData_p0 + i * (pMyImg->strides[0]) + j) = i * pMyImg->height + j + 34;
+    for (int c = 0; c < 3; ++c){
+        uint8_t* pRow = pMyImg->pImageData[c];
+        for (int i = 0; i < height; ++i){
+            for (int j = 0; j < pMyImg->strides[c]; j += get_num_of_bytes_per_pixel(bitDepth)){
+                *(uint32_t*)(pRow + j) = 257;
+            }
+            pRow += pMyImg->strides[c];
         }
     }
 
-    for (int i = 0; i < 12; i++){
-        std::cout<<"    "<< (*(pMyData_p0 + i));
-    }
-    std::cout<<'\n';
+    view_img_properties(pMyImg);
+    ROI_t roi = {1012, 0, 0, pMyImg->width, pMyImg->height};
+    view_image_data(pMyImg, roi);
 
-    for (int i = 0; i < 12; i++){
-        std::cout<<"    "<< (*(pMyData_p0 + pMyImg->strides[0] + i));
-    }
-    std::cout<<'\n';
+    int dstBitDepth = 24;
+    change_img_bitDepth(pMyImg, dstBitDepth);
+    view_img_properties(pMyImg);
+    view_image_data(pMyImg, roi);
 
     destruct_img(&pMyImg);
-
-    // but we have not null-ed pMyData_p0 yet. this is dangerous.
-    pMyData_p0 = NULL;
-    
  }
