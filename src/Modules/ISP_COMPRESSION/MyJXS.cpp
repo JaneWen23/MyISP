@@ -67,7 +67,7 @@ IMG_RTN_CODE my_jxs_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pM
 
 
 IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMyJXSArg){
-    sInImgPtrs.pMainImg->sign = SIGNED;
+    safe_unsigned_to_signed_img(sInImgPtrs.pMainImg);
 
     Img_t* pTmpImg = (Img_t*)malloc(sizeof(Img_t));
     my_jxs_forward(sInImgPtrs.pMainImg, pTmpImg, pMyJXSArg);
@@ -76,8 +76,8 @@ IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* p
     // currently, the module execution will not update any arguments, i.e., pMyJXSArg will not be changed by this func.
     // there may be some adaptive parameters if perform a "real" compression algo (;TODO)
     // also, arguments may be changed by the provided arguments from toml latter.
-
-    pOutImg->sign = UNSIGNED;
+    
+    safe_signed_to_unsigned_img(pOutImg);
     return SUCCEED;
 }
 

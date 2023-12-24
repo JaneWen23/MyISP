@@ -6,7 +6,7 @@ IMG_RTN_CODE isp_ccm(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_CCM
         std::cout<<"error: ISP_CCM: input image not being RGB. exited.\n";
         exit(1);
     }
-    sInImgPtrs.pMainImg->sign = SIGNED; // ccm() is defined to be signed.
+    safe_unsigned_to_signed_img(sInImgPtrs.pMainImg); // ccm() is defined to be signed.
 
     // TODO: may design MArg CCM elements to be all positive ==> negatives are in complement,
     // and then convert them to the signed CCMArg.
@@ -17,8 +17,8 @@ IMG_RTN_CODE isp_ccm(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_CCM
         exit(1);
     }
     
-    pOutImg->sign = UNSIGNED; // modules only allow unsigned data.
-
+    safe_signed_to_unsigned_img(pOutImg); // modules only allow unsigned data.
+    
     // TODO: add function to update the color matrix
 
     return SUCCEED;
