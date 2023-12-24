@@ -724,7 +724,7 @@ IMG_RTN_CODE safe_signed_to_unsigned_img(Img_t* pImg){
     // set negative values to 0: if it really happens, print a warning.
 
     int dstBitDepth = pImg->bitDepth - 1;
-    clamp_img(pImg, 0, (1 << (dstBitDepth)) - 1);
+    clamp_img(pImg, 0, (1 << (dstBitDepth)) - 1, true);
     change_img_bitDepth(pImg, dstBitDepth);
     
     pImg->sign = UNSIGNED;
