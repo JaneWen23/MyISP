@@ -533,13 +533,13 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
 
 // TODO: crop_image()
 
-void print_clamp_warning(int a, int b){
+void print_clamp_warning(const int a, const int b){
     if (a != b){
         std::cout<<"warning: value clipped, from " << a << " to "<< b <<"\n";
     }
 }
 
-void do_not_print_clamp_waring(int a, int b){
+void do_not_print_clamp_waring(const int a, const int b){
     // do nothing
 }
 
