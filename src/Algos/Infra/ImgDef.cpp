@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include "ImgDef.hpp"
+#include "../Math/Math.hpp"
 
 
 const int get_next_multiple(const int x, const int m){
@@ -532,6 +533,83 @@ IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg){
 
 // TODO: crop_image()
 
+void print_clamp_warning(int a, int b){
+    if (a != b){
+        std::cout<<"warning: value clipped, from " << a << " to "<< b <<"\n";
+    }
+}
+
+void do_not_print_clamp_waring(int a, int b){
+    // do nothing
+}
+
+typedef void (*FPRINTCLAMP)(int, int);
+
+template <typename T> 
+void clamp_img_with_type(Img_t* pImg, int lowerBound, int upperBound, bool printWarning){
+    Clamp_T<T> Fclamp;
+    Fclamp.f = clamp;
+    FPRINTCLAMP f_print = NULL;
+    if (printWarning){
+        f_print = print_clamp_warning;
+    }
+    else{
+        f_print = do_not_print_clamp_waring;
+    }
+    int heights[MAX_NUM_P] = {0};
+    int widths[MAX_NUM_P] = {0};
+    find_heights_or_widths(pImg, 'h', heights);
+    find_heights_or_widths(pImg, 'w', widths);
+    T tmp = 0;
+    T pixVal = 0;
+    for (int c = 0; c < MAX_NUM_P; ++c){
+        uint8_t* pRow = pImg->pImageData[c];
+        if (pImg->pImageData[c] != NULL){
+            for (int i = 0; i < heights[c]; ++i){
+                for (int j = 0; j < widths[c]; ++j){
+                    pixVal = *((T*)pRow + j);
+                    tmp = Fclamp.f(pixVal, (T)lowerBound, (T)upperBound);
+                    f_print(pixVal, tmp);
+                    *((T*)pRow + j) = tmp;
+                }
+                pRow += pImg->strides[c];
+            }
+        }
+    }
+}
+
+IMG_RTN_CODE clamp_img(Img_t* pImg, int lowerBound, int upperBound, bool printWarning){
+    if (pImg->sign == SIGNED){
+        if (pImg->bitDepth <= 8){
+            clamp_img_with_type<int8_t>(pImg, lowerBound, upperBound, printWarning);
+            return SUCCEED;
+        }
+        else if (pImg->bitDepth <= 16){
+            clamp_img_with_type<int16_t>(pImg, lowerBound, upperBound, printWarning);
+            return SUCCEED;
+        }
+        else if (pImg->bitDepth <= 32){
+            clamp_img_with_type<int>(pImg, lowerBound, upperBound, printWarning);
+            return SUCCEED;
+        }
+    }
+    else{
+        if (pImg->bitDepth <= 8){
+            clamp_img_with_type<uint8_t>(pImg, lowerBound, upperBound, printWarning);
+            return SUCCEED;
+        }
+        else if (pImg->bitDepth <= 16){
+            clamp_img_with_type<uint16_t>(pImg, lowerBound, upperBound, printWarning);
+            return SUCCEED;
+        }
+        else if (pImg->bitDepth <= 32){
+            clamp_img_with_type<uint32_t>(pImg, lowerBound, upperBound, printWarning);
+            return SUCCEED;
+        }
+    }
+    return PROCESS_INCOMPLETE;
+}
+
 template<typename Tsrc, typename Tdst>
 void copy_pix_with_type(uint8_t* pSrc, uint8_t* pDst){
     Tsrc tmp = *((Tsrc*)pSrc);
@@ -562,7 +640,7 @@ FCOPYPIX choose_copy_pix_func(int dstTypeBytes){
 IMG_RTN_CODE change_img_bitDepth(Img_t* pImg, const int dstBitDepth){
     if (pImg == NULL){
         std::cout<<"error: source Img_t object is not allocated.\n";
-        return ALLOCATION_FAIL;
+        return INVALID_INPUT;
     }
 
     // do not discuss sign. only discuss bit depth. because data are stored in uint8.
@@ -577,6 +655,7 @@ IMG_RTN_CODE change_img_bitDepth(Img_t* pImg, const int dstBitDepth){
     int dstTypeBytes = get_num_of_bytes_per_pixel(dstBitDepth);
     if (srcTypeBytes == dstTypeBytes){
         pImg->bitDepth = dstBitDepth;
+        return SUCCEED;
     }
     else{
         uint8_t* pSrcImageData[MAX_NUM_P] = {NULL};
@@ -595,7 +674,6 @@ IMG_RTN_CODE change_img_bitDepth(Img_t* pImg, const int dstBitDepth){
         int widths[MAX_NUM_P] = {0};
         find_heights_or_widths(pImg, 'w', widths); // dst widths
         
-
         FCOPYPIX f = NULL;
         switch (srcTypeBytes){
             case 1:{
@@ -632,6 +710,43 @@ IMG_RTN_CODE change_img_bitDepth(Img_t* pImg, const int dstBitDepth){
         }
     }
 
+    return SUCCEED;
+}
+
+IMG_RTN_CODE safe_signed_to_unsigned_img(Img_t* pImg){
+    if (pImg->sign != SIGNED){
+        std::cout<<"warning: called signed_to_unsigned_img() but input img is UNSIGNED.\n";
+        return INVALID_INPUT;
+    }
+    // usually used when module finished processing an image,
+    // since the processed image may be signed but pipeline only allows
+    // data in range [0, 2^bitDepth - 1], we should first set negatives to 0, then set sign to UNSIGNED.
+    // set negative values to 0: if it really happens, print a warning.
+
+    int dstBitDepth = pImg->bitDepth - 1;
+    clamp_img(pImg, 0, (1 << (dstBitDepth)) - 1);
+    change_img_bitDepth(pImg, dstBitDepth);
+    
+    pImg->sign = UNSIGNED;
+    return SUCCEED;
+}
+
+IMG_RTN_CODE safe_unsigned_to_signed_img(Img_t* pImg){
+    if (pImg->sign != UNSIGNED){
+        std::cout<<"warning: called unsigned_to_signed_img() but input img is SIGNED.\n";
+        return INVALID_INPUT;
+    }
+    // this is usually used when module just got the img from pipeline,
+    // in the case that the algo needs signed img, 
+    // module should convert it to SIGNED before pass to algo.
+
+    // for example:
+    // if sensor bit depth is 12, we need bitDepth >= 13 to make sure signed data type also carries "full" data.
+
+    int dstBitDepth = pImg->bitDepth + 1;
+    change_img_bitDepth(pImg, dstBitDepth);
+
+    pImg->sign = SIGNED;
     return SUCCEED;
 }
 
@@ -699,7 +814,7 @@ void test_img_def(){
         uint8_t* pRow = pMyImg->pImageData[c];
         for (int i = 0; i < height; ++i){
             for (int j = 0; j < pMyImg->strides[c]; j += get_num_of_bytes_per_pixel(bitDepth)){
-                *(uint32_t*)(pRow + j) = 257;
+                *(uint32_t*)(pRow + j) = 0;
             }
             pRow += pMyImg->strides[c];
         }
@@ -707,6 +822,10 @@ void test_img_def(){
 
     view_img_properties(pMyImg);
     ROI_t roi = {1012, 0, 0, pMyImg->width, pMyImg->height};
+    view_image_data(pMyImg, roi);
+
+    clamp_img(pMyImg, 3, 254, true);
+    std::cout<<"clamped: \n";
     view_image_data(pMyImg, roi);
 
     int dstBitDepth = 24;

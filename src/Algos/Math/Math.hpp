@@ -57,7 +57,17 @@ struct Formulas_T{
 }; // note: cannot typedef, because there is no type yet.
 
 
-// find max, find min??
+// TODO: find max, find min??
 
+template<typename T>
+const T clamp(const T val, const T lowerBound, const T upperBound){
+    T tmp = val < lowerBound? lowerBound : val;
+    return (tmp > upperBound? upperBound : tmp); 
+}
+
+template<typename T>
+struct Clamp_T{
+    const T (*f)(const T, const T, const T);
+};
 
 #endif

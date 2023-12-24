@@ -68,7 +68,10 @@ void view_img_properties(const Img_t* pImg);
 void view_image_data(const Img_t* pImg, const ROI_t& viewROI);
 IMG_RTN_CODE duplicate_img(const Img_t* pSrcImg, Img_t* pDstImg);
 // TODO: crop_image()
+IMG_RTN_CODE clamp_img(Img_t* pImg, int lowerBound, int upperBound, bool printWarning = false);
 IMG_RTN_CODE change_img_bitDepth(Img_t* pImg, const int dstBitDepth);
+IMG_RTN_CODE safe_signed_to_unsigned_img(Img_t* pImg);
+IMG_RTN_CODE safe_unsigned_to_signed_img(Img_t* pImg);
 bool is_image_equal(const Img_t* pSrcImg, const Img_t* pDstImg);
 
 void test_img_def(); // to be rewritten as unit test

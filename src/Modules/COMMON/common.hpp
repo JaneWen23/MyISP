@@ -23,7 +23,5 @@ typedef enum {
 } MODULE_ENUM;
 
 const char* get_module_name(const MODULE_ENUM m);
-void signed_to_unsigned_img(Img_t* pImg);
-void unsigned_to_signed_img(Img_t* pImg);
 
 #endif
