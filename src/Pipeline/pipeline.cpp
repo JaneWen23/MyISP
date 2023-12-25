@@ -1,5 +1,3 @@
-// #include "pipeline.hpp"
-// #include "../ThirdParty/OpenCV.hpp"
 # include "../Modules/COMMON/common.hpp"
 
 
@@ -107,7 +105,6 @@
 //             set_in_img_t(*it);
 //             move_data();
 //             (*it).run_function(_sInImgPtrs, &_sOutImg, find_arg_for_func(sArgs, (*it).module));
-//             // TODO: then check if out img types are consistent with sModule outs'
 //             // TODO:  maybe dump?? "EOF end of frame"
 //             dump();
 //         }

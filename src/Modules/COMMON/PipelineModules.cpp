@@ -2,7 +2,7 @@
 
 
 
-std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_to_run(MODULE_ENUM m){
+std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_ENUM m){
     switch (m){
         case ISP_VIN:{
             return isp_vin;
@@ -35,19 +35,15 @@ std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_to_run(MOD
 }
 
 
-// //TODO: maybe before the generate isp module, we can first determine who is the last, and who is the next!!
-// Module_t generate_isp_module(PipeUnit_t& sPipeUnit, PipeUnit_t& sPipeUnitLast){
-// // TODO: if sPipeCfgLast does not exist, should take care of it before pass to here.
+
+// Module_t generate_isp_module(PipeUnit_t& sPipeUnit){
 //     Module_t sVinModule ={
 //         sPipeUnit.module,
-//         sPipeUnitLast.module,
-//         sPipeUnitLast.outFmt,
+//         sPipeUnit.inFmt,
 //         sPipeUnit.outFmt,
-//         sPipeUnitLast.outBitDepth,
+//         sPipeUnit.inBitDepth,
 //         sPipeUnit.outBitDepth,
-//         sPipeUnitLast.outSign,
-//         sPipeUnit.outSign,
-//         find_func_to_run(sPipeUnit.module)
+//         find_func_for_module(sPipeUnit.module)
 //     };
 //     return sVinModule;
 // }

@@ -706,7 +706,9 @@ IMG_RTN_CODE change_img_bitDepth(Img_t* pImg, const int dstBitDepth){
             }
         }
         for (int c = 0; c < MAX_NUM_P; ++c){
-            free(pSrcImageData[c]);
+            if(pSrcImageData[c] != NULL){
+                free(pSrcImageData[c]);
+            }
         }
     }
 

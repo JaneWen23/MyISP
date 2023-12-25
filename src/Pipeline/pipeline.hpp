@@ -6,7 +6,6 @@
 #include "../Algos/Infra/ImgDef.hpp"
 #include "../Modules/COMMON/PipelineModules.hpp"
 
-// #define MAX_NUM_PARALLEL_MODULES 4
 
 typedef struct{
     // the integration of all run-time arguments
@@ -21,6 +20,7 @@ class Pipeline{
         ~Pipeline();
         void add_module_to_pipe(Module_t& sModule);
         void print_pipe();
+        // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth
         void run_pipe(PipeArgs_t& sArgs); // run pipeline for a single frame
         void dump();
 
@@ -44,7 +44,7 @@ class StreamPipeline : public Pipeline{
         ~StreamPipeline();
         void frames_run_pipe(PipeArgs_t& sArgs); // TODO: maybe another name??
     private:
-        void update_module_args(int frameInd);//TODO: to be finished, update gars every frame.
+        void update_module_args(int frameInd);//TODO: to be finished, update args every frame.
     private:
         int _startFrameInd;
         int _frameNum;
