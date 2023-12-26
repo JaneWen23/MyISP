@@ -3,6 +3,33 @@
 
 const char* get_module_name(const MODULE_ENUM m){
     switch(m){
+        case DUMMY0:{
+            return "DUMMY0";
+        }
+        case DUMMY1:{
+            return "DUMMY1";
+        }
+        case DUMMY2:{
+            return "DUMMY2";
+        }
+        case DUMMY3:{
+            return "DUMMY3";
+        }
+        case DUMMY4:{
+            return "DUMMY4";
+        }
+        case DUMMY5:{
+            return "DUMMY5";
+        }
+        case DUMMY6:{
+            return "DUMMY6";
+        }
+        case DUMMY7:{
+            return "DUMMY7";
+        }
+        case DUMMY8:{
+            return "DUMMY8";
+        }
         case ISP_NONE:{
             return "ISP_NONE";
         }

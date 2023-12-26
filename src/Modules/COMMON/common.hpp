@@ -12,7 +12,16 @@ typedef struct{ // input images for a module
 } ImgPtrs_t;
 
 typedef enum {
-    ISP_NONE,
+    DUMMY0,
+    DUMMY1,
+    DUMMY2,
+    DUMMY3,
+    DUMMY4,
+    DUMMY5,
+    DUMMY6,
+    DUMMY7,
+    DUMMY8,
+    ISP_NONE, // remove???
     ISP_VIN,
     ISP_COMPRESSION,
     ISP_BLC,

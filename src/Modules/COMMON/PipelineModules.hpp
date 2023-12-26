@@ -6,6 +6,9 @@
 // and they are "packages" of other modules in Modules.
 
 #include <functional>
+#include <map>
+//#include <queue>
+#include <vector>
 #include "common.hpp"
 #include "../../Modules/ISP_VIN/Vin.hpp"
 #include "../../Modules/ISP_COMPRESSION/MyJXS.hpp"
@@ -23,28 +26,114 @@ typedef struct{
 
 } PipeUnit_t; // TODO: or change name to pipe unit min info???
 
-#define MAX_NUM_NODE_IO 4
 
 typedef struct{
     MODULE_ENUM module;
-    MODULE_ENUM pred_modules[MAX_NUM_NODE_IO]; // predecessor modules
-    MODULE_ENUM succ_modules[MAX_NUM_NODE_IO]; // successor modules
-
-    // example: A,B,C,D:
-    // A -> C,  B -> C, A -> D, C -> D
-    // dependency: (the predecessor nodes)
-    // A_depend = {},
-    // B_depend = {},
-    // C_depend = {A, B},
-    // D_depend = {A, C}
-    // who will need: (the successor nodes)
-    // A_needed_by = {C, D},
-    // B_needed_by = {C}
-    // C_needed_by = {D}
-    // D_needed_by = {}
+    std::vector<MODULE_ENUM> pred_modules; // predecessor modules; a module is a vertex
+    std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a vertex
 } pipeNode;
 
-// add func to take in pipeNode objects and generate a DAG, or a topology sorted vector
+// TODO: move this to .cpp!!!
+void print_graph(std::vector<pipeNode> graph){
+    for(auto it = graph.begin(); it != graph.end(); ++it){
+        std::cout<< "node "<< get_module_name((*it).module)<<": ";
+        int L = ((*it).succ_modules).size();
+        if (L == 0){
+            std::cout<< "has no successor;";
+        }
+        else{
+            std::cout<< "has successor(s): ";
+            for (int i = 0; i < L; ++i){
+                std::cout<< get_module_name((*it).succ_modules[i]) <<", ";
+            }
+        }
+        std::cout<<"\n";
+    }
+}
+
+// TODO: move this to .cpp!!!
+const std::map<MODULE_ENUM, int> make_module_vertex_map(const std::vector<pipeNode> graph){
+    std::map<MODULE_ENUM, int> mvMap;
+    for (int i = 0; i < graph.size(); ++i){
+        mvMap.insert(std::pair<MODULE_ENUM, int>(graph[i].module, i));
+    }
+    return mvMap;
+}
+
+const int find_index_for_module(MODULE_ENUM m, std::map<MODULE_ENUM, int> mvMap){
+    return mvMap.find(m)->first;
+}
+
+void dfs(MODULE_ENUM u, std::vector<pipeNode>& graph, bool* isVisited, std::map<MODULE_ENUM, int>& mvMap, MODULE_ENUM* sorted, int* ind){
+    pipeNode node = graph[find_index_for_module(u, mvMap)];
+    for (int i = 0; i < node.succ_modules.size(); ++i){
+        MODULE_ENUM v = node.succ_modules[i];
+        if ( ! isVisited[find_index_for_module(v, mvMap)]){
+            dfs(v, graph, isVisited, mvMap, sorted, ind);
+        }
+    }
+
+    isVisited[u] = true;
+    sorted[*ind] = u;
+    (*ind)--;
+}
+
+// TODO: move this to .cpp!!!
+void dfs_topsort(std::vector<pipeNode> graph){
+    std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
+
+    int N = graph.size();
+    MODULE_ENUM sorted[N];
+    bool isVisited[N];
+    for (int i = 0; i < N; ++i){
+        isVisited[i] = false;
+    }
+
+    int ind = N-1; // TODO: assert N >= 1
+    for (int i = 0; i < N; ++i){
+        if(!isVisited[i]){
+            MODULE_ENUM u = graph[i].module;
+            dfs(u, graph, isVisited, mvMap, sorted, &ind);
+        }
+    }
+
+    std::cout<<"sorted:\n";
+    for (int i = 0; i < N - 1; ++i){
+        std::cout<< get_module_name(sorted[i])<<" --> ";
+    }
+    std::cout<< get_module_name(sorted[N-1]);
+    std::cout<<"\n";
+}
+
+
+// TODO: move this to .cpp!!!
+bool topological_sort(){
+    int n = 9; // number of nodes
+
+    std::vector<pipeNode> graph(n);
+
+
+    graph[0] = {DUMMY0, {}, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    graph[1] = {DUMMY1, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    graph[2] = {DUMMY2, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    graph[3] = {DUMMY3, {DUMMY1, DUMMY2}, {DUMMY4, DUMMY5}}; // and so on ...
+    graph[4] = {DUMMY4, {DUMMY3}, {DUMMY6}};
+    graph[5] = {DUMMY5, {DUMMY3}, {DUMMY7}};
+    graph[6] = {DUMMY6, {DUMMY4, DUMMY7}, {DUMMY8}};
+    graph[7] = {DUMMY7, {DUMMY5}, {DUMMY6}}; 
+    graph[8] = {DUMMY8, {DUMMY6}, {}};
+
+    //print_graph(graph);
+
+    // std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
+    // std::cout<<" given module DUMMY0, found index = "<< mvMap.find(DUMMY0)->first<<"\n";
+    // std::cout<<" given module DUMMY1, found index = "<< mvMap.find(DUMMY1)->first<<"\n";
+    // std::cout<<" given module DUMMY2, found index = "<< mvMap.find(DUMMY2)->first<<"\n";
+
+    dfs_topsort(graph);
+
+    return true;
+}
 
 typedef struct{
     // this struct is usually inferred from PipeUnit_t;

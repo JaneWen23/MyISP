@@ -26,7 +26,9 @@ int main(){
     //test_pipeline();
     //test_my_jxs();
 
-    test_img_def();
+    //test_img_def();
+
+    topological_sort();
 
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
