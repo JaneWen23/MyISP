@@ -38,6 +38,8 @@ typedef struct{
     std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a vertex
 } PipeNode_t; // "full", and will be inferred from graph
 
+typedef std::vector<PipeNode_t> Pipe_t;
+
 // TODO: move this to .cpp!!!
 void print_graph(Graph_t& graph){
     for(auto it = graph.begin(); it != graph.end(); ++it){
@@ -56,10 +58,6 @@ void print_graph(Graph_t& graph){
     }
 }
 
-void generate_full_info_pipe_node(const Graph_t& graph, PipeNode_t& pipeNode){
-    
-}
-
 // TODO: move this to .cpp!!!
 const std::map<MODULE_ENUM, int> make_module_vertex_map(const Graph_t& graph){
     std::map<MODULE_ENUM, int> mvMap;
@@ -71,6 +69,64 @@ const std::map<MODULE_ENUM, int> make_module_vertex_map(const Graph_t& graph){
 
 const int find_index_for_module(const MODULE_ENUM m, const std::map<MODULE_ENUM, int>& mvMap){
     return mvMap.find(m)->first;
+}
+
+const int find_ind_in_sorted(const MODULE_ENUM m, const MODULE_ENUM* sorted, const int len){
+    for (int i = 0; i < len; ++i){
+        if (sorted[i] == m){
+            return i;
+        }
+    }
+    return 0;
+}
+
+void generate_pipe(const Graph_t& graph, const MODULE_ENUM* sorted, Pipe_t& pipe){
+    std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
+    int N = graph.size();
+    if (N < 1){
+        std::cout<<"error: pipe is not created with a proper length. exited.\n";
+        exit(1);
+    }
+    for (int i = 0; i < N; ++i){
+        // copy the module name and the successor modules:
+        pipe[i].module = sorted[i];
+        int ii = find_index_for_module(sorted[i], mvMap);
+        pipe[i].succ_modules = graph[ii].succ_modules;
+        // then "insert" predecessor modules:
+        for (int jj = 0; jj < graph[ii].succ_modules.size(); ++jj){
+            int j = find_ind_in_sorted(graph[ii].succ_modules[jj], sorted, N); 
+            pipe[j].pred_modules.push_back(graph[ii].module);
+        }
+    }
+}
+// TODO: check that every module only appears ONCE
+// TODO: check for acyclic graph
+void print_pipe(Pipe_t& pipe){
+    for(auto it = pipe.begin(); it != pipe.end(); ++it){
+        std::cout<< "module "<< get_module_name((*it).module)<<": ";
+        int lp = ((*it).pred_modules).size();
+        if (lp == 0){
+            std::cout<< "  has no predecessor;";
+        }
+        else{
+            std::cout<< "  has predecessor(s): ";
+            for (int i = 0; i < lp; ++i){
+                std::cout<< get_module_name((*it).pred_modules[i]) <<", ";
+            }
+        }
+
+        int ls= ((*it).succ_modules).size();
+        if (ls == 0){
+            std::cout<< "  has no successor;";
+        }
+        else{
+            std::cout<< "  has successor(s): ";
+            for (int i = 0; i < ls; ++i){
+                std::cout<< get_module_name((*it).succ_modules[i]) <<", ";
+            }
+        }
+        std::cout<<"\n";
+    }
 }
 
 void dfs_topsort(const MODULE_ENUM u, const Graph_t& graph, bool* isVisited, const std::map<MODULE_ENUM, int>& mvMap, MODULE_ENUM* sorted, int* ind){
@@ -93,6 +149,15 @@ void topological_sort(const Graph_t& graph, MODULE_ENUM* sorted){
     std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
 
     int N = graph.size();
+    if (N < 1){
+        std::cout<<"error: graph has no vertices. exited.\n";
+        exit(1);
+    }
+    else if (N == 1){
+        sorted[0] = graph[0].module;
+        return;
+    }
+
     bool isVisited[N];
     for (int i = 0; i < N; ++i){
         isVisited[i] = false;
@@ -119,21 +184,10 @@ void print_sorted_nodes(const MODULE_ENUM* sorted, const int len){
 
 
 // TODO: move this to .cpp!!!
-bool test_topological_sort(){
+void test_topological_sort(){
     int n = 9; // number of nodes
 
     Graph_t graph(n);
-
-    // "full":
-    // graph[0] = {DUMMY0, {}, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
-    // graph[1] = {DUMMY1, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
-    // graph[2] = {DUMMY2, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
-    // graph[3] = {DUMMY3, {DUMMY1, DUMMY2}, {DUMMY4, DUMMY5}}; // and so on ...
-    // graph[4] = {DUMMY4, {DUMMY3}, {DUMMY6}};
-    // graph[5] = {DUMMY5, {DUMMY3}, {DUMMY7}};
-    // graph[6] = {DUMMY6, {DUMMY4, DUMMY7}, {DUMMY8}};
-    // graph[7] = {DUMMY7, {DUMMY5}, {DUMMY6}}; 
-    // graph[8] = {DUMMY8, {DUMMY6}, {}};
 
     graph[0] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
     graph[1] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
@@ -151,7 +205,19 @@ bool test_topological_sort(){
     topological_sort(graph, sorted);
     print_sorted_nodes(sorted, n);
 
-    return true;
+    // "full":
+    // pipe[0] = {DUMMY0, {}, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    // pipe[1] = {DUMMY1, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    // pipe[2] = {DUMMY2, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    // pipe[3] = {DUMMY3, {DUMMY1, DUMMY2}, {DUMMY4, DUMMY5}}; // and so on ...
+    // pipe[4] = {DUMMY4, {DUMMY3}, {DUMMY6}};
+    // pipe[5] = {DUMMY5, {DUMMY3}, {DUMMY7}};
+    // pipe[6] = {DUMMY6, {DUMMY4, DUMMY7}, {DUMMY8}};
+    // pipe[7] = {DUMMY7, {DUMMY5}, {DUMMY6}}; 
+    // pipe[8] = {DUMMY8, {DUMMY6}, {}};
+    Pipe_t pipe(n);
+    generate_pipe(graph, sorted, pipe);
+    print_pipe(pipe);
 }
 
 typedef struct{
