@@ -41,6 +41,19 @@ typedef struct{
 
 typedef std::vector<PipeNode_t> Pipe_t;
 
+bool is_subset(MODULE_ENUM* a, int l_a, MODULE_ENUM* b, int l_b){
+    // check if a is subset of b.
+    // this is naive way, for convenience.
+    for (int i = 0; i < l_a; ++i){
+        for (int j = 0; j < l_b; ++j){
+            if (b[j] == a[i]){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool is_graph_valid(Graph_t& graph){
     // only check basic rules of a directed graph. does NOT guarantee to be acyclic.
     const int n = graph.size();
@@ -53,7 +66,7 @@ bool is_graph_valid(Graph_t& graph){
     std::sort(definedVtx, definedVtx + n);
     for (int i = 1; i < n; ++i){
         if (definedVtx[i-1] == definedVtx[i]){
-            std::cout<<"warning: invalid graph: there are repeated vertices.\n";
+            std::cout<<"invalid graph: there are repeated vertices.\n";
             return false;
         }
     }
@@ -66,7 +79,7 @@ bool is_graph_valid(Graph_t& graph){
                 adj[j] = graph[i].succ_modules[j];
                 // check if there is edge from and to the same vertex:
                 if (graph[i].module == adj[j]){
-                    std::cout<<"warning: invalid graph: there exists an edge from and to the same vertex.\n";
+                    std::cout<<"invalid graph: there exists an edge from and to the same vertex.\n";
                     return false;
                 }
             }
@@ -74,13 +87,16 @@ bool is_graph_valid(Graph_t& graph){
             std::sort(adj, adj + l);
             for (int k = 1; k < l; ++k){
                 if (adj[k-1] == adj[k]){
-                    std::cout<<"warning: invalid graph: there are repeated edges.\n";
+                    std::cout<<"invalid graph: there are repeated edges.\n";
                     return false;
                 }
             }
             // check if there is edge connecting to undefined vertex:
             // i.e. all elements in adj[] should be in definedVtx[].
-
+            if ( ! is_subset(adj, l, definedVtx, n)){
+                std::cout<<"invalid graph: there exists an edge connecting to undefined vertex.\n";
+                return false;
+            }
         }
     }
 
@@ -115,8 +131,6 @@ const std::map<MODULE_ENUM, int> make_module_vertex_map(const Graph_t& graph){
 }
 
 const int find_index_for_module(const MODULE_ENUM m, const std::map<MODULE_ENUM, int>& mvMap){
-    // std::cout<<"mvMap.find(m)->first = " << mvMap.find(m)->first <<"\n";
-    // std::cout<<"mvMap.find(m)->second = " << mvMap.find(m)->second <<"\n";
     return mvMap.find(m)->second;
 }
 
@@ -148,11 +162,11 @@ void generate_pipe(const Graph_t& graph, const MODULE_ENUM* sorted, Pipe_t& pipe
         }
     }
 }
-// TODO: check that every module only appears ONCE
-// TODO: check for acyclic graph
+
 void print_pipe(Pipe_t& pipe){
+    std::cout<<"pipe:\n";
     for(auto it = pipe.begin(); it != pipe.end(); ++it){
-        std::cout<< "module "<< get_module_name((*it).module)<<": ";
+        std::cout << get_module_name((*it).module)<<": ";
         int lp = ((*it).pred_modules).size();
         if (lp == 0){
             std::cout<< "  has no predecessor; ";
@@ -178,19 +192,35 @@ void print_pipe(Pipe_t& pipe){
     }
 }
 
-void dfs_topsort(const MODULE_ENUM u, const Graph_t& graph, bool* isVisited, const std::map<MODULE_ENUM, int>& mvMap, MODULE_ENUM* sorted, int* ind){
+typedef enum{
+    UNVISITED,
+    VISITING,
+    VISITED
+} VISIT_STATUS;
+
+bool dfs_topsort(const MODULE_ENUM u, const Graph_t& graph, VISIT_STATUS* vStatus, const std::map<MODULE_ENUM, int>& mvMap, MODULE_ENUM* sorted, int* ind){
     // topological sort vertices of directed acyclic graph, using DFS. this is not the only way.
+    vStatus[find_index_for_module(u, mvMap)] = VISITING;
     AdjVtx_t node = graph[find_index_for_module(u, mvMap)];
     for (int j = 0; j < node.succ_modules.size(); ++j){
         MODULE_ENUM v = node.succ_modules[j];
-        if ( ! isVisited[find_index_for_module(v, mvMap)]){
-            dfs_topsort(v, graph, isVisited, mvMap, sorted, ind);
+        if (vStatus[find_index_for_module(v, mvMap)] == VISITING){
+            // in this case, dfs tries to visit some predecessor. it means cycle exists, cannot topsort.
+            return false;
+        }
+        if (vStatus[find_index_for_module(v, mvMap)] == UNVISITED){
+            if ( ! dfs_topsort(v, graph, vStatus, mvMap, sorted, ind)){
+                return false; // if the recursion returns false, the current "stack" should also return false.
+                // if do not return false, it will go to the next lines and return true eventually.
+            }
         }
     }
 
-    isVisited[find_index_for_module(u, mvMap)] = true;
+    // only if no "false", can the program go to here:
+    vStatus[find_index_for_module(u, mvMap)] = VISITED;
     sorted[*ind] = u;
     (*ind)--;
+    return true;
 }
 
 // TODO: move this to .cpp!!!
@@ -207,16 +237,19 @@ void topological_sort(const Graph_t& graph, MODULE_ENUM* sorted){
         return;
     }
 
-    bool isVisited[n];
+    VISIT_STATUS vStatus[n];
     for (int i = 0; i < n; ++i){
-        isVisited[i] = false;
+        vStatus[i] = UNVISITED;
     }
 
     int ind = n-1;
     for (int i = 0; i < n; ++i){
-        if(!isVisited[i]){
+        if(!vStatus[i]){
             MODULE_ENUM u = graph[i].module;
-            dfs_topsort(u, graph, isVisited, mvMap, sorted, &ind);
+            if ( ! dfs_topsort(u, graph, vStatus, mvMap, sorted, &ind)){
+                std::cout<<"error: topological sort failed because it encounters cycle in graph. exited.\n";
+                exit(1);
+            }
         }
     }
 }
@@ -238,33 +271,26 @@ void test_topological_sort(){
 
     Graph_t graph(n);
     
-    graph[8] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
-    graph[1] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
-    graph[2] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    graph[0] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    graph[2] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    graph[1] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
     graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
     graph[4] = {DUMMY4, {DUMMY6}};
-    graph[5] = {DUMMY5, {DUMMY7}};
+    graph[5] = {DUMMY5, {DUMMY6}};
     graph[6] = {DUMMY6, {DUMMY8}};
     graph[7] = {DUMMY7, {DUMMY6}}; 
-    graph[0] = {DUMMY8, {}};
+    graph[8] = {DUMMY8, {}};
 
-    //print_graph(graph);
-    is_graph_valid(graph);
+    print_graph(graph);
+    if ( ! is_graph_valid(graph)){
+        std::cout<<"error: graph is invalid, cannot proceed.\n";
+        exit(1);
+    }
 
     MODULE_ENUM sorted[n];
     topological_sort(graph, sorted);
     print_sorted_nodes(sorted, n);
 
-    // "full":
-    // pipe[0] = {DUMMY0, {}, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
-    // pipe[1] = {DUMMY1, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
-    // pipe[2] = {DUMMY2, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
-    // pipe[3] = {DUMMY3, {DUMMY1, DUMMY2}, {DUMMY4, DUMMY5}}; // and so on ...
-    // pipe[4] = {DUMMY4, {DUMMY3}, {DUMMY6}};
-    // pipe[5] = {DUMMY5, {DUMMY3}, {DUMMY7}};
-    // pipe[6] = {DUMMY6, {DUMMY4, DUMMY7}, {DUMMY8}};
-    // pipe[7] = {DUMMY7, {DUMMY5}, {DUMMY6}}; 
-    // pipe[8] = {DUMMY8, {DUMMY6}, {}};
     Pipe_t pipe(n);
     generate_pipe(graph, sorted, pipe);
     print_pipe(pipe);
