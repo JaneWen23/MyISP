@@ -8,6 +8,7 @@
 #include <functional>
 #include <map>
 #include <vector>
+#include <algorithm>
 #include "common.hpp"
 #include "../../Modules/ISP_VIN/Vin.hpp"
 #include "../../Modules/ISP_COMPRESSION/MyJXS.hpp"
@@ -27,30 +28,76 @@ typedef struct{
 
 typedef struct{
     MODULE_ENUM module;
-    std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a vertex
+    std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a "name" of a vertex
 } AdjVtx_t; // minimal definition for people to write in TOML.
 
 typedef std::vector<AdjVtx_t> Graph_t;
 
 typedef struct{
     MODULE_ENUM module;
-    std::vector<MODULE_ENUM> pred_modules; // predecessor modules; a module is a vertex
-    std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a vertex
+    std::vector<MODULE_ENUM> pred_modules; // predecessor modules; a module is a "name" of a vertex
+    std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a "name" of a vertex
 } PipeNode_t; // "full", and will be inferred from graph
 
 typedef std::vector<PipeNode_t> Pipe_t;
+
+bool is_graph_valid(Graph_t& graph){
+    // only check basic rules of a directed graph. does NOT guarantee to be acyclic.
+    const int n = graph.size();
+    MODULE_ENUM definedVtx[n]; // variable-sized, should not initialize.
+    for (int i = 0; i < n; ++i){
+        definedVtx[i] = graph[i].module;
+    }
+    
+    // check if there are repeated vertices:
+    std::sort(definedVtx, definedVtx + n);
+    for (int i = 1; i < n; ++i){
+        if (definedVtx[i-1] == definedVtx[i]){
+            std::cout<<"warning: invalid graph: there are repeated vertices.\n";
+            return false;
+        }
+    }
+
+    for (int i = 0; i < n; ++i){
+        int l = graph[i].succ_modules.size();
+        if (l > 0){
+            MODULE_ENUM adj[l];
+            for (int j = 0; j < l; ++j){
+                adj[j] = graph[i].succ_modules[j];
+                // check if there is edge from and to the same vertex:
+                if (graph[i].module == adj[j]){
+                    std::cout<<"warning: invalid graph: there exists an edge from and to the same vertex.\n";
+                    return false;
+                }
+            }
+            // check if there are repeated edges:
+            std::sort(adj, adj + l);
+            for (int k = 1; k < l; ++k){
+                if (adj[k-1] == adj[k]){
+                    std::cout<<"warning: invalid graph: there are repeated edges.\n";
+                    return false;
+                }
+            }
+            // check if there is edge connecting to undefined vertex:
+            // i.e. all elements in adj[] should be in definedVtx[].
+
+        }
+    }
+
+    return true;
+}
 
 // TODO: move this to .cpp!!!
 void print_graph(Graph_t& graph){
     for(auto it = graph.begin(); it != graph.end(); ++it){
         std::cout<< "node "<< get_module_name((*it).module)<<": ";
-        int L = ((*it).succ_modules).size();
-        if (L == 0){
-            std::cout<< "has no successor;";
+        int len = ((*it).succ_modules).size();
+        if (len == 0){
+            std::cout<< "has no successor; ";
         }
         else{
             std::cout<< "has successor(s): ";
-            for (int i = 0; i < L; ++i){
+            for (int i = 0; i < len; ++i){
                 std::cout<< get_module_name((*it).succ_modules[i]) <<", ";
             }
         }
@@ -68,7 +115,9 @@ const std::map<MODULE_ENUM, int> make_module_vertex_map(const Graph_t& graph){
 }
 
 const int find_index_for_module(const MODULE_ENUM m, const std::map<MODULE_ENUM, int>& mvMap){
-    return mvMap.find(m)->first;
+    // std::cout<<"mvMap.find(m)->first = " << mvMap.find(m)->first <<"\n";
+    // std::cout<<"mvMap.find(m)->second = " << mvMap.find(m)->second <<"\n";
+    return mvMap.find(m)->second;
 }
 
 const int find_ind_in_sorted(const MODULE_ENUM m, const MODULE_ENUM* sorted, const int len){
@@ -82,19 +131,19 @@ const int find_ind_in_sorted(const MODULE_ENUM m, const MODULE_ENUM* sorted, con
 
 void generate_pipe(const Graph_t& graph, const MODULE_ENUM* sorted, Pipe_t& pipe){
     std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
-    int N = graph.size();
-    if (N < 1){
+    const int n = graph.size();
+    if (n < 1){
         std::cout<<"error: pipe is not created with a proper length. exited.\n";
         exit(1);
     }
-    for (int i = 0; i < N; ++i){
+    for (int i = 0; i < n; ++i){
         // copy the module name and the successor modules:
         pipe[i].module = sorted[i];
         int ii = find_index_for_module(sorted[i], mvMap);
         pipe[i].succ_modules = graph[ii].succ_modules;
         // then "insert" predecessor modules:
         for (int jj = 0; jj < graph[ii].succ_modules.size(); ++jj){
-            int j = find_ind_in_sorted(graph[ii].succ_modules[jj], sorted, N); 
+            int j = find_ind_in_sorted(graph[ii].succ_modules[jj], sorted, n); 
             pipe[j].pred_modules.push_back(graph[ii].module);
         }
     }
@@ -106,7 +155,7 @@ void print_pipe(Pipe_t& pipe){
         std::cout<< "module "<< get_module_name((*it).module)<<": ";
         int lp = ((*it).pred_modules).size();
         if (lp == 0){
-            std::cout<< "  has no predecessor;";
+            std::cout<< "  has no predecessor; ";
         }
         else{
             std::cout<< "  has predecessor(s): ";
@@ -117,7 +166,7 @@ void print_pipe(Pipe_t& pipe){
 
         int ls= ((*it).succ_modules).size();
         if (ls == 0){
-            std::cout<< "  has no successor;";
+            std::cout<< "  has no successor; ";
         }
         else{
             std::cout<< "  has successor(s): ";
@@ -139,7 +188,7 @@ void dfs_topsort(const MODULE_ENUM u, const Graph_t& graph, bool* isVisited, con
         }
     }
 
-    isVisited[u] = true;
+    isVisited[find_index_for_module(u, mvMap)] = true;
     sorted[*ind] = u;
     (*ind)--;
 }
@@ -148,23 +197,23 @@ void dfs_topsort(const MODULE_ENUM u, const Graph_t& graph, bool* isVisited, con
 void topological_sort(const Graph_t& graph, MODULE_ENUM* sorted){
     std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
 
-    int N = graph.size();
-    if (N < 1){
-        std::cout<<"error: graph has no vertices. exited.\n";
+    const int n = graph.size();
+    if (n < 1){
+        std::cout<<"error: graph has no vertices, cannot sort. exited.\n";
         exit(1);
     }
-    else if (N == 1){
+    else if (n == 1){
         sorted[0] = graph[0].module;
         return;
     }
 
-    bool isVisited[N];
-    for (int i = 0; i < N; ++i){
+    bool isVisited[n];
+    for (int i = 0; i < n; ++i){
         isVisited[i] = false;
     }
 
-    int ind = N-1;
-    for (int i = 0; i < N; ++i){
+    int ind = n-1;
+    for (int i = 0; i < n; ++i){
         if(!isVisited[i]){
             MODULE_ENUM u = graph[i].module;
             dfs_topsort(u, graph, isVisited, mvMap, sorted, &ind);
@@ -188,8 +237,8 @@ void test_topological_sort(){
     int n = 9; // number of nodes
 
     Graph_t graph(n);
-
-    graph[0] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    
+    graph[8] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
     graph[1] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
     graph[2] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
     graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
@@ -197,9 +246,10 @@ void test_topological_sort(){
     graph[5] = {DUMMY5, {DUMMY7}};
     graph[6] = {DUMMY6, {DUMMY8}};
     graph[7] = {DUMMY7, {DUMMY6}}; 
-    graph[8] = {DUMMY8, {}};
+    graph[0] = {DUMMY8, {}};
 
     //print_graph(graph);
+    is_graph_valid(graph);
 
     MODULE_ENUM sorted[n];
     topological_sort(graph, sorted);
