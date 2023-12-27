@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <map>
-//#include <queue>
 #include <vector>
 #include "common.hpp"
 #include "../../Modules/ISP_VIN/Vin.hpp"
@@ -26,15 +25,21 @@ typedef struct{
 
 } PipeUnit_t; // TODO: or change name to pipe unit min info???
 
+typedef struct{
+    MODULE_ENUM module;
+    std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a vertex
+} AdjVtx_t; // minimal definition for people to write in TOML.
+
+typedef std::vector<AdjVtx_t> Graph_t;
 
 typedef struct{
     MODULE_ENUM module;
     std::vector<MODULE_ENUM> pred_modules; // predecessor modules; a module is a vertex
     std::vector<MODULE_ENUM> succ_modules; // successor modules; a module is a vertex
-} pipeNode;
+} PipeNode_t; // "full", and will be inferred from graph
 
 // TODO: move this to .cpp!!!
-void print_graph(std::vector<pipeNode> graph){
+void print_graph(Graph_t& graph){
     for(auto it = graph.begin(); it != graph.end(); ++it){
         std::cout<< "node "<< get_module_name((*it).module)<<": ";
         int L = ((*it).succ_modules).size();
@@ -51,8 +56,12 @@ void print_graph(std::vector<pipeNode> graph){
     }
 }
 
+void generate_full_info_pipe_node(const Graph_t& graph, PipeNode_t& pipeNode){
+    
+}
+
 // TODO: move this to .cpp!!!
-const std::map<MODULE_ENUM, int> make_module_vertex_map(const std::vector<pipeNode> graph){
+const std::map<MODULE_ENUM, int> make_module_vertex_map(const Graph_t& graph){
     std::map<MODULE_ENUM, int> mvMap;
     for (int i = 0; i < graph.size(); ++i){
         mvMap.insert(std::pair<MODULE_ENUM, int>(graph[i].module, i));
@@ -60,16 +69,17 @@ const std::map<MODULE_ENUM, int> make_module_vertex_map(const std::vector<pipeNo
     return mvMap;
 }
 
-const int find_index_for_module(MODULE_ENUM m, std::map<MODULE_ENUM, int> mvMap){
+const int find_index_for_module(const MODULE_ENUM m, const std::map<MODULE_ENUM, int>& mvMap){
     return mvMap.find(m)->first;
 }
 
-void dfs(MODULE_ENUM u, std::vector<pipeNode>& graph, bool* isVisited, std::map<MODULE_ENUM, int>& mvMap, MODULE_ENUM* sorted, int* ind){
-    pipeNode node = graph[find_index_for_module(u, mvMap)];
-    for (int i = 0; i < node.succ_modules.size(); ++i){
-        MODULE_ENUM v = node.succ_modules[i];
+void dfs_topsort(const MODULE_ENUM u, const Graph_t& graph, bool* isVisited, const std::map<MODULE_ENUM, int>& mvMap, MODULE_ENUM* sorted, int* ind){
+    // topological sort vertices of directed acyclic graph, using DFS. this is not the only way.
+    AdjVtx_t node = graph[find_index_for_module(u, mvMap)];
+    for (int j = 0; j < node.succ_modules.size(); ++j){
+        MODULE_ENUM v = node.succ_modules[j];
         if ( ! isVisited[find_index_for_module(v, mvMap)]){
-            dfs(v, graph, isVisited, mvMap, sorted, ind);
+            dfs_topsort(v, graph, isVisited, mvMap, sorted, ind);
         }
     }
 
@@ -79,58 +89,67 @@ void dfs(MODULE_ENUM u, std::vector<pipeNode>& graph, bool* isVisited, std::map<
 }
 
 // TODO: move this to .cpp!!!
-void dfs_topsort(std::vector<pipeNode> graph){
+void topological_sort(const Graph_t& graph, MODULE_ENUM* sorted){
     std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
 
     int N = graph.size();
-    MODULE_ENUM sorted[N];
     bool isVisited[N];
     for (int i = 0; i < N; ++i){
         isVisited[i] = false;
     }
 
-    int ind = N-1; // TODO: assert N >= 1
+    int ind = N-1;
     for (int i = 0; i < N; ++i){
         if(!isVisited[i]){
             MODULE_ENUM u = graph[i].module;
-            dfs(u, graph, isVisited, mvMap, sorted, &ind);
+            dfs_topsort(u, graph, isVisited, mvMap, sorted, &ind);
         }
     }
+}
 
+// TODO: move this to .cpp!!!
+void print_sorted_nodes(const MODULE_ENUM* sorted, const int len){
     std::cout<<"sorted:\n";
-    for (int i = 0; i < N - 1; ++i){
+    for (int i = 0; i < len - 1; ++i){
         std::cout<< get_module_name(sorted[i])<<" --> ";
     }
-    std::cout<< get_module_name(sorted[N-1]);
+    std::cout<< get_module_name(sorted[len-1]);
     std::cout<<"\n";
 }
 
 
 // TODO: move this to .cpp!!!
-bool topological_sort(){
+bool test_topological_sort(){
     int n = 9; // number of nodes
 
-    std::vector<pipeNode> graph(n);
+    Graph_t graph(n);
 
+    // "full":
+    // graph[0] = {DUMMY0, {}, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    // graph[1] = {DUMMY1, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    // graph[2] = {DUMMY2, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    // graph[3] = {DUMMY3, {DUMMY1, DUMMY2}, {DUMMY4, DUMMY5}}; // and so on ...
+    // graph[4] = {DUMMY4, {DUMMY3}, {DUMMY6}};
+    // graph[5] = {DUMMY5, {DUMMY3}, {DUMMY7}};
+    // graph[6] = {DUMMY6, {DUMMY4, DUMMY7}, {DUMMY8}};
+    // graph[7] = {DUMMY7, {DUMMY5}, {DUMMY6}}; 
+    // graph[8] = {DUMMY8, {DUMMY6}, {}};
 
-    graph[0] = {DUMMY0, {}, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
-    graph[1] = {DUMMY1, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
-    graph[2] = {DUMMY2, {DUMMY0}, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
-    graph[3] = {DUMMY3, {DUMMY1, DUMMY2}, {DUMMY4, DUMMY5}}; // and so on ...
-    graph[4] = {DUMMY4, {DUMMY3}, {DUMMY6}};
-    graph[5] = {DUMMY5, {DUMMY3}, {DUMMY7}};
-    graph[6] = {DUMMY6, {DUMMY4, DUMMY7}, {DUMMY8}};
-    graph[7] = {DUMMY7, {DUMMY5}, {DUMMY6}}; 
-    graph[8] = {DUMMY8, {DUMMY6}, {}};
+    graph[0] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    graph[1] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    graph[2] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
+    graph[4] = {DUMMY4, {DUMMY6}};
+    graph[5] = {DUMMY5, {DUMMY7}};
+    graph[6] = {DUMMY6, {DUMMY8}};
+    graph[7] = {DUMMY7, {DUMMY6}}; 
+    graph[8] = {DUMMY8, {}};
 
     //print_graph(graph);
 
-    // std::map<MODULE_ENUM, int> mvMap = make_module_vertex_map(graph);
-    // std::cout<<" given module DUMMY0, found index = "<< mvMap.find(DUMMY0)->first<<"\n";
-    // std::cout<<" given module DUMMY1, found index = "<< mvMap.find(DUMMY1)->first<<"\n";
-    // std::cout<<" given module DUMMY2, found index = "<< mvMap.find(DUMMY2)->first<<"\n";
-
-    dfs_topsort(graph);
+    MODULE_ENUM sorted[n];
+    topological_sort(graph, sorted);
+    print_sorted_nodes(sorted, n);
 
     return true;
 }

@@ -28,7 +28,7 @@ int main(){
 
     //test_img_def();
 
-    topological_sort();
+    test_topological_sort();
 
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
