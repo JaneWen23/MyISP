@@ -22,6 +22,16 @@ void make_pipe(const Graph_t& graph, const MODULE_NAME* sorted, Pipe_t& pipe){
         // find module-run-function:
         pipe[i].run_function = find_func_for_module(sorted[i]);
     }
+    // for modules with two or more inputs:
+    // reorder the predecessors to match with the order of "main, additional1, additional2, ..."
+    // the order is specified by cfg (user-provided extra information)
+
+    // first check if predecessors is subset of cfg-provided,
+    // then check if cfg-provided is subset of predecessors,
+    // if both are true, replace predecessors with cfg-provided,
+    // if not, report an error and exit.
+
+
 }
 
 
@@ -54,36 +64,47 @@ void print_pipe(Pipe_t& pipe){
     }
 }
 
-// void* find_arg_for_func(PipeArgs_t& sArgs, MODULE_NAME m){
-//     switch (m){
-//         case ISP_VIN:{
-//             return &(sArgs.sVinArg);
-//         }
-//         case ISP_COMPRESSION:{
-//             return &(sArgs.sCompressionArg);
-//         }
-//         case ISP_BLC:{
-//             break;
-//         }
-//         case ISP_DMS:{
-//             break;
-//         }
-//         case ISP_WB:{
-//             break;
-//         }
-//         case ISP_CCM:{
-//             return &(sArgs.sCCMArg);
-//         }
-//         case ISP_RGB2YUV:{
-//             break;
-//         }
-//         default:{
-//             std::cout<<"error: cannot find arguments for this function to run. exited.\n";
-//             exit(1);
-//         }
-//     }
-//     return NULL; // this is nonsense. just because it needs a return value.
-// }
+void* find_arg_for_func(AllArgs_t& sArgs, MODULE_NAME m){
+    switch (m){
+        case DUMMY0:
+        case DUMMY1:
+        case DUMMY2:
+        case DUMMY3:
+        case DUMMY4:
+        case DUMMY5:
+        case DUMMY6:
+        case DUMMY7:
+        case DUMMY8:{
+            return &(sArgs.sDummyArg);
+        }
+        case ISP_VIN:{
+            return &(sArgs.sVinArg);
+        }
+        case ISP_COMPRESSION:{
+            return &(sArgs.sCompressionArg);
+        }
+        case ISP_BLC:{
+            break;
+        }
+        case ISP_DMS:{
+            break;
+        }
+        case ISP_WB:{
+            break;
+        }
+        case ISP_CCM:{
+            return &(sArgs.sCCMArg);
+        }
+        case ISP_RGB2YUV:{
+            break;
+        }
+        default:{
+            std::cout<<"error: cannot find arguments for this function to run. exited.\n";
+            exit(1);
+        }
+    }
+    return NULL; // this is nonsense. just because it needs a return value.
+}
 
 Pipeline::Pipeline(const Graph_t& graph, bool needPrint){
     // initialize _sorted and _pipe according to number of nodes:
@@ -96,26 +117,14 @@ Pipeline::Pipeline(const Graph_t& graph, bool needPrint){
     if (needPrint){
         print_pipe(_pipe);
     }
-    // _sInImg = sImg;
-    // for(int c = 0; c < MAX_NUM_P; ++c){
-    //     _sOutImg.pImageData[c] = NULL;
-    // }
+    _pOutImg = (PipeImg_t*) malloc(sizeof(PipeImg_t));
 }
 
 Pipeline::~Pipeline(){
     free(_sorted);
     // do not destruct _pipe manually; it was constructed in stack area.
+    free(_pOutImg);
 
-    // TODO: take notes:
-    // delete ptr means to release memory pointed by ptr;
-    // delete[] rg means to release memory pointed by rg AND call destructor of each element in rg.
-
-    // for(int c = 0; c < MAX_NUM_P; ++c){
-    //     if(_sInImg.pImageData[c] != NULL){
-    //         free(_sInImg.pImageData[c]);
-    //         _sInImg.pImageData[c] = NULL;
-    //     }
-    // }
     // for(int c = 0; c < MAX_NUM_P; ++c){
     //     if(_sOutImg.pImageData[c] != NULL){
     //         free(_sOutImg.pImageData[c]);
@@ -134,33 +143,29 @@ Pipeline::~Pipeline(){
 //     return true;
 // }
 
-// void Pipeline::add_module_to_pipe(Module_t& sModule){
-//     if(is_pipe_valid_till_now(sModule)){
-//         _pipe.push_back(sModule);
-//     }
-//     else{
-//         std::cout<<"error: last module's output does not match with the input of current module. exited.\n";
-//         exit(1);
-//     }
-// }
 
 
-// void Pipeline::set_in_img_t(Module_t& sModule){
-//     _sInImg.imageFormat = sModule.inFmt;
-//     _sInImg.sign = sModule.inSign;
-//     _sInImg.bitDepth = sModule.inBitDepth;
-// }
+ImgPtrs_t Pipeline::set_in_img_t(Module_t& sModule){
+    ImgPtrs_t imgPtrs = {NULL};
+    // consider module name and its predecessor modules
+    // if there is(are) predecessor(s), the order main, addl1, addl2, ... is the same as the order of predecessors
 
-// void Pipeline::move_data(){
-//     for (int c = 0; c < MAX_NUM_P; ++c){
-//         if (_sInImg.pImageData[c] != NULL){
-//             free(_sInImg.pImageData[c]); // if in img previously contains data, we should free it
-//             _sInImg.pImageData[c] = NULL;
-//         }
-//         _sInImg.pImageData[c] = _sOutImg.pImageData[c]; // deliver data from out to in
-//         _sOutImg.pImageData[c] = NULL; // out img should not contain data now
-//     }
-// }
+    if (sModule.pred_modules.size() > 1){
+        // find the MArg from AllArgs, then find MArg.order
+    }
+    else if (sModule.pred_modules.size() == 1){
+        //imgPtrs.pMainImg = 
+    }
+    else if (sModule.pred_modules.size() == 0){
+        return imgPtrs; // in this case, imgPtrs is dont-care for the module.
+    }
+
+    return imgPtrs;
+}
+
+void Pipeline::move_data(){
+
+}
 
 // void Pipeline::run_pipe(PipeArgs_t& sArgs){
 //     if (!_pipe.empty()){
@@ -268,5 +273,16 @@ void test_pipeline(){
     // note:
     //Pipe_t pp = Pipe_t(4); // equivalent to Pipe_t pp(4);
 
+    std::vector<int> vv(8);
+    for (int i = 0; i < vv.size(); ++i){
+        vv[i] = i;
+    }
+
+    vv.erase(vv.begin()+2);
+
+    for (int i = 0; i < vv.size(); ++i){
+        std::cout<< vv[i] << ", ";
+    }
+    std::cout<<"\n";
 
 }

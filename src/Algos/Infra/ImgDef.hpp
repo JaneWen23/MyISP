@@ -26,7 +26,7 @@ typedef enum{
     SIGNED
 } SIGN;
 
-typedef struct{
+typedef struct Img_tag{
     // NOTE: only integer (signed or unsigned) image data is supported.
     IMAGE_FMT imageFormat;
     int width; // image width in pixels; there may be different widths for different panels, to be handled by imageFormat.
@@ -34,8 +34,8 @@ typedef struct{
     SIGN sign;
     int bitDepth; // recommend to set to the bit depth used in COMPUTER, for example 8, 16, 32; can be signed or unsigned.
     int alignment; // the number of bytes for a line is a multiple of number of alignment, in bytes; if no specific alignment, set this to 1.
-    int strides[MAX_NUM_P]; // in bytes
-    uint8_t* pImageData[MAX_NUM_P]; // the pointers to all components of the image
+    int strides[MAX_NUM_P] = {0}; // in bytes
+    uint8_t* pImageData[MAX_NUM_P] = {NULL}; // the pointers to all components of the image
 } Img_t;
 
 typedef struct{

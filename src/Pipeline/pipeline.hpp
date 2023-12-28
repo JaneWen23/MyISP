@@ -2,17 +2,25 @@
 #define _PIPELINE_H
 
 #include <list>
-#include "../Algos/Infra/ImgDef.hpp"
 #include "../Modules/COMMON/PipelineModules.hpp" // TODO: just want an integral of all modules. can be anoher file or file name.
 #include "graph.hpp"
 
+typedef struct{
+    MODULE_NAME madeBy;
+    std::vector<MODULE_NAME> deliverTo;
+} Signature_t;
 
 typedef struct{
-    // the integration of all module arguments (beginning with "MArg")
-    MArg_Vin_t sVinArg;
-    MArg_Compression_t sCompressionArg;
-    MArg_CCM_t sCCMArg;
-} PipeArgs_t;
+    MODULE_NAME module;
+    std::vector<MODULE_NAME> predInOrder;
+} InputOrder_t; // only matters when module is with two or more inputs
+
+typedef std::vector<InputOrder_t> Orders_t; // only stores the info of modules with two or more inputs
+
+typedef struct{
+    Img_t img;
+    Signature_t sig;
+} PipeImg_t;
 
 typedef struct{
     MODULE_NAME module;
@@ -28,22 +36,22 @@ void print_pipe(Pipe_t& pipe);
 
 class Pipeline{
     public:
-        Pipeline(const Graph_t& graph, bool needPrint); // TODO: module cfg will be carried out in pipeline class constructor
+        Pipeline(const Graph_t& graph, bool needPrint);
         ~Pipeline();
         //void add_module_to_pipe(Module_t& sModule);
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????
-        void run_pipe(PipeArgs_t& sArgs); // run pipeline for a single frame
+        void run_pipe(AllArgs_t& sArgs); // run pipeline for a single frame
         void dump();
 
     private:
         bool is_pipe_valid_till_now(Module_t& sModule); // TODO: remove?
-        void set_in_img_t(Module_t& sModule); // set _sInImg according to current running sModule
+        ImgPtrs_t set_in_img_t(Module_t& sModule); // distribute who is main img, who is additional img, ...
         void move_data();
 
     private:
-        ImgPtrs_t _sInImgPtrs; // TODO: input pool + "madeFrom, deliverTo"
-        Img_t _sOutImg; // TODO: when made: record madeFrom, deliverTo
+        std::vector<PipeImg_t*> _InImgPool;
+        PipeImg_t* _pOutImg;
         // TODO: const char* namePrefix ???
 
     protected:
@@ -55,7 +63,7 @@ class StreamPipeline : public Pipeline{
     public:
         StreamPipeline(const Graph_t& graph, bool needPrint); // maybe add cfg to parameter list
         ~StreamPipeline();
-        void frames_run_pipe(PipeArgs_t& sArgs); // TODO: maybe another name??
+        void frames_run_pipe(AllArgs_t& sArgs); // TODO: maybe another name??
     private:
         void update_module_args(int frameInd);//TODO: to be finished, update args every frame.
     private:

@@ -11,6 +11,14 @@
 #include "../../Modules/ISP_CCM/ccm.hpp"
 
 
+typedef struct{
+    // the integration of all module arguments (beginning with "MArg")
+    MArg_Vin_t sVinArg;
+    MArg_Compression_t sCompressionArg;
+    MArg_CCM_t sCCMArg;
+    MArg_Dummy_t sDummyArg;
+} AllArgs_t;
+
 
 // Update 20231218
 // forget the above. need to rethink about the modules in pipeline
@@ -58,7 +66,11 @@
 // if a module needs two or more inputs, since every output knows who made it and there is dependency list, 
 // we can get the corresponding inputs from the named-outputs.
 
+// if two inputs: which one is main img, which one is additional img?
+// may need an "instruction" in cfg file
+
 std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m);
+
 //Module_t generate_isp_module(PipeUnit_t& sPipeUnit);
 void test_pipeline_modules();
 

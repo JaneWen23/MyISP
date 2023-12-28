@@ -2,7 +2,7 @@
 #define _COMMON_H
 
 #include "../../Algos/Infra/ImgDef.hpp"
-
+#include <vector>
 
 typedef struct{ // input images for a module
     Img_t* pMainImg;
@@ -29,6 +29,13 @@ typedef enum {
     ISP_CCM,
     ISP_RGB2YUV
 } MODULE_NAME;
+
+
+typedef struct{
+    int a;
+} MArg_Dummy_t;
+
+IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy);
 
 const char* get_module_name(const MODULE_NAME m);
 

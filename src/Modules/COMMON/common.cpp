@@ -59,3 +59,7 @@ const char* get_module_name(const MODULE_NAME m){
 }
 
 
+IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy){
+    std::cout<<"dummy module is running.\n";
+    return SUCCEED;
+}

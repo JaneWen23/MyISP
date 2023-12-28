@@ -12,7 +12,9 @@ std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module
         case DUMMY5:
         case DUMMY6:
         case DUMMY7:
-        case DUMMY8:
+        case DUMMY8:{
+            return isp_dummy;
+        }
         case ISP_VIN:{
             return isp_vin;
         }
@@ -44,18 +46,6 @@ std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module
 }
 
 
-
-// Module_t generate_isp_module(PipeUnit_t& sPipeUnit){
-//     Module_t sVinModule ={
-//         sPipeUnit.module,
-//         sPipeUnit.inFmt,
-//         sPipeUnit.outFmt,
-//         sPipeUnit.inBitDepth,
-//         sPipeUnit.outBitDepth,
-//         find_func_for_module(sPipeUnit.module)
-//     };
-//     return sVinModule;
-// }
 
 
 
