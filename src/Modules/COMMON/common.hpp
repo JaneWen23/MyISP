@@ -21,7 +21,6 @@ typedef enum {
     DUMMY6,
     DUMMY7,
     DUMMY8,
-    ISP_NONE, // remove???
     ISP_VIN,
     ISP_COMPRESSION,
     ISP_BLC,
@@ -29,8 +28,8 @@ typedef enum {
     ISP_WB,
     ISP_CCM,
     ISP_RGB2YUV
-} MODULE_ENUM;
+} MODULE_NAME;
 
-const char* get_module_name(const MODULE_ENUM m);
+const char* get_module_name(const MODULE_NAME m);
 
 #endif

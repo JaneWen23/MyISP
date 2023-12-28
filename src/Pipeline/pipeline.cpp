@@ -1,7 +1,60 @@
-# include "../Modules/COMMON/common.hpp"
+#include "pipeline.hpp"
+#include <algorithm>
+#include <iostream>
+
+void make_pipe(const Graph_t& graph, const MODULE_NAME* sorted, Pipe_t& pipe){
+    std::map<MODULE_NAME, int> mvMap = make_module_vertex_map(graph);
+    const int n = graph.size();
+    if (n < 1){
+        std::cout<<"error: pipe is not created with a proper length. exited.\n";
+        exit(1);
+    }
+    for (int i = 0; i < n; ++i){
+        // copy the module name and the successor modules:
+        pipe[i].module = sorted[i];
+        int ii = find_index_for_module(sorted[i], mvMap);
+        pipe[i].succ_modules = graph[ii].succ_modules;
+        // then "insert" predecessor modules:
+        for (int jj = 0; jj < graph[ii].succ_modules.size(); ++jj){
+            int j = find_ind_in_sorted(graph[ii].succ_modules[jj], sorted, n); 
+            pipe[j].pred_modules.push_back(graph[ii].module);
+        }
+        // find module-run-function:
+        pipe[i].run_function = find_func_for_module(sorted[i]);
+    }
+}
 
 
-// void* find_arg_for_func(PipeArgs_t& sArgs, MODULE_ENUM m){
+void print_pipe(Pipe_t& pipe){
+    std::cout<<"pipe:\n";
+    for(auto it = pipe.begin(); it != pipe.end(); ++it){
+        std::cout << get_module_name((*it).module)<<": ";
+        int lp = ((*it).pred_modules).size();
+        if (lp == 0){
+            std::cout<< "  has no input; ";
+        }
+        else{
+            std::cout<< "  takes input(s) from: ";
+            for (int i = 0; i < lp; ++i){
+                std::cout<< get_module_name((*it).pred_modules[i]) <<", ";
+            }
+        }
+
+        int ls= ((*it).succ_modules).size();
+        if (ls == 0){
+            std::cout<< "  has no output; ";
+        }
+        else{
+            std::cout<< "  delivers output to: ";
+            for (int i = 0; i < ls; ++i){
+                std::cout<< get_module_name((*it).succ_modules[i]) <<", ";
+            }
+        }
+        std::cout<<"\n";
+    }
+}
+
+// void* find_arg_for_func(PipeArgs_t& sArgs, MODULE_NAME m){
 //     switch (m){
 //         case ISP_VIN:{
 //             return &(sArgs.sVinArg);
@@ -32,27 +85,44 @@
 //     return NULL; // this is nonsense. just because it needs a return value.
 // }
 
-// Pipeline::Pipeline(Img_t& sImg){
-//     _sInImg = sImg;
-//     for(int c = 0; c < MAX_NUM_P; ++c){
-//         _sOutImg.pImageData[c] = NULL;
-//     }
-// }
+Pipeline::Pipeline(const Graph_t& graph, bool needPrint){
+    // initialize _sorted and _pipe according to number of nodes:
+    int n = graph.size();
+    _sorted = (MODULE_NAME*)malloc( n * sizeof(MODULE_NAME));
+    _pipe = Pipe_t(n); // TODO: is it constructor of std::vector<T> ??? why TYPE(n) ????
+    // generate pipeline from graph:
+    topological_sort(graph, _sorted);
+    make_pipe(graph, _sorted, _pipe);
+    if (needPrint){
+        print_pipe(_pipe);
+    }
+    // _sInImg = sImg;
+    // for(int c = 0; c < MAX_NUM_P; ++c){
+    //     _sOutImg.pImageData[c] = NULL;
+    // }
+}
 
-// Pipeline::~Pipeline(){
-//     for(int c = 0; c < MAX_NUM_P; ++c){
-//         if(_sInImg.pImageData[c] != NULL){
-//             free(_sInImg.pImageData[c]);
-//             _sInImg.pImageData[c] = NULL;
-//         }
-//     }
-//     for(int c = 0; c < MAX_NUM_P; ++c){
-//         if(_sOutImg.pImageData[c] != NULL){
-//             free(_sOutImg.pImageData[c]);
-//             _sOutImg.pImageData[c] = NULL;
-//         }
-//     }
-// }
+Pipeline::~Pipeline(){
+    free(_sorted);
+    // do not destruct _pipe manually; it was constructed in stack area.
+
+    // TODO: take notes:
+    // delete ptr means to release memory pointed by ptr;
+    // delete[] rg means to release memory pointed by rg AND call destructor of each element in rg.
+
+    // for(int c = 0; c < MAX_NUM_P; ++c){
+    //     if(_sInImg.pImageData[c] != NULL){
+    //         free(_sInImg.pImageData[c]);
+    //         _sInImg.pImageData[c] = NULL;
+    //     }
+    // }
+    // for(int c = 0; c < MAX_NUM_P; ++c){
+    //     if(_sOutImg.pImageData[c] != NULL){
+    //         free(_sOutImg.pImageData[c]);
+    //         _sOutImg.pImageData[c] = NULL;
+    //     }
+    // }
+}
 
 // bool Pipeline::is_pipe_valid_till_now(Module_t& sModule){
 //     // if _pipe is empty, nothing will go wrong
@@ -74,12 +144,6 @@
 //     }
 // }
 
-// void Pipeline::print_pipe(){
-//     std::list<Module_t>::iterator it;
-//     for (it = _pipe.begin(); it != _pipe.end(); ++it){
-//         std::cout<< get_module_name((*it).module)<<"\n";
-//     }
-// }
 
 // void Pipeline::set_in_img_t(Module_t& sModule){
 //     _sInImg.imageFormat = sModule.inFmt;
@@ -148,77 +212,61 @@
 //     }
 // }
 
-// void test_pipeline(){
-//     ReadRawArg_t sVinArg = {
-//         "../data/rawData.raw", //const char* path;
-//         0, //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
-//         RAW_RGGB, //IMAGE_FMT imageFormat;
-//         4256, //int width;
-//         2848, //int height;
-//         16, //int bitDepth;
-//         1, //int alignment;
-//     };
+void test_pipeline(){
+    ReadRawArg_t sVinArg = {
+        "../data/rawData.raw", //const char* path;
+        0, //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
+        RAW_RGGB, //IMAGE_FMT imageFormat;
+        4256, //int width;
+        2848, //int height;
+        16, //int bitDepth;
+        1, //int alignment;
+    };
 
-//     StarTetrixArg_t sStarTetrixArg = {
-//         1,
-//         2
-//     };
-//     StarTetrixArg_t* pStarTetrixArg = &sStarTetrixArg;
+    StarTetrixArg_t sStarTetrixArg = {
+        1,
+        2
+    };
+    StarTetrixArg_t* pStarTetrixArg = &sStarTetrixArg;
 
-//     DWTArg_t sDWTArg;
-//     sDWTArg.level = 2;
-//     sDWTArg.orient = TWO_DIMENSIONAL;
-//     sDWTArg.inImgPanelId = 0;
-//     sDWTArg.outImgPanelId = 0;
-//     config_dwt_kernels_LeGall53<int16_t>(&sDWTArg, MIRROR);
+    DWTArg_t sDWTArg;
+    sDWTArg.level = 2;
+    sDWTArg.orient = TWO_DIMENSIONAL;
+    sDWTArg.inImgPanelId = 0;
+    sDWTArg.outImgPanelId = 0;
+    config_dwt_kernels_LeGall53<int16_t>(&sDWTArg, MIRROR);
 
-//     MArg_Compression_t sCompressionArg = {sStarTetrixArg, sDWTArg};
+    MArg_Compression_t sCompressionArg = {sStarTetrixArg, sDWTArg};
 
-//     CCMArg_t sCCMArg = {
-//         {278, -10, -8},
-//         {-12, 269, -8},
-//         {-10, -3, 272},
-//     };
-//     //======================================================
+    CCMArg_t sCCMArg = {
+        {278, -10, -8},
+        {-12, 269, -8},
+        {-10, -3, 272},
+    };
+    //======================================================
 
+    int n = 9; // number of nodes
 
-//     PipeArgs_t sArgs = {
-//         sVinArg,
-//         sCompressionArg,
-//         sCCMArg
-//     };
+    Graph_t graph(n);
     
-//     Module_t sVinModule ={
-//         ISP_VIN,
-//         ISP_NONE,
-//         RAW_RGGB,
-//         RAW_RGGB,
-//         16,
-//         16,
-//         UNSIGNED,
-//         UNSIGNED,
-//         read_raw_frame
-//     };
+    graph[0] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    graph[2] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    graph[1] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
+    graph[4] = {DUMMY4, {DUMMY6}};
+    graph[5] = {DUMMY5, {DUMMY6}};
+    graph[6] = {DUMMY6, {DUMMY8}};
+    graph[7] = {DUMMY7, {DUMMY6}}; 
+    graph[8] = {DUMMY8, {}};
 
-//     Module_t sCompressionModule ={
-//         ISP_COMPRESSION,
-//         ISP_VIN,
-//         RAW_RGGB,
-//         RAW_RGGB,
-//         16,
-//         16,
-//         UNSIGNED,
-//         SIGNED,
-//         my_jxs_pipe_sim
-//     };
 
-//     Img_t* pInitInImg = (Img_t*)malloc(sizeof(Img_t));
-//     construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
-//     Pipeline myPipe(*pInitInImg);
-//     myPipe.add_module_to_pipe(sVinModule);
+    //Img_t* pInitInImg = (Img_t*)malloc(sizeof(Img_t));
+    //construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
+    
+    Pipeline myPipe(graph, true);
 
-//     myPipe.print_pipe();
-//     myPipe.run_pipe(sArgs);
+    // note:
+    //Pipe_t pp = Pipe_t(4); // equivalent to Pipe_t pp(4);
 
-//     destruct_img(&pInitInImg);
-// }
+
+}

@@ -10,7 +10,7 @@
 #include "src/Demo/demo.hpp"
 #include "src/Algos/Color/Color.hpp"
 #include "src/Pipeline/pipeline.hpp"
-#include <functional>
+#include "src/Pipeline/graph.hpp"
 
 
 
@@ -28,7 +28,8 @@ int main(){
 
     //test_img_def();
 
-    test_topological_sort();
+    //test_graph();
+    test_pipeline();
 
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "common.hpp"
 
-const char* get_module_name(const MODULE_ENUM m){
+const char* get_module_name(const MODULE_NAME m){
     switch(m){
         case DUMMY0:{
             return "DUMMY0";
@@ -29,9 +29,6 @@ const char* get_module_name(const MODULE_ENUM m){
         }
         case DUMMY8:{
             return "DUMMY8";
-        }
-        case ISP_NONE:{
-            return "ISP_NONE";
         }
         case ISP_VIN:{
             return "ISP_VIN";

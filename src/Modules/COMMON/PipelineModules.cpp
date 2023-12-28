@@ -2,8 +2,17 @@
 
 
 
-std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_ENUM m){
+std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m){
     switch (m){
+        case DUMMY0:
+        case DUMMY1:
+        case DUMMY2:
+        case DUMMY3:
+        case DUMMY4:
+        case DUMMY5:
+        case DUMMY6:
+        case DUMMY7:
+        case DUMMY8:
         case ISP_VIN:{
             return isp_vin;
         }
