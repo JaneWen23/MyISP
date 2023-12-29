@@ -35,6 +35,17 @@ bool is_subset(const std::vector<MODULE_NAME>& a, const std::vector<MODULE_NAME>
     return ans;
 }
 
+bool is_subset(const MODULE_NAME& a, const std::vector<MODULE_NAME>& b){
+    // check if a is subset of b.
+    // this is naive way, for convenience.
+    for (auto ib = b.begin(); ib != b.end(); ++ib){
+        if ( a == (*ib)){
+            return true;
+        }
+    }
+    return false;
+}
+
 bool is_graph_valid(const Graph_t& graph){
     // only check basic rules of a directed graph. does NOT guarantee to be acyclic.
     const int n = graph.size();

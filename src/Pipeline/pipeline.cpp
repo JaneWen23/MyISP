@@ -2,7 +2,28 @@
 #include <algorithm>
 #include <iostream>
 
-void make_pipe(const Graph_t& graph, const MODULE_NAME* sorted, Pipe_t& pipe){
+void reorder_predecessors(const Orders_t& orders, Pipe_t& pipe){
+    // first check if predecessors is subset of cfg-provided,
+    // then check if cfg-provided is subset of predecessors,
+    // if both are true, replace predecessors with cfg-provided,
+    // if not, report an error and exit.
+    for (auto it = orders.begin(); it != orders.end(); ++it){
+        for(auto ip = pipe.begin(); ip != pipe.end(); ++ip){
+            if ((*ip).module == (*it).module){
+                if (is_subset((*it).predInOrder, (*ip).pred_modules) && is_subset((*ip).pred_modules, (*it).predInOrder)){
+                    (*ip).pred_modules = (*it).predInOrder;
+                }
+                else{
+                    std::cout<<"error: the provided predecessors of "<< get_module_name((*it).module) << " do not match with the graph. exited.\n";
+                    exit(1);
+                }
+                break;
+            }
+        }
+    }
+}
+
+void make_pipe(const Orders_t& orders, const Graph_t& graph, const MODULE_NAME* sorted, Pipe_t& pipe){
     std::map<MODULE_NAME, int> mvMap = make_module_vertex_map(graph);
     const int n = graph.size();
     if (n < 1){
@@ -25,17 +46,11 @@ void make_pipe(const Graph_t& graph, const MODULE_NAME* sorted, Pipe_t& pipe){
     // for modules with two or more inputs:
     // reorder the predecessors to match with the order of "main, additional1, additional2, ..."
     // the order is specified by cfg (user-provided extra information)
-
-    // first check if predecessors is subset of cfg-provided,
-    // then check if cfg-provided is subset of predecessors,
-    // if both are true, replace predecessors with cfg-provided,
-    // if not, report an error and exit.
-
-
+    reorder_predecessors(orders, pipe);
 }
 
 
-void print_pipe(Pipe_t& pipe){
+void print_pipe(const Pipe_t& pipe){
     std::cout<<"pipe:\n";
     for(auto it = pipe.begin(); it != pipe.end(); ++it){
         std::cout << get_module_name((*it).module)<<": ";
@@ -64,7 +79,7 @@ void print_pipe(Pipe_t& pipe){
     }
 }
 
-void* find_arg_for_func(AllArgs_t& sArgs, MODULE_NAME m){
+void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m){
     switch (m){
         case DUMMY0:
         case DUMMY1:
@@ -75,13 +90,13 @@ void* find_arg_for_func(AllArgs_t& sArgs, MODULE_NAME m){
         case DUMMY6:
         case DUMMY7:
         case DUMMY8:{
-            return &(sArgs.sDummyArg);
+            return (void*)(&(sArgs.sDummyArg));
         }
         case ISP_VIN:{
-            return &(sArgs.sVinArg);
+            return (void*)(&(sArgs.sVinArg));
         }
         case ISP_COMPRESSION:{
-            return &(sArgs.sCompressionArg);
+            return (void*)(&(sArgs.sCompressionArg));
         }
         case ISP_BLC:{
             break;
@@ -93,7 +108,7 @@ void* find_arg_for_func(AllArgs_t& sArgs, MODULE_NAME m){
             break;
         }
         case ISP_CCM:{
-            return &(sArgs.sCCMArg);
+            return (void*)(&(sArgs.sCCMArg));
         }
         case ISP_RGB2YUV:{
             break;
@@ -106,31 +121,24 @@ void* find_arg_for_func(AllArgs_t& sArgs, MODULE_NAME m){
     return NULL; // this is nonsense. just because it needs a return value.
 }
 
-Pipeline::Pipeline(const Graph_t& graph, bool needPrint){
+Pipeline::Pipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint){
     // initialize _sorted and _pipe according to number of nodes:
     int n = graph.size();
     _sorted = (MODULE_NAME*)malloc( n * sizeof(MODULE_NAME));
     _pipe = Pipe_t(n); // TODO: is it constructor of std::vector<T> ??? why TYPE(n) ????
     // generate pipeline from graph:
     topological_sort(graph, _sorted);
-    make_pipe(graph, _sorted, _pipe);
+    make_pipe(orders, graph, _sorted, _pipe);
     if (needPrint){
         print_pipe(_pipe);
     }
-    _pOutImg = (PipeImg_t*) malloc(sizeof(PipeImg_t));
+    _pOutPipeImg = (PipeImg_t*) malloc(sizeof(PipeImg_t));
 }
 
 Pipeline::~Pipeline(){
     free(_sorted);
     // do not destruct _pipe manually; it was constructed in stack area.
-    free(_pOutImg);
-
-    // for(int c = 0; c < MAX_NUM_P; ++c){
-    //     if(_sOutImg.pImageData[c] != NULL){
-    //         free(_sOutImg.pImageData[c]);
-    //         _sOutImg.pImageData[c] = NULL;
-    //     }
-    // }
+    free(_pOutPipeImg);
 }
 
 // bool Pipeline::is_pipe_valid_till_now(Module_t& sModule){
@@ -143,45 +151,90 @@ Pipeline::~Pipeline(){
 //     return true;
 // }
 
-
-
-ImgPtrs_t Pipeline::set_in_img_t(Module_t& sModule){
-    ImgPtrs_t imgPtrs = {NULL};
-    // consider module name and its predecessor modules
-    // if there is(are) predecessor(s), the order main, addl1, addl2, ... is the same as the order of predecessors
-
-    if (sModule.pred_modules.size() > 1){
-        // find the MArg from AllArgs, then find MArg.order
+void Pipeline::move_output_to_pool(){
+    // if no delivery (or no output at all), do nothing.
+    if ( ! _pOutPipeImg->sig.deliverTo.empty()){
+        _InImgPool.push_back(_pOutPipeImg);
+        _pOutPipeImg = (PipeImg_t*)malloc(sizeof(PipeImg_t));
     }
-    else if (sModule.pred_modules.size() == 1){
-        //imgPtrs.pMainImg = 
-    }
-    else if (sModule.pred_modules.size() == 0){
-        return imgPtrs; // in this case, imgPtrs is dont-care for the module.
-    }
+}
 
+const ImgPtrs_t Pipeline::distribute_in_img_t(const Module_t& sModule){
+    // this function should be called after the output img moved to input pool.
+    // assign the input images from pool to the module run-function.
+    int len = sModule.pred_modules.size();
+    ImgPtrs_t imgPtrs(len);
+    for (int i = 0; i < len; ++i){
+        for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
+            if ((*it)->sig.madeBy == sModule.pred_modules[i]){
+                if (is_subset(sModule.module, (*it)->sig.deliverTo)){
+                    imgPtrs[i] = &((*it)->img); // assign img
+                    break;
+                }   
+            }
+            std::cout<<"error: cannot find the input image needed by " << get_module_name(sModule.module)<<". exited.\n";
+            exit(1);
+        }
+    }
     return imgPtrs;
 }
 
-void Pipeline::move_data(){
-
+void remove_from_delivery_list(const MODULE_NAME m, std::vector<MODULE_NAME>& ls){
+    for (int i = 0; i < ls.size(); ++i){
+        if (m == ls[i]){
+            ls.erase(ls.begin()+i);
+            return;
+        }
+    }
 }
 
-// void Pipeline::run_pipe(PipeArgs_t& sArgs){
-//     if (!_pipe.empty()){
-//         std::list<Module_t>::iterator it;
-//         for (it = _pipe.begin(); it != _pipe.end(); ++it){
-//             set_in_img_t(*it);
-//             move_data();
-//             (*it).run_function(_sInImgPtrs, &_sOutImg, find_arg_for_func(sArgs, (*it).module));
-//             // TODO:  maybe dump?? "EOF end of frame"
-//             dump();
-//         }
-//     }
-//     else{
-//         std::cout<<"warning: pipeline is empty. nothing processed.\n";
-//     }
-// }
+void Pipeline::sign_out_from_pool(const Module_t& sModule){
+    // after input img is used, remove module name from deliverTo list;
+    // if list is empty, destroy the img.
+    int len = sModule.pred_modules.size();
+    ImgPtrs_t imgPtrs(len);
+    for (int i = 0; i < len; ++i){
+        for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
+            if ((*it)->sig.madeBy == sModule.pred_modules[i]){
+                if (is_subset(sModule.module, (*it)->sig.deliverTo)){
+                    remove_from_delivery_list(sModule.module, (*it)->sig.deliverTo);
+                    if ((*it)->sig.deliverTo.size() == 0){
+                        free_image_data(&((*it)->img));
+                        free(*it); // want to free the "PipeImg_t", which was malloced when _pOutPipeImg created.
+                        _InImgPool.erase(it);
+                    }
+                    break;
+                }   
+            }
+            std::cout<<"error: cannot sign out " << get_module_name(sModule.module)<<". exited.\n";
+            exit(1);
+        }
+    }
+}
+
+void Pipeline::signature_output_img(const Module_t& sModule){
+    // assemble the img and signature (img was set by module run_function)
+    _pOutPipeImg->sig.madeBy = sModule.module;
+    _pOutPipeImg->sig.deliverTo = sModule.succ_modules;
+}
+
+void Pipeline::run_pipe(AllArgs_t& sArgs){
+    if (!_pipe.empty()){
+        Pipe_t::iterator it;
+        for (it = _pipe.begin(); it != _pipe.end(); ++it){
+            move_output_to_pool();
+            ImgPtrs_t inPtrs = distribute_in_img_t(*it);
+            (*it).run_function(inPtrs, &(_pOutPipeImg->img), find_arg_for_func(sArgs, (*it).module));
+            sign_out_from_pool(*it);
+            signature_output_img(*it);
+            // TODO:  maybe dump?? "EOF end of frame"
+            //dump();
+        }
+    }
+    else{
+        std::cout<<"warning: pipeline is empty. nothing processed.\n";
+    }
+}
 
 // void Pipeline::dump(){
 //     cv::Mat image;
@@ -264,11 +317,14 @@ void test_pipeline(){
     graph[7] = {DUMMY7, {DUMMY6}}; 
     graph[8] = {DUMMY8, {}};
 
+    Orders_t orders(2);
+    orders[0] = {DUMMY3, {DUMMY1, DUMMY2}};
+    orders[1] = {DUMMY6, {DUMMY4, DUMMY5, DUMMY7}};
 
     //Img_t* pInitInImg = (Img_t*)malloc(sizeof(Img_t));
     //construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
     
-    Pipeline myPipe(graph, true);
+    Pipeline myPipe(graph, orders, true);
 
     // note:
     //Pipe_t pp = Pipe_t(4); // equivalent to Pipe_t pp(4);

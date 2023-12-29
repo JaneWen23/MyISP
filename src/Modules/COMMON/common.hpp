@@ -4,12 +4,12 @@
 #include "../../Algos/Infra/ImgDef.hpp"
 #include <vector>
 
-typedef struct{ // input images for a module
-    Img_t* pMainImg;
-    Img_t* pAddlImg1; // additional image 1
-    Img_t* pAddlImg2; // additional image 2
-    Img_t* pAddlImg3; // additional image 3
-} ImgPtrs_t;
+
+typedef std::vector<Img_t*> ImgPtrs_t;
+// since a module can have one or more input images, store the img pointers in the vector.
+// for example, 
+//      ImgPtrs_t p(4);
+// means p[0] is the pointer to main img, p[1] additional img1, p[2] additional img2, ...
 
 typedef enum {
     DUMMY0,

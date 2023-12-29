@@ -17,7 +17,7 @@ typedef struct{
     MArg_Compression_t sCompressionArg;
     MArg_CCM_t sCCMArg;
     MArg_Dummy_t sDummyArg;
-} AllArgs_t;
+} AllArgs_t; // TOML
 
 
 // Update 20231218

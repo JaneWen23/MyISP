@@ -67,10 +67,10 @@ IMG_RTN_CODE my_jxs_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pM
 
 
 IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMyJXSArg){
-    safe_unsigned_to_signed_img(sInImgPtrs.pMainImg);
+    safe_unsigned_to_signed_img(sInImgPtrs[0]);
 
     Img_t* pTmpImg = (Img_t*)malloc(sizeof(Img_t));
-    my_jxs_forward(sInImgPtrs.pMainImg, pTmpImg, pMyJXSArg);
+    my_jxs_forward(sInImgPtrs[0], pTmpImg, pMyJXSArg);
     my_jxs_backward(pTmpImg, pOutImg, pMyJXSArg);
     destruct_img(&pTmpImg);
     // currently, the module execution will not update any arguments, i.e., pMyJXSArg will not be changed by this func.
@@ -124,8 +124,8 @@ void test_my_jxs(){
     pMyJXSArg->sStarTetrixArg = sStarTetrixArg;
     pMyJXSArg->sDWTArg = sDWTArg;
 
-    ImgPtrs_t sImgPtrs;
-    sImgPtrs.pMainImg = pInImg;
+    ImgPtrs_t sImgPtrs(1);
+    sImgPtrs[0] = pInImg;
 
     std::cout<<"original:\n";
     ROI_t viewROI = {0, 0, 0, pInImg->width, pInImg->height};

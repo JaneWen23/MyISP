@@ -13,9 +13,9 @@ typedef struct{
 typedef struct{
     MODULE_NAME module;
     std::vector<MODULE_NAME> predInOrder;
-} InputOrder_t; // only matters when module is with two or more inputs
+} InputOrder_t; // is needed only when module is with two or more inputs
 
-typedef std::vector<InputOrder_t> Orders_t; // only stores the info of modules with two or more inputs
+typedef std::vector<InputOrder_t> Orders_t; // only stores the info of modules with two or more inputs; TOML;
 
 typedef struct{
     Img_t img;
@@ -36,7 +36,7 @@ void print_pipe(Pipe_t& pipe);
 
 class Pipeline{
     public:
-        Pipeline(const Graph_t& graph, bool needPrint);
+    Pipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint);
         ~Pipeline();
         //void add_module_to_pipe(Module_t& sModule);
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
@@ -45,13 +45,15 @@ class Pipeline{
         void dump();
 
     private:
-        bool is_pipe_valid_till_now(Module_t& sModule); // TODO: remove?
-        ImgPtrs_t set_in_img_t(Module_t& sModule); // distribute who is main img, who is additional img, ...
-        void move_data();
+        //bool is_pipe_valid_till_now(Module_t& sModule); // TODO: change to run-time validity?????
+        void move_output_to_pool();
+        const ImgPtrs_t distribute_in_img_t(const Module_t& sModule); // distribute who is main img, who is additional img, ...
+        void sign_out_from_pool(const Module_t& sModule); // after input img is used, remove module name from deliverTo list; if list is empty, destroy the img.
+        void signature_output_img(const Module_t& sModule); // assemble the img and signature
 
     private:
         std::vector<PipeImg_t*> _InImgPool;
-        PipeImg_t* _pOutImg;
+        PipeImg_t* _pOutPipeImg;
         // TODO: const char* namePrefix ???
 
     protected:

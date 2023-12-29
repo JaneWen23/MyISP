@@ -63,6 +63,7 @@ IMG_RTN_CODE construct_img(Img_t* pImg,
                             const int bitDepth,
                             const int alignment,
                             const bool allocateImage);
+IMG_RTN_CODE free_image_data(Img_t* pImg);
 IMG_RTN_CODE destruct_img(Img_t**);
 void view_img_properties(const Img_t* pImg);
 void view_image_data(const Img_t* pImg, const ROI_t& viewROI);
