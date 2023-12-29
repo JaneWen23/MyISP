@@ -31,9 +31,6 @@ typedef enum {
 } MODULE_NAME;
 
 
-typedef struct{
-    int a;
-} MArg_Dummy_t;
 
 IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy);
 

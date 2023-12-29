@@ -10,6 +10,9 @@
 #include "../../Modules/ISP_COMPRESSION/MyJXS.hpp"
 #include "../../Modules/ISP_CCM/ccm.hpp"
 
+typedef struct{
+    int a;
+} MArg_Dummy_t;
 
 typedef struct{
     // the integration of all module arguments (beginning with "MArg")

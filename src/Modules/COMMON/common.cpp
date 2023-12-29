@@ -1,5 +1,6 @@
 #include <iostream>
 #include "common.hpp"
+#include "../../Algos/Infra/RandImageGen.hpp"
 
 const char* get_module_name(const MODULE_NAME m){
     switch(m){
@@ -61,6 +62,27 @@ const char* get_module_name(const MODULE_NAME m){
 
 IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy){
     std::cout<<"dummy module is running.\n";
-    
+    std::cout<<"in img ptrs: \n";
+    for (int i = 0; i < sInImgPtrs.size(); ++i){
+        if (sInImgPtrs[i] != NULL){
+            std::cout<< sInImgPtrs[i]<< ",\n";
+        }
+    }
+    IMAGE_FMT imageFormat = RGB;
+    size_t width = 6;
+    size_t height = 4;
+    size_t bitDepth = 16;
+    size_t alignment = 32;
+    construct_img(pOutImg, 
+                imageFormat,
+                width,
+                height,
+                UNSIGNED,
+                bitDepth,
+                alignment,
+                true);
+    Distrib_t sDistrib = {0, 511, 3, 15};  
+    ValCfg_t sValCfg = {SIGNED, rand_num_uniform, sDistrib};
+    set_value(pOutImg, sValCfg);
     return SUCCEED;
 }

@@ -132,13 +132,14 @@ Pipeline::Pipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint)
     if (needPrint){
         print_pipe(_pipe);
     }
-    _pOutPipeImg = (PipeImg_t*) malloc(sizeof(PipeImg_t));
+    // _pOutPipeImg = (PipeImg_t*)malloc(sizeof(PipeImg_t));
+    // _pOutPipeImg->sig.deliverTo = std::vector<MODULE_NAME>(0);
 }
 
 Pipeline::~Pipeline(){
     free(_sorted);
     // do not destruct _pipe manually; it was constructed in stack area.
-    free(_pOutPipeImg);
+    //free(_pOutPipeImg);
 }
 
 // bool Pipeline::is_pipe_valid_till_now(Module_t& sModule){
@@ -153,9 +154,12 @@ Pipeline::~Pipeline(){
 
 void Pipeline::move_output_to_pool(){
     // if no delivery (or no output at all), do nothing.
-    if ( ! _pOutPipeImg->sig.deliverTo.empty()){
+    if ( ! _pOutPipeImg.sig.deliverTo.empty()){
         _InImgPool.push_back(_pOutPipeImg);
-        _pOutPipeImg = (PipeImg_t*)malloc(sizeof(PipeImg_t));
+        free_image_data(&(_pOutPipeImg.img));
+        _pOutPipeImg.sig.deliverTo.clear();
+        // _pOutPipeImg = (PipeImg_t*)malloc(sizeof(PipeImg_t));
+        // _pOutPipeImg->sig.deliverTo = std::vector<MODULE_NAME>(0);
     }
 }
 
@@ -166,14 +170,12 @@ const ImgPtrs_t Pipeline::distribute_in_img_t(const Module_t& sModule){
     ImgPtrs_t imgPtrs(len);
     for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
-            if ((*it)->sig.madeBy == sModule.pred_modules[i]){
-                if (is_subset(sModule.module, (*it)->sig.deliverTo)){
-                    imgPtrs[i] = &((*it)->img); // assign img
+            if ((*it).sig.madeBy == sModule.pred_modules[i]){
+                if (is_subset(sModule.module, (*it).sig.deliverTo)){
+                    imgPtrs[i] = &((*it).img); // assign img
                     break;
                 }   
             }
-            std::cout<<"error: cannot find the input image needed by " << get_module_name(sModule.module)<<". exited.\n";
-            exit(1);
         }
     }
     return imgPtrs;
@@ -195,27 +197,27 @@ void Pipeline::sign_out_from_pool(const Module_t& sModule){
     ImgPtrs_t imgPtrs(len);
     for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
-            if ((*it)->sig.madeBy == sModule.pred_modules[i]){
-                if (is_subset(sModule.module, (*it)->sig.deliverTo)){
-                    remove_from_delivery_list(sModule.module, (*it)->sig.deliverTo);
-                    if ((*it)->sig.deliverTo.size() == 0){
-                        free_image_data(&((*it)->img));
-                        free(*it); // want to free the "PipeImg_t", which was malloced when _pOutPipeImg created.
+            if ((*it).sig.madeBy == sModule.pred_modules[i]){
+                if (is_subset(sModule.module, (*it).sig.deliverTo)){
+                    remove_from_delivery_list(sModule.module, (*it).sig.deliverTo);
+                    if ((*it).sig.deliverTo.size() == 0){
+                        // free_image_data(&((*it)->img));
+                        // free(*it); // want to free the "PipeImg_t", which was malloced when _pOutPipeImg created.
                         _InImgPool.erase(it);
                     }
                     break;
                 }   
             }
-            std::cout<<"error: cannot sign out " << get_module_name(sModule.module)<<". exited.\n";
-            exit(1);
         }
     }
 }
 
 void Pipeline::signature_output_img(const Module_t& sModule){
     // assemble the img and signature (img was set by module run_function)
-    _pOutPipeImg->sig.madeBy = sModule.module;
-    _pOutPipeImg->sig.deliverTo = sModule.succ_modules;
+    _pOutPipeImg.sig.madeBy = sModule.module;
+    for (auto it = sModule.succ_modules.begin(); it != sModule.succ_modules.end(); ++it){
+        _pOutPipeImg.sig.deliverTo.push_back((*it));
+    }
 }
 
 void Pipeline::run_pipe(AllArgs_t& sArgs){
@@ -224,7 +226,7 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
             move_output_to_pool();
             ImgPtrs_t inPtrs = distribute_in_img_t(*it);
-            (*it).run_function(inPtrs, &(_pOutPipeImg->img), find_arg_for_func(sArgs, (*it).module));
+            (*it).run_function(inPtrs, &(_pOutPipeImg.img), find_arg_for_func(sArgs, (*it).module));
             sign_out_from_pool(*it);
             signature_output_img(*it);
             // TODO:  maybe dump?? "EOF end of frame"
@@ -271,7 +273,7 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
 // }
 
 void test_pipeline(){
-    ReadRawArg_t sVinArg = {
+    ReadRawArg_t sAlgoVinArg = {
         "../data/rawData.raw", //const char* path;
         0, //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
         RAW_RGGB, //IMAGE_FMT imageFormat;
@@ -280,6 +282,7 @@ void test_pipeline(){
         16, //int bitDepth;
         1, //int alignment;
     };
+    MArg_Vin_t sVinArg = {sAlgoVinArg, false};
 
     StarTetrixArg_t sStarTetrixArg = {
         1,
@@ -296,11 +299,16 @@ void test_pipeline(){
 
     MArg_Compression_t sCompressionArg = {sStarTetrixArg, sDWTArg};
 
-    CCMArg_t sCCMArg = {
+    CCMArg_t sAlgoCCMArg = {
         {278, -10, -8},
         {-12, 269, -8},
         {-10, -3, 272},
     };
+    MArg_CCM_t sCCMArg = {sAlgoCCMArg};
+
+    MArg_Dummy_t sDummyArg = {3};
+
+    AllArgs_t sArgs = {sVinArg, sCompressionArg, sCCMArg, sDummyArg};
     //======================================================
 
     int n = 9; // number of nodes
@@ -325,20 +333,9 @@ void test_pipeline(){
     //construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
     
     Pipeline myPipe(graph, orders, true);
+    myPipe.run_pipe(sArgs);
 
     // note:
     //Pipe_t pp = Pipe_t(4); // equivalent to Pipe_t pp(4);
-
-    std::vector<int> vv(8);
-    for (int i = 0; i < vv.size(); ++i){
-        vv[i] = i;
-    }
-
-    vv.erase(vv.begin()+2);
-
-    for (int i = 0; i < vv.size(); ++i){
-        std::cout<< vv[i] << ", ";
-    }
-    std::cout<<"\n";
 
 }

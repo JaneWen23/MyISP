@@ -31,7 +31,7 @@ typedef struct{
 
 typedef std::vector<Module_t> Pipe_t;
 
-void print_pipe(Pipe_t& pipe);
+void print_pipe(const Pipe_t& pipe);
 
 
 class Pipeline{
@@ -52,8 +52,8 @@ class Pipeline{
         void signature_output_img(const Module_t& sModule); // assemble the img and signature
 
     private:
-        std::vector<PipeImg_t*> _InImgPool;
-        PipeImg_t* _pOutPipeImg;
+        std::vector<PipeImg_t> _InImgPool;
+        PipeImg_t _pOutPipeImg;
         // TODO: const char* namePrefix ???
 
     protected:
