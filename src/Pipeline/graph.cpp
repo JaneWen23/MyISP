@@ -1,17 +1,38 @@
 #include "graph.hpp"
 #include <iostream>
 
-bool is_subset(MODULE_NAME* a, int l_a, MODULE_NAME* b, int l_b){
+bool is_subset(const MODULE_NAME* a, int l_a, const MODULE_NAME* b, int l_b){
     // check if a is subset of b.
     // this is naive way, for convenience.
+    bool ans = false;
     for (int i = 0; i < l_a; ++i){
         for (int j = 0; j < l_b; ++j){
             if (b[j] == a[i]){
-                return true;
+                ans = true;
+                break;
             }
+            ans = false;
         }
+        if (!ans) break;
     }
-    return false;
+    return ans;
+}
+
+bool is_subset(const std::vector<MODULE_NAME>& a, const std::vector<MODULE_NAME>& b){
+    // check if a is subset of b.
+    // this is naive way, for convenience.
+    bool ans = false;
+    for (auto ia = a.begin(); ia != a.end(); ++ia){
+        for (auto ib = b.begin(); ib != b.end(); ++ib){
+            if ( (*ia) == (*ib)){
+                ans = true;
+                break;
+            }
+            ans = false;
+        }
+        if (!ans) break;
+    }
+    return ans;
 }
 
 bool is_graph_valid(const Graph_t& graph){
@@ -199,4 +220,8 @@ void test_graph(){
     MODULE_NAME sorted[n];
     topological_sort(graph, sorted);
     print_sorted_nodes(sorted, n);
+
+    std::vector<MODULE_NAME> a = {DUMMY1, DUMMY2};
+    std::vector<MODULE_NAME> b = {DUMMY1, DUMMY2, DUMMY3};
+    std::cout<<"is subset: "<<is_subset(b, a)<<"\n";
 }
