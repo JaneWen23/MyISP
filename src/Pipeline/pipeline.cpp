@@ -1,6 +1,7 @@
 #include "pipeline.hpp"
 #include <algorithm>
 #include <iostream>
+#include "../ThirdParty/OpenCV.hpp"
 
 void reorder_predecessors(const Orders_t& orders, Pipe_t& pipe){
     // first check if predecessors is subset of cfg-provided,
@@ -56,7 +57,7 @@ void print_pipe(const Pipe_t& pipe){
         std::cout << get_module_name((*it).module)<<": ";
         int lp = ((*it).pred_modules).size();
         if (lp == 0){
-            std::cout<< "  has no input; ";
+            std::cout<< "  needs no input; ";
         }
         else{
             std::cout<< "  takes input(s) from: ";
@@ -67,7 +68,7 @@ void print_pipe(const Pipe_t& pipe){
 
         int ls= ((*it).succ_modules).size();
         if (ls == 0){
-            std::cout<< "  has no output; ";
+            std::cout<< "  dose not deliver output; ";
         }
         else{
             std::cout<< "  delivers output to: ";
@@ -132,14 +133,12 @@ Pipeline::Pipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint)
     if (needPrint){
         print_pipe(_pipe);
     }
-    // _pOutPipeImg = (PipeImg_t*)malloc(sizeof(PipeImg_t));
-    // _pOutPipeImg->sig.deliverTo = std::vector<MODULE_NAME>(0);
 }
 
 Pipeline::~Pipeline(){
     free(_sorted);
-    // do not destruct _pipe manually; it was constructed in stack area.
-    //free(_pOutPipeImg);
+    free_image_data(&(_sOutPipeImg.img));
+    _pipe.clear();
 }
 
 // bool Pipeline::is_pipe_valid_till_now(Module_t& sModule){
@@ -154,12 +153,12 @@ Pipeline::~Pipeline(){
 
 void Pipeline::move_output_to_pool(){
     // if no delivery (or no output at all), do nothing.
-    if ( ! _pOutPipeImg.sig.deliverTo.empty()){
-        _InImgPool.push_back(_pOutPipeImg);
-        free_image_data(&(_pOutPipeImg.img));
-        _pOutPipeImg.sig.deliverTo.clear();
-        // _pOutPipeImg = (PipeImg_t*)malloc(sizeof(PipeImg_t));
-        // _pOutPipeImg->sig.deliverTo = std::vector<MODULE_NAME>(0);
+    if ( ! _sOutPipeImg.sig.deliverTo.empty()){
+        _InImgPool.push_back(_sOutPipeImg);
+        for (int i = 0; i < MAX_NUM_P; ++i){
+            _sOutPipeImg.img.pImageData[i] = NULL;
+        }
+        _sOutPipeImg.sig.deliverTo.clear();
     }
 }
 
@@ -201,8 +200,7 @@ void Pipeline::sign_out_from_pool(const Module_t& sModule){
                 if (is_subset(sModule.module, (*it).sig.deliverTo)){
                     remove_from_delivery_list(sModule.module, (*it).sig.deliverTo);
                     if ((*it).sig.deliverTo.size() == 0){
-                        // free_image_data(&((*it)->img));
-                        // free(*it); // want to free the "PipeImg_t", which was malloced when _pOutPipeImg created.
+                        free_image_data(&(*it).img);
                         _InImgPool.erase(it);
                     }
                     break;
@@ -214,9 +212,9 @@ void Pipeline::sign_out_from_pool(const Module_t& sModule){
 
 void Pipeline::signature_output_img(const Module_t& sModule){
     // assemble the img and signature (img was set by module run_function)
-    _pOutPipeImg.sig.madeBy = sModule.module;
+    _sOutPipeImg.sig.madeBy = sModule.module;
     for (auto it = sModule.succ_modules.begin(); it != sModule.succ_modules.end(); ++it){
-        _pOutPipeImg.sig.deliverTo.push_back((*it));
+        _sOutPipeImg.sig.deliverTo.push_back((*it));
     }
 }
 
@@ -226,7 +224,7 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
             move_output_to_pool();
             ImgPtrs_t inPtrs = distribute_in_img_t(*it);
-            (*it).run_function(inPtrs, &(_pOutPipeImg.img), find_arg_for_func(sArgs, (*it).module));
+            (*it).run_function(inPtrs, &(_sOutPipeImg.img), find_arg_for_func(sArgs, (*it).module));
             sign_out_from_pool(*it);
             signature_output_img(*it);
             // TODO:  maybe dump?? "EOF end of frame"
@@ -245,26 +243,26 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
 // }
 
 
-// StreamPipeline::StreamPipeline(Img_t& sImg) : Pipeline(sImg){
-//     // nothing to do
-// }
+StreamPipeline::StreamPipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint) : Pipeline(graph, orders, needPrint){
+    // nothing to do
+}
 
-// StreamPipeline::~StreamPipeline(){
-//     // nothing to do, and does not need to explicitly call the destructor from base class
-// }
+StreamPipeline::~StreamPipeline(){
+    // nothing to do, and does not need to explicitly call the destructor from base class
+}
 
 // void StreamPipeline::update_module_args(int frameInd){
-//     std::list<Module_t>::iterator it;
-//     for (it = _pipe.begin(); it != _pipe.end(); ++it){
-//         //(*it).pArg = 
-//         // TODO: two ways to update args. one is c-model simulation mode, just set values when module runs;
-//         // the other is to read from a series of toml files for every frame, and override the values set by module.
-//     }
+//     // TODO: two ways to update args. one is c-model simulation mode, just set values when module runs;
+//     // the other is to read from a series of toml files for every frame, and override the values set by module.
+    
+//     // for (auto it = _pipe.begin(); it != _pipe.end(); ++it){
+
+//     // }
 // }
 
-// void StreamPipeline::frames_run_pipe(PipeArgs_t& sArgs){
+// void StreamPipeline::frames_run_pipe(AllArgs_t& sArgs){
 //     for(int i = _startFrameInd; i < _startFrameInd + _frameNum; ++i){
-//         update_module_args(i); // should consider behavioral consistency with Pipeline, when frameNum = 1: RawStream has update_module_args but Pipeline does not.
+//         update_module_args(i); // this is to read new arg from cfg; already updated some args in Modules when pipe runs.
 //         run_pipe(sArgs);
 //         // if config specifies what arguments for a specific frame, just use config
 //         // if config not specified, use adapted

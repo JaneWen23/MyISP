@@ -38,14 +38,13 @@ class Pipeline{
     public:
     Pipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint);
         ~Pipeline();
-        //void add_module_to_pipe(Module_t& sModule);
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         void run_pipe(AllArgs_t& sArgs); // run pipeline for a single frame
         void dump();
 
     private:
-        //bool is_pipe_valid_till_now(Module_t& sModule); // TODO: change to run-time validity?????
+        //bool is_pipe_valid_till_now(Module_t& sModule); // TODO: change to run-time validation???
         void move_output_to_pool();
         const ImgPtrs_t distribute_in_img_t(const Module_t& sModule); // distribute who is main img, who is additional img, ...
         void sign_out_from_pool(const Module_t& sModule); // after input img is used, remove module name from deliverTo list; if list is empty, destroy the img.
@@ -53,7 +52,7 @@ class Pipeline{
 
     private:
         std::vector<PipeImg_t> _InImgPool;
-        PipeImg_t _pOutPipeImg;
+        PipeImg_t _sOutPipeImg;
         // TODO: const char* namePrefix ???
 
     protected:
@@ -63,7 +62,7 @@ class Pipeline{
 
 class StreamPipeline : public Pipeline{
     public:
-        StreamPipeline(const Graph_t& graph, bool needPrint); // maybe add cfg to parameter list
+        StreamPipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint);
         ~StreamPipeline();
         void frames_run_pipe(AllArgs_t& sArgs); // TODO: maybe another name??
     private:

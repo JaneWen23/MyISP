@@ -8,7 +8,7 @@ IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Vin
                        pMArg->sReadRawArg.imageFormat,
                        pMArg->sReadRawArg.width,
                        pMArg->sReadRawArg.height,
-                       pMArg->sReadRawArg.bitDepth, // bitDepth is at least sensor bitDepth + 1 ?????????
+                       pMArg->sReadRawArg.bitDepth,
                        pMArg->sReadRawArg.alignment,
                        pMArg->sReadRawArg.frameInd);
 
