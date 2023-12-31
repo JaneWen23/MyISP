@@ -193,7 +193,6 @@ void Pipeline::sign_out_from_pool(const Module_t& sModule){
     // after input img is used, remove module name from deliverTo list;
     // if list is empty, destroy the img.
     int len = sModule.pred_modules.size();
-    ImgPtrs_t imgPtrs(len);
     for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
             if ((*it).sig.madeBy == sModule.pred_modules[i]){
@@ -218,18 +217,29 @@ void Pipeline::signature_output_img(const Module_t& sModule){
     }
 }
 
+void Pipeline::run_module(const Module_t& sModule, void* pMArg){
+    move_output_to_pool();
+    ImgPtrs_t inPtrs = distribute_in_img_t(sModule);
+    sModule.run_function(inPtrs, &(_sOutPipeImg.img), pMArg);
+    sign_out_from_pool(sModule);
+    signature_output_img(sModule);
+}
+
 void Pipeline::run_pipe(AllArgs_t& sArgs){
     if (!_pipe.empty()){
         Pipe_t::iterator it;
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
-            move_output_to_pool();
-            ImgPtrs_t inPtrs = distribute_in_img_t(*it);
-            (*it).run_function(inPtrs, &(_sOutPipeImg.img), find_arg_for_func(sArgs, (*it).module));
-            sign_out_from_pool(*it);
-            signature_output_img(*it);
+            run_module((*it), find_arg_for_func(sArgs, (*it).module));
+
             // TODO:  maybe dump?? "EOF end of frame"
             //dump();
         }
+        // maybe dump some log here??
+        // maybe clear all imgs??
+        // (because when the StreamPipe runs, Pipeline destructor won't be called after a frame finished.)
+        // what if there are some buffered img (stored for the next FRAME)?
+        // can the last-frame img represented by the graph???
+        // 
     }
     else{
         std::cout<<"warning: pipeline is empty. nothing processed.\n";
@@ -251,24 +261,33 @@ StreamPipeline::~StreamPipeline(){
     // nothing to do, and does not need to explicitly call the destructor from base class
 }
 
-// void StreamPipeline::update_module_args(int frameInd){
-//     // TODO: two ways to update args. one is c-model simulation mode, just set values when module runs;
-//     // the other is to read from a series of toml files for every frame, and override the values set by module.
-    
-//     // for (auto it = _pipe.begin(); it != _pipe.end(); ++it){
+void parse_args(const int frameInd, AllArgs_t& sArgs){
+    // TODO: two ways to update args. one is c-model simulation mode, just set values when module runs;
+    // the other is to read from a series of toml files for every frame, and override the values set by module.
 
-//     // }
-// }
+}
 
-// void StreamPipeline::frames_run_pipe(AllArgs_t& sArgs){
-//     for(int i = _startFrameInd; i < _startFrameInd + _frameNum; ++i){
-//         update_module_args(i); // this is to read new arg from cfg; already updated some args in Modules when pipe runs.
-//         run_pipe(sArgs);
-//         // if config specifies what arguments for a specific frame, just use config
-//         // if config not specified, use adapted
-//         // if none of the above, keep unchanged
-//     }
-// }
+void StreamPipeline::run_module(const Module_t& sModule, void* pMArg){
+    std::cout<<"StreamPipeline " << get_module_name(sModule.module) <<", ";
+    move_output_to_pool(); // add another line in StreamPipeline
+    ImgPtrs_t inPtrs = distribute_in_img_t(sModule); // add another line in StreamPipeline
+    sModule.run_function(inPtrs, &(_sOutPipeImg.img), pMArg);
+    sign_out_from_pool(sModule); // add another line in StreamPipeline
+    signature_output_img(sModule); // add another line in StreamPipeline
+}
+
+void StreamPipeline::run_pipe(AllArgs_t& sArgs){
+    for (auto it = _pipe.begin(); it != _pipe.end(); ++it){
+        run_module((*it), find_arg_for_func(sArgs, (*it).module));
+    }
+}
+
+void StreamPipeline::frames_run_pipe(AllArgs_t& sArgs){
+    for(int i = _startFrameInd; i < _startFrameInd + _frameNum; ++i){
+        parse_args(i, sArgs); // already updated some args in Modules when pipe runs. this line is to override.
+        run_pipe(sArgs); 
+    }
+}
 
 void test_pipeline(){
     ReadRawArg_t sAlgoVinArg = {
@@ -327,13 +346,12 @@ void test_pipeline(){
     orders[0] = {DUMMY3, {DUMMY1, DUMMY2}};
     orders[1] = {DUMMY6, {DUMMY4, DUMMY5, DUMMY7}};
 
-    //Img_t* pInitInImg = (Img_t*)malloc(sizeof(Img_t));
-    //construct_img(pInitInImg, RAW_RGGB, 4256, 2848, UNSIGNED, 16, 1, false); // can be anything if the first module in pipe is VIN, because VIN does not need InImg.
-    
-    Pipeline myPipe(graph, orders, true);
-    myPipe.run_pipe(sArgs);
 
-    // note:
-    //Pipe_t pp = Pipe_t(4); // equivalent to Pipe_t pp(4);
+    // Pipeline myPipe(graph, orders, true);
+    // myPipe.run_pipe(sArgs);
+
+
+    StreamPipeline strmPipe(graph, orders, true);
+    strmPipe.run_pipe(sArgs);
 
 }
