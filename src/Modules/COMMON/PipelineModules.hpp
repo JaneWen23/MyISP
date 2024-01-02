@@ -73,6 +73,7 @@ typedef struct{
 // may need an "instruction" in cfg file
 
 std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m);
+void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m);
 
 //Module_t generate_isp_module(PipeUnit_t& sPipeUnit);
 void test_pipeline_modules();

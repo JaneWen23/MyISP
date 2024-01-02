@@ -35,16 +35,16 @@ bool is_subset(const std::vector<MODULE_NAME>& a, const std::vector<MODULE_NAME>
     return ans;
 }
 
-bool is_subset(const MODULE_NAME& a, const std::vector<MODULE_NAME>& b){
-    // check if a is subset of b.
-    // this is naive way, for convenience.
-    for (auto ib = b.begin(); ib != b.end(); ++ib){
-        if ( a == (*ib)){
-            return true;
-        }
-    }
-    return false;
-}
+// bool is_subset(const MODULE_NAME& a, const std::vector<MODULE_NAME>& b){ // not in use
+//     // check if a is subset of b.
+//     // this is naive way, for convenience.
+//     for (auto ib = b.begin(); ib != b.end(); ++ib){
+//         if ( a == (*ib)){
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 bool is_graph_valid(const Graph_t& graph){
     // only check basic rules of a directed graph. does NOT guarantee to be acyclic.
@@ -64,28 +64,28 @@ bool is_graph_valid(const Graph_t& graph){
     }
 
     for (int i = 0; i < n; ++i){
-        int l = graph[i].succ_modules.size();
+        int l = graph[i].succModules.size();
         if (l > 0){
-            MODULE_NAME adj[l];
+            MODULE_NAME node[l];
             for (int j = 0; j < l; ++j){
-                adj[j] = graph[i].succ_modules[j];
+                node[j] = graph[i].succModules[j];
                 // check if there is edge from and to the same vertex:
-                if (graph[i].module == adj[j]){
+                if (graph[i].module == node[j]){
                     std::cout<<"invalid graph: there exists an edge from and to the same vertex.\n";
                     return false;
                 }
             }
             // check if there are repeated edges:
-            std::sort(adj, adj + l);
+            std::sort(node, node + l);
             for (int k = 1; k < l; ++k){
-                if (adj[k-1] == adj[k]){
+                if (node[k-1] == node[k]){
                     std::cout<<"invalid graph: there are repeated edges.\n";
                     return false;
                 }
             }
             // check if there is edge connecting to undefined vertex:
-            // i.e. all elements in adj[] should be in definedVtx[].
-            if ( ! is_subset(adj, l, definedVtx, n)){
+            // i.e. all elements in node[] should be in definedVtx[].
+            if ( ! is_subset(node, l, definedVtx, n)){
                 std::cout<<"invalid graph: there exists an edge connecting to undefined vertex.\n";
                 return false;
             }
@@ -99,14 +99,14 @@ void print_graph(Graph_t& graph){
     std::cout<<"graph:\n";
     for(auto it = graph.begin(); it != graph.end(); ++it){
         std::cout<< "node "<< get_module_name((*it).module)<<": ";
-        int len = ((*it).succ_modules).size();
+        int len = ((*it).succModules).size();
         if (len == 0){
             std::cout<< "has no successor; ";
         }
         else{
             std::cout<< "has successor(s): ";
             for (int i = 0; i < len; ++i){
-                std::cout<< get_module_name((*it).succ_modules[i]) <<", ";
+                std::cout<< get_module_name((*it).succModules[i]) <<", ";
             }
         }
         std::cout<<"\n";
@@ -135,9 +135,9 @@ typedef enum{
 bool dfs_topsort(const MODULE_NAME u, const Graph_t& graph, VISIT_STATUS* vStatus, const std::map<MODULE_NAME, int>& mvMap, MODULE_NAME* sorted, int* ind){
     // topological sort vertices of directed acyclic graph, using DFS. this is not the only way.
     vStatus[find_index_for_module(u, mvMap)] = VISITING;
-    AdjVtx_t node = graph[find_index_for_module(u, mvMap)];
-    for (int j = 0; j < node.succ_modules.size(); ++j){
-        MODULE_NAME v = node.succ_modules[j];
+    Adjacency_t node = graph[find_index_for_module(u, mvMap)];
+    for (int j = 0; j < node.succModules.size(); ++j){
+        MODULE_NAME v = node.succModules[j];
         if (vStatus[find_index_for_module(v, mvMap)] == VISITING){
             // in this case, dfs tries to visit some predecessor. it means cycle exists, cannot topsort.
             return false;
