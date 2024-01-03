@@ -95,7 +95,7 @@ void copy_graph_to_pipe(const Graph_t& graphNoDelay, const MODULE_NAME* sorted, 
     }
 }
 
-void attach_delay_to_pipe(const DelayGraph_t delayGraph, Pipe_t& pipe){
+void attach_delay_to_pipe(const DelayGraph_t& delayGraph, Pipe_t& pipe){
     // attach delayed successors:
     for (auto it = delayGraph.begin(); it != delayGraph.end(); ++it){
         for (auto ip = pipe.begin(); ip != pipe.end(); ++ip){
@@ -128,9 +128,6 @@ void attach_delay_to_pipe(const DelayGraph_t delayGraph, Pipe_t& pipe){
 
 void make_pipe_no_delay(const Orders_t& orders, const Graph_t& graphNoDelay, const MODULE_NAME* sorted, Pipe_t& pipe){
     copy_graph_to_pipe(graphNoDelay, sorted, pipe);
-    // for modules with two or more inputs:
-    // reorder the predecessors to match with the order of "main, additional1, additional2, ..."
-    // the order is specified by cfg (user-provided extra information)
     reorder_predecessors(orders, pipe); // NOTE: if no-delay only, you should also provide "no-delay orders"
 }
 
@@ -140,7 +137,7 @@ void make_pipe_with_delay(const Orders_t& orders, const Graph_t& graphNoDelay, c
     // for modules with two or more inputs:
     // reorder the predecessors to match with the order of "main, additional1, additional2, ..."
     // the order is specified by cfg (user-provided extra information)
-    reorder_predecessors(orders, pipe); // NOTE: if no-delay only, you should also provide "no-delay orders"
+    reorder_predecessors(orders, pipe);
 }
 
 
@@ -205,17 +202,8 @@ void print_pipe(const Pipe_t& pipe){
 
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, const Orders_t& orders, bool needPrint){
-    // // initialize _sorted and _pipe according to number of nodes:
-    // int n = graph.size();
-    // _sorted = (MODULE_NAME*)malloc( n * sizeof(MODULE_NAME));
-    // _pipe = Pipe_t(n); // TODO: is it constructor of std::vector<T> ??? why TYPE(n) ????
-    // // generate pipeline from graph:
-    // topological_sort(graph, _sorted);
-    // make_pipe_no_delay(orders, graph, _sorted, _pipe);
-    // if (needPrint){
-    //     print_pipe(_pipe);
-    // }
-        int n = graphNoDelay.size();
+    // initialize _sorted and _pipe according to number of nodes:
+    int n = graphNoDelay.size();
     _sorted = (MODULE_NAME*)malloc( n * sizeof(MODULE_NAME));
     _pipe = Pipe_t(n);
     // generate pipeline from graph:
@@ -226,20 +214,23 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, c
     }
 }
 
+Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint){
+    // initialize _sorted and _pipe according to number of nodes:
+    int n = graphNoDelay.size();
+    _sorted = (MODULE_NAME*)malloc( n * sizeof(MODULE_NAME));
+    _pipe = Pipe_t(n);
+    // generate pipeline from graph:
+    topological_sort(graphNoDelay, _sorted);
+    make_pipe_no_delay(orders, graphNoDelay, _sorted, _pipe);
+    if (needPrint){
+        print_pipe(_pipe);
+    }
+}
+
 Pipeline::~Pipeline(){
     free(_sorted);
     _pipe.clear();
 }
-
-// bool Pipeline::is_pipe_valid_till_now(Module_t& sModule){
-//     // if _pipe is empty, nothing will go wrong
-//     if (!_pipe.empty()){
-//         if(_pipe.back().outBitDepth != sModule.inBitDepth){return false;}
-//         if(_pipe.back().outFmt != sModule.inFmt){return false;}
-//         if(_pipe.back().outSign != sModule.inSign){return false;}
-//     }
-//     return true;
-// }
 
 void Pipeline::move_output_to_pool(){
     // if no delivery (or no output at all), do nothing.
@@ -259,7 +250,7 @@ const ImgPtrs_t Pipeline::distribute_in_img_t(const Module_t& sModule){
     ImgPtrs_t imgPtrs(len);
     for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
-            if ((*it).sig.madeBy.time + sModule.predWthDelay[i].delay == _frameInd){ // TODO: want _frameInd polymorphism
+            if ((*it).sig.madeBy.time + sModule.predWthDelay[i].delay == _frameInd){
                 if ((*it).sig.madeBy.module == sModule.predWthDelay[i].module){
                     if (is_subset({sModule.module, sModule.predWthDelay[i].delay}, (*it).sig.deliverTo)){
                         imgPtrs[i] = &((*it).img); // assign img
@@ -314,6 +305,7 @@ void Pipeline::signature_output_img(const Module_t& sModule){
 }
 
 void Pipeline::run_module(const Module_t& sModule, void* pMArg){
+    std::cout<<"running module " << get_module_name(sModule.module) <<":\n";
     move_output_to_pool();
     ImgPtrs_t inPtrs = distribute_in_img_t(sModule);
     sModule.run_function(inPtrs, &(_sOutPipeImg.img), pMArg);
@@ -329,7 +321,9 @@ void Pipeline::clear_imgs(){
         }
         _InImgPool.clear();
     }
-    free_image_data(&(_sOutPipeImg.img));
+    if ( ! _sOutPipeImg.sig.deliverTo.empty()){
+        free_image_data(&(_sOutPipeImg.img));
+    }
 }
 
 void Pipeline::run_pipe(AllArgs_t& sArgs){
@@ -342,7 +336,9 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
             //dump();
         }
         // maybe dump some log here??
-        clear_imgs();
+        if (_sOutPipeImg.sig.deliverTo.empty()){
+            free_image_data(&(_sOutPipeImg.img));
+        }
     }
     else{
         std::cout<<"warning: pipeline is empty. nothing processed.\n";
@@ -356,18 +352,6 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
 // }
 
 
-// StreamPipeline::StreamPipeline(const Graph_t& graph, const Orders_t& orders, bool needPrint) : Pipeline(graph, orders, needPrint){
-//     // nothing to do
-// }
-
-StreamPipeline::StreamPipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, const Orders_t& orders, bool needPrint) 
-               : Pipeline(graphNoDelay, delayGraph, orders, needPrint){
-    // nothing to do
-}
-
-StreamPipeline::~StreamPipeline(){
-    // nothing to do, and does not need to explicitly call the destructor from base class
-}
 
 void parse_args(const int frameInd, AllArgs_t& sArgs){
     // TODO: two ways to update args. one is c-model simulation mode, just set values when module runs;
@@ -390,26 +374,14 @@ void parse_args(const int frameInd, AllArgs_t& sArgs){
     // no-delay graph is a special case.
     // and after top-sort, we discuss general case.
 
-void StreamPipeline::run_module(const Module_t& sModule, void* pMArg){
-    std::cout<<"StreamPipeline " << get_module_name(sModule.module) <<", ";
-    move_output_to_pool();
-    ImgPtrs_t inPtrs = distribute_in_img_t(sModule);
-    sModule.run_function(inPtrs, &(_sOutPipeImg.img), pMArg);
-    sign_out_from_pool(sModule);
-    signature_output_img(sModule);
-}
 
-void StreamPipeline::run_pipe(AllArgs_t& sArgs){
-    for (auto it = _pipe.begin(); it != _pipe.end(); ++it){
-        run_module((*it), find_arg_for_func(sArgs, (*it).module));
-    }
-}
-
-void StreamPipeline::frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum){
+void Pipeline::frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum){
     for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
+        std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
         parse_args(_frameInd, sArgs); // already updated some args in Modules when pipe runs. this line is to override.
         run_pipe(sArgs); 
     }
+    std::cout<<"\n======== all frames processed. ========\n\n";
     clear_imgs();
 }
 
@@ -468,20 +440,18 @@ void test_pipeline(){
 
     DelayGraph_t delayGraph;
     delayGraph.push_back({DUMMY8, {{DUMMY8, 1}}});
-    delayGraph.push_back({DUMMY1, {{DUMMY2, 1}}});
+    delayGraph.push_back({DUMMY1, {{DUMMY2, 1}, {DUMMY2, 2}}});
 
-    Orders_t orders(4);
-    orders[0] = {DUMMY3, {{DUMMY1, 0}, {DUMMY2, 0}}};
-    orders[1] = {DUMMY6, {{DUMMY4, 0}, {DUMMY5, 0}, {DUMMY7, 0}}};
-    orders[2] = {DUMMY8, {{DUMMY6, 0}, {DUMMY8, 1}}};
-    orders[3] = {DUMMY2, {{DUMMY0, 0}, {DUMMY1, 1}}};
-
-    // Pipeline myPipe(graph, orders, true);
-    // myPipe.run_pipe(sArgs);
+    Orders_t orders;
+    orders.push_back({DUMMY3, {{DUMMY1 }, {DUMMY2 }}}); // mind the syntax! {DUMMY1} is actually {DUMMY1, 0}, the 0 is default and therefore omitted.
+    orders.push_back({DUMMY6, {{DUMMY4 }, {DUMMY5 }, {DUMMY7 }}});
+    orders.push_back({DUMMY8, {{DUMMY6 }, {DUMMY8, 1}}});
+    orders.push_back({DUMMY2, {{DUMMY0 }, {DUMMY1, 1}, {DUMMY1, 2}}});
 
 
-    StreamPipeline strmPipe(graph, delayGraph, orders, true);
-    //strmPipe.run_pipe(sArgs);
-    strmPipe.frames_run_pipe(sArgs, 0, 3);
+    Pipeline myPipe(graph, delayGraph, orders, true);
+    //Pipeline myPipe(graph, orders, true);
+    //myPipe.run_pipe(sArgs);
+    myPipe.frames_run_pipe(sArgs, 0, 3);
 
 }
