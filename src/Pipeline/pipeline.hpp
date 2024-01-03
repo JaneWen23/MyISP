@@ -29,7 +29,6 @@ typedef struct{
     MODULE_NAME module;
     std::vector<ModuleDelay_t> inputInOrder;
 } InputOrder_t; // is needed only when module is with two or more inputs
-// TODO: for no-delay pipes, inputInOrder from cfg may not contain delay info. add mechanism to convert no delay to delayed.
 
 typedef std::vector<InputOrder_t> Orders_t; // only stores the info of modules with two or more inputs; TOML;
 

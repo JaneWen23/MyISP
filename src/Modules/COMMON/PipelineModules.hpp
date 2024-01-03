@@ -5,7 +5,6 @@
 
 #include <functional>
 
-#include "common.hpp"
 #include "../../Modules/ISP_VIN/Vin.hpp"
 #include "../../Modules/ISP_COMPRESSION/MyJXS.hpp"
 #include "../../Modules/ISP_CCM/ccm.hpp"
@@ -75,7 +74,9 @@ typedef struct{
 std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m);
 void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m);
 
+
+IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy);
+
 //Module_t generate_isp_module(PipeUnit_t& sPipeUnit);
-void test_pipeline_modules();
 
 #endif

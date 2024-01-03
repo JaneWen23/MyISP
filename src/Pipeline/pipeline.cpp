@@ -249,6 +249,9 @@ const ImgPtrs_t Pipeline::distribute_in_img_t(const Module_t& sModule){
     int len = sModule.predWthDelay.size();
     ImgPtrs_t imgPtrs(len);
     for (int i = 0; i < len; ++i){
+        imgPtrs[i] = NULL;
+    }
+    for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
             if ((*it).sig.madeBy.time + sModule.predWthDelay[i].delay == _frameInd){
                 if ((*it).sig.madeBy.module == sModule.predWthDelay[i].module){

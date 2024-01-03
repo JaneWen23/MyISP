@@ -32,8 +32,6 @@ typedef enum {
 
 
 
-IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy);
-
 const char* get_module_name(const MODULE_NAME m);
 
 #endif

@@ -88,8 +88,37 @@ void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m){
     return NULL; // this is nonsense. just because it needs a return value.
 }
 
+IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy){
+    std::cout<<"dummy module is running.\n";
+    std::cout<<"in img data p0 ptrs: ";
+    for (int i = 0; i < sInImgPtrs.size(); ++i){
+        if (sInImgPtrs[i] != NULL){
+            std::cout<< (void*)(sInImgPtrs[i]->pImageData[0])<< ", ";
+        }
+        else{
+            std::cout<< "NULL, ";
+        }
+    }
 
+    IMAGE_FMT imageFormat = RGB;
+    size_t width = 6;
+    size_t height = 4;
+    size_t bitDepth = 16;
+    size_t alignment = 32;
+    construct_img(pOutImg, 
+                imageFormat,
+                width,
+                height,
+                UNSIGNED,
+                bitDepth,
+                alignment,
+                true);
+    Distrib_t sDistrib = {0, 511, 3, 15};  
+    ValCfg_t sValCfg = {SIGNED, rand_num_uniform, sDistrib};
+    set_value(pOutImg, sValCfg);
 
-void test_pipeline_modules(){
+    std::cout<<"out img data p0 ptr: ";
+    std::cout<< (void*)(pOutImg->pImageData[0])<< "\n";
 
+    return SUCCEED;
 }
