@@ -5,8 +5,8 @@ include_directories(src)
 find_package(OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-find_package(toml11 3.7.1)
-include_directories(/usr/local/include/)
+find_package(tomlplusplus 3.4.0)
+include_directories(/usr/local/include/toml++)
 
 
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Math DIR_PROJECT_SRC)

@@ -11,6 +11,9 @@ aux_source_directory(. SRC_LIST)
 find_package(OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
+find_package(tomlplusplus 3.4.0)
+include_directories(/usr/local/include/toml++)
+
 add_executable(MyIspApp "top.cpp")
 target_link_libraries(MyIspApp isp_src ${OpenCV_LIBS})
 

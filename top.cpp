@@ -11,8 +11,7 @@
 #include "src/Algos/Color/Color.hpp"
 #include "src/Pipeline/pipeline.hpp"
 #include "src/Pipeline/graph.hpp"
-#include "src/ThirdParty/TOML.hpp"
-
+#include "src/ThirdParty/MyToml.hpp"
 
 int main(){
     //test_opencv();
