@@ -11,7 +11,7 @@
 #include "src/Algos/Color/Color.hpp"
 #include "src/Pipeline/pipeline.hpp"
 #include "src/Pipeline/graph.hpp"
-
+#include "src/ThirdParty/TOML.hpp"
 
 
 int main(){
@@ -29,7 +29,8 @@ int main(){
     //test_img_def();
 
     //test_graph();
-    test_pipeline();
+    //test_pipeline();
+    test_toml();
 
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";

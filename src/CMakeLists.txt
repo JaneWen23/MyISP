@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
+set(CMAKE_CXX_STANDARD 17)
 
 include_directories(src)
 find_package(OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
+
+find_package(toml11 3.7.1)
+include_directories(/usr/local/include/)
+
 
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Math DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Algos/Infra DIR_PROJECT_SRC)

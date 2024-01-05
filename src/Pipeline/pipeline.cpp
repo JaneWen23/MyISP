@@ -435,7 +435,7 @@ void test_pipeline(){
     graph[2] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
     graph[1] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
     graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
-    graph[4] = {DUMMY4, {DUMMY6}};
+    graph[4] = {DUMMY4, {}};
     graph[5] = {DUMMY5, {DUMMY6}};
     graph[6] = {DUMMY6, {DUMMY8}};
     graph[7] = {DUMMY7, {DUMMY6}}; 
