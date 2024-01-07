@@ -406,13 +406,15 @@ void test_pipeline(){
     };
     StarTetrixArg_t* pStarTetrixArg = &sStarTetrixArg;
 
-    DWTArg_t sDWTArg;
-    sDWTArg.level = 2;
-    sDWTArg.orient = TWO_DIMENSIONAL;
-    sDWTArg.inImgPanelId = 0;
-    sDWTArg.outImgPanelId = 0;
-    config_dwt_kernels_LeGall53<int16_t>(&sDWTArg, MIRROR);
-
+    DWTArg_t sDWTArg = {
+        0, // int inImgPanelId; // apply dwt to the whole 2D image
+        0, // int outImgPanelId;
+        TWO_DIMENSIONAL, // ORIENT orient;
+        1, // int level;
+        LE_GALL_53, // WAVELET_NAME wavelet;
+        MIRROR // PADDING padding;
+    };
+    
     MArg_Compression_t sCompressionArg = {sStarTetrixArg, sDWTArg};
 
     CCMArg_t sAlgoCCMArg = {

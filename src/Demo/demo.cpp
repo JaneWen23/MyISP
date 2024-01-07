@@ -38,6 +38,7 @@ void demo_star_tetrix(){
 
     Img_t* pBackOutImg =(Img_t*)malloc(sizeof(Img_t));
     star_tetrix_backward(pOutImg, pBackOutImg, (void*)pStarTetrixArg);
+    free(pStarTetrixArg);
 
     std::cout<<"is equal: "<<is_image_equal(pInImg, pBackOutImg)<<"\n";
 
@@ -45,6 +46,10 @@ void demo_star_tetrix(){
     Mat image;
     convert_img_t_to_cv_mat(image, pBackOutImg);
     imwrite("../dump/star_tetrix_backward.png", image); // current working directory is build/.
+
+    destruct_img(&pInImg);
+    destruct_img(&pOutImg);
+    destruct_img(&pBackOutImg);
 }
 
 
@@ -58,16 +63,17 @@ void demo_dwt(){
     Img_t* pImg =(Img_t*)malloc(sizeof(Img_t));
     convert_cv_mat_to_img_t(image, pImg, 32, true, SIGNED, 16);
 
-    DWTArg_t* pDWTArg = (DWTArg_t*)malloc(sizeof(DWTArg_t));
-    pDWTArg->level = 1;
-    pDWTArg->orient = TWO_DIMENSIONAL;
-    pDWTArg->inImgPanelId = 0;
-    pDWTArg->outImgPanelId = 0;
-    config_dwt_kernels_LeGall53<int16_t>(pDWTArg, MIRROR);
+    DWTArg_t sDWTArg = {};
+    sDWTArg.level = 1;
+    sDWTArg.orient = TWO_DIMENSIONAL;
+    sDWTArg.inImgPanelId = 0;
+    sDWTArg.outImgPanelId = 0;
+    sDWTArg.wavelet = LE_GALL_53;
+    sDWTArg.padding = MIRROR;
 
     Img_t* pOutImg = (Img_t*)malloc(sizeof(Img_t));
 
-    dwt_forward(pImg, pOutImg, (void*)pDWTArg);
+    dwt_forward(pImg, pOutImg, (void*)&sDWTArg);
 
     // ROI_t viewROI = {0, 600, 600, 20, 20};
     // view_image_data(pImg, viewROI );
@@ -77,7 +83,7 @@ void demo_dwt(){
     imwrite("../dump/dwtout.png", image2); // current working directory is build/.
 
     Img_t* pOutBackImg = (Img_t*)malloc(sizeof(Img_t));
-    dwt_backward(pOutImg, pOutBackImg, (void*)pDWTArg);
+    dwt_backward(pOutImg, pOutBackImg, (void*)&sDWTArg);
     
     Mat image3;
     convert_img_t_to_cv_mat(image3, pOutBackImg);
