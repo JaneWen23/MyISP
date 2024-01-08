@@ -143,4 +143,5 @@ void test_my_jxs(){
 
     destruct_img(&pInImg);
     destruct_img(&pOutImg);
+    free(pMyJXSArg);
 }

@@ -15,7 +15,7 @@
 
 int main(){
     //test_opencv();
-    test_dwt();
+    //test_dwt();
     //demo_dwt();
     //test_star_tetrix();
     //test_read_raw();
@@ -29,7 +29,7 @@ int main(){
 
     //test_graph();
     //test_pipeline();
-    //test_toml();
+    test_toml();
 
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
