@@ -1,10 +1,10 @@
 #ifndef _IMAGE_IO_H
 #define _IMAGE_IO_H
 #include "ImgDef.hpp"
-
+#include <string>
 
 typedef struct{
-    const char* path;
+    std::string path;
     int frameInd; // read i-th frame, i >= 0
     IMAGE_FMT imageFormat;
     int width;

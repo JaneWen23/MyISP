@@ -1,7 +1,7 @@
 #include "pipeline.hpp"
 #include <algorithm>
 #include <iostream>
-#include "../ThirdParty/OpenCV.hpp"
+#include "parse.hpp"
 
 bool is_ModuleDelay_equal(const ModuleDelay_t& a, const ModuleDelay_t& b){
     if (a.module == b.module && a.delay == b.delay){
@@ -356,11 +356,6 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
 
 
 
-void parse_args(const int frameInd, AllArgs_t& sArgs){
-    // TODO: two ways to update args. one is c-model simulation mode, just set values when module runs;
-    // the other is to read from a series of toml files for every frame, and override the values set by module.
-
-}
 
     // frame-delayed output:
     // should also be pipeImg type. because output form Pipeline may also be used after delay.
@@ -404,7 +399,6 @@ void test_pipeline(){
         1,
         2
     };
-    StarTetrixArg_t* pStarTetrixArg = &sStarTetrixArg;
 
     DWTArg_t sDWTArg = {
         0, // int inImgPanelId; // apply dwt to the whole 2D image

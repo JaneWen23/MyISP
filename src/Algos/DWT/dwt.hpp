@@ -32,7 +32,10 @@ void test_dwt();
 
 IMG_RTN_CODE dwt_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pDWTArg);
 IMG_RTN_CODE dwt_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pDWTArg);
-
+const char* get_dwt_orient_name(const ORIENT orient);
+const ORIENT get_dwt_orient_from_name(const char* name);
+const char* get_wavelet_name(const WAVELET_NAME wavelet);
+const WAVELET_NAME get_wavelet_from_name(const char* name);
 
 template<typename T>
 const T LeGall53_fwd_predict(const T** a, const T** b = NULL, const int vecLen = 3){

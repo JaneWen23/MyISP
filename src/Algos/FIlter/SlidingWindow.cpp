@@ -3,7 +3,33 @@
 #include "../Math/Math.hpp"
 
 // sliding window: a uniform API to perform 1D/2D filtering of any kernel, with configurable settings.
+const char* get_padding_name(const PADDING padding){
+    switch(padding){
+        case(ZEROPADDING):{
+            return "ZEROPADDING";
+        }
+        case(PERIODIC):{
+            return "PERIODIC";
+        }
+        case(MIRROR):{
+            return "MIRROR";
+        }
+    }
+    return "MIRROR";
+}
 
+const PADDING get_padding_from_name(const char* name){
+    if (strcmp(name, "ZEROPADDING") == 0){
+        return ZEROPADDING;
+    }
+    if (strcmp(name, "PERIODIC") == 0){
+        return PERIODIC;
+    }
+    if (strcmp(name, "MIRROR") == 0){
+        return MIRROR;
+    }
+    return MIRROR;
+}
 
 template<typename T>
 void set_kernel_addr(T** pAddr, T* pKernel, int kerLen, bool needFlip){

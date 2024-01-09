@@ -1,7 +1,6 @@
 #ifndef _PIPELINE_H
 #define _PIPELINE_H
 
-#include <list>
 #include "../Modules/COMMON/PipelineModules.hpp" // TODO: just want an integral of all modules. can be anoher file or file name.
 #include "graph.hpp"
 
@@ -51,7 +50,6 @@ typedef struct Module_tag{
 typedef std::vector<Module_t> Pipe_t;
 
 void print_pipe(const Pipe_t& pipe);
-void parse_args(const int frameInd, AllArgs_t& sArgs);
 
 
 class Pipeline{

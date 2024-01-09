@@ -3,7 +3,7 @@
 IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Vin){
     MArg_Vin_t* pMArg = (MArg_Vin_t*)pMArg_Vin;
     // Input Img: don't care.
-    read_raw_to_img_t(pMArg->sReadRawArg.path,
+    read_raw_to_img_t(pMArg->sReadRawArg.path.c_str(), // convert std::string to const char*
                        pOutImg,
                        pMArg->sReadRawArg.imageFormat,
                        pMArg->sReadRawArg.width,

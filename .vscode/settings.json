@@ -70,7 +70,14 @@
         "map": "cpp",
         "queue": "cpp",
         "set": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "any": "cpp",
+        "charconv": "cpp",
+        "forward_list": "cpp",
+        "future": "cpp",
+        "regex": "cpp",
+        "unordered_set": "cpp",
+        "valarray": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "cSpell.words": [

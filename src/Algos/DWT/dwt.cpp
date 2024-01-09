@@ -4,6 +4,49 @@
 #include "../Infra/RandImageGen.hpp"
 #include "dwt.hpp"
 
+const char* get_dwt_orient_name(const ORIENT orient){
+    switch(orient){
+        case(HORIZONTAL):{
+            return "HORIZONTAL";
+        }
+        case(VERTICAL):{
+            return "VERTICAL";
+        }
+        case(TWO_DIMENSIONAL):{
+            return "TWO_DIMENSIONAL";
+        }
+    }
+    return "HORIZONTAL";
+}
+
+const ORIENT get_dwt_orient_from_name(const char* name){
+    if (strcmp(name, "HORIZONTAL") == 0){
+        return HORIZONTAL;
+    }
+    if (strcmp(name, "VERTICAL") == 0){
+        return VERTICAL;
+    }
+    if (strcmp(name, "TWO_DIMENSIONAL") == 0){
+        return TWO_DIMENSIONAL;
+    }
+    return HORIZONTAL; // nonsense
+}
+
+const char* get_wavelet_name(const WAVELET_NAME wavelet){
+    switch(wavelet){
+        case(LE_GALL_53):{
+            return "LE_GALL_53";
+        }
+    }
+    return "LE_GALL_53";
+}
+
+const WAVELET_NAME get_wavelet_from_name(const char* name){
+    if (strcmp(name, "LE_GALL_53") == 0){
+        return LE_GALL_53;
+    }
+    return LE_GALL_53; // nonsense
+}
 
 typedef struct{
     int inImgPanelId; // apply dwt to the whole 2D image???
