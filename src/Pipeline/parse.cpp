@@ -5,37 +5,41 @@ void parse_args(const int frameInd, AllArgs_t& sArgs){
 
     toml::table tbl = toml::parse_file( "../args/sample.toml" );
 
+    auto node = tbl["sVinArg"]["sAlgoVinArg"];
     ReadRawArg_t sAlgoVinArg = {
-        tbl["sVinArg"]["sAlgoVinArg"]["path"].value<std::string>().value(),
-        tbl["sVinArg"]["sAlgoVinArg"]["frameInd"].value<int>().value(), //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
-        get_image_format_from_name(tbl["sVinArg"]["sAlgoVinArg"]["imageFormat"].value<const char*>().value()), //IMAGE_FMT imageFormat;
-        tbl["sVinArg"]["sAlgoVinArg"]["width"].value<int>().value(), //int width;
-        tbl["sVinArg"]["sAlgoVinArg"]["height"].value<int>().value(), //int height;
-        tbl["sVinArg"]["sAlgoVinArg"]["bitDepth"].value<int>().value(), //int bitDepth;
-        tbl["sVinArg"]["sAlgoVinArg"]["alignment"].value<int>().value(), //int alignment;
+        node["path"].value<std::string>().value(),
+        node["frameInd"].value<int>().value(), //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
+        get_image_format_from_name(node["imageFormat"].value<const char*>().value()), //IMAGE_FMT imageFormat;
+        node["width"].value<int>().value(), //int width;
+        node["height"].value<int>().value(), //int height;
+        node["bitDepth"].value<int>().value(), //int bitDepth;
+        node["alignment"].value<int>().value(), //int alignment;
     };
     sArgs.sVinArg = {sAlgoVinArg, tbl["sVinArg"]["rewind"].value<bool>().value()};
 
+    auto node2 = tbl["sCompressionArg"]["sStarTetrixArg"];
     StarTetrixArg_t sStarTetrixArg = {
-        tbl["sCompressionArg"]["sStarTetrixArg"]["Wr"].value<int>().value(), // int Wr
-        tbl["sCompressionArg"]["sStarTetrixArg"]["Wb"].value<int>().value() //int Wb
+        node2["Wr"].value<int>().value(), // int Wr
+        node2["Wb"].value<int>().value() //int Wb
     };
 
+    auto node3 = tbl["sCompressionArg"]["sDWTArg"];
     DWTArg_t sDWTArg = {
-        tbl["sCompressionArg"]["sDWTArg"]["inImgPanelId"].value<int>().value(), // int inImgPanelId;
-        tbl["sCompressionArg"]["sDWTArg"]["outImgPanelId"].value<int>().value(), // int outImgPanelId;
-        get_dwt_orient_from_name(tbl["sCompressionArg"]["sDWTArg"]["orient"].value<const char*>().value()), // ORIENT orient;
-        tbl["sCompressionArg"]["sDWTArg"]["level"].value<int>().value(), // int level;
-        get_wavelet_from_name(tbl["sCompressionArg"]["sDWTArg"]["wavelet"].value<const char*>().value()), // WAVELET_NAME wavelet;
-        get_padding_from_name(tbl["sCompressionArg"]["sDWTArg"]["padding"].value<const char*>().value()) // PADDING padding;
+        node3["inImgPanelId"].value<int>().value(), // int inImgPanelId;
+        node3["outImgPanelId"].value<int>().value(), // int outImgPanelId;
+        get_dwt_orient_from_name(node3["orient"].value<const char*>().value()), // ORIENT orient;
+        node3["level"].value<int>().value(), // int level;
+        get_wavelet_from_name(node3["wavelet"].value<const char*>().value()), // WAVELET_NAME wavelet;
+        get_padding_from_name(node3["padding"].value<const char*>().value()) // PADDING padding;
     };
     
     sArgs.sCompressionArg = {sStarTetrixArg, sDWTArg};
 
+    auto node4 = tbl["sCCMArg"]["sAlgoCCMArg"];
     CCMArg_t sAlgoCCMArg = {
-        {tbl["sCCMArg"]["sAlgoCCMArg"][0][0].value<int>().value(), tbl["sCCMArg"]["sAlgoCCMArg"][0][1].value<int>().value(), tbl["sCCMArg"]["sAlgoCCMArg"][0][2].value<int>().value()}, //{278, -10, -8},
-        {tbl["sCCMArg"]["sAlgoCCMArg"][1][0].value<int>().value(), tbl["sCCMArg"]["sAlgoCCMArg"][1][1].value<int>().value(), tbl["sCCMArg"]["sAlgoCCMArg"][1][2].value<int>().value()}, //{-12, 269, -8},
-        {tbl["sCCMArg"]["sAlgoCCMArg"][2][0].value<int>().value(), tbl["sCCMArg"]["sAlgoCCMArg"][2][1].value<int>().value(), tbl["sCCMArg"]["sAlgoCCMArg"][2][2].value<int>().value()}, //{-10, -3, 272},
+        {node4[0][0].value<int>().value(), node4[0][1].value<int>().value(), node4[0][2].value<int>().value()}, //{278, -10, -8},
+        {node4[1][0].value<int>().value(), node4[1][1].value<int>().value(), node4[1][2].value<int>().value()}, //{-12, 269, -8},
+        {node4[2][0].value<int>().value(), node4[2][1].value<int>().value(), node4[2][2].value<int>().value()}, //{-10, -3, 272},
     };
     sArgs.sCCMArg = {sAlgoCCMArg};
 
