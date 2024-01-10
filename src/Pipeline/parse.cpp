@@ -1,29 +1,32 @@
 #include <iostream>
 #include "parse.hpp"
 
-void parse_args(const int frameInd, AllArgs_t& sArgs){
+void parse_args(const char* pathFile, const int frameInd, AllArgs_t& sArgs){
 
-    toml::table tbl = toml::parse_file( "../args/sample.toml" );
+    toml::table tbl = toml::parse_file(pathFile);
 
-    auto node = tbl["sVinArg"]["sAlgoVinArg"];
+    toml::path the_path("sVinArg.sAlgoVinArg");
+    auto node = tbl[the_path];
     ReadRawArg_t sAlgoVinArg = {
-        node["path"].value<std::string>().value(),
-        node["frameInd"].value<int>().value(), //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
+        node["path"].value<decltype(sAlgoVinArg.path)>().value(),
+        node["frameInd"].value<decltype(sAlgoVinArg.frameInd)>().value(), //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
         get_image_format_from_name(node["imageFormat"].value<const char*>().value()), //IMAGE_FMT imageFormat;
-        node["width"].value<int>().value(), //int width;
-        node["height"].value<int>().value(), //int height;
-        node["bitDepth"].value<int>().value(), //int bitDepth;
-        node["alignment"].value<int>().value(), //int alignment;
+        node["width"].value<decltype(sAlgoVinArg.width)>().value(), //int width;
+        node["height"].value<decltype(sAlgoVinArg.height)>().value(), //int height;
+        node["bitDepth"].value<decltype(sAlgoVinArg.bitDepth)>().value(), //int bitDepth;
+        node["alignment"].value<decltype(sAlgoVinArg.alignment)>().value(), //int alignment;
     };
     sArgs.sVinArg = {sAlgoVinArg, tbl["sVinArg"]["rewind"].value<bool>().value()};
 
-    auto node2 = tbl["sCompressionArg"]["sStarTetrixArg"];
+    toml::path the_path2("sCompressionArg.sStarTetrixArg");
+    auto node2 = tbl[the_path2];
     StarTetrixArg_t sStarTetrixArg = {
         node2["Wr"].value<int>().value(), // int Wr
         node2["Wb"].value<int>().value() //int Wb
     };
 
-    auto node3 = tbl["sCompressionArg"]["sDWTArg"];
+    toml::path the_path3("sCompressionArg.sDWTArg");
+    auto node3 = tbl[the_path3];
     DWTArg_t sDWTArg = {
         node3["inImgPanelId"].value<int>().value(), // int inImgPanelId;
         node3["outImgPanelId"].value<int>().value(), // int outImgPanelId;
@@ -35,7 +38,8 @@ void parse_args(const int frameInd, AllArgs_t& sArgs){
     
     sArgs.sCompressionArg = {sStarTetrixArg, sDWTArg};
 
-    auto node4 = tbl["sCCMArg"]["sAlgoCCMArg"];
+    toml::path the_path4("sCCMArg.sAlgoCCMArg");
+    auto node4 = tbl[the_path4];
     CCMArg_t sAlgoCCMArg = {
         {node4[0][0].value<int>().value(), node4[0][1].value<int>().value(), node4[0][2].value<int>().value()}, //{278, -10, -8},
         {node4[1][0].value<int>().value(), node4[1][1].value<int>().value(), node4[1][2].value<int>().value()}, //{-12, 269, -8},
@@ -58,7 +62,7 @@ void print_parsed_args(AllArgs_t& sArgs){
     std::cout<<"int bitDepth = "<<sArgs.sVinArg.sReadRawArg.bitDepth<<"\n";
     std::cout<<"int alignment = "<<sArgs.sVinArg.sReadRawArg.alignment<<"\n";
     std::cout<<"}\n";
-    std::cout<<"rewind = "<<sArgs.sVinArg.rewind<<"\n";
+    std::cout<<"bool rewind = "<<sArgs.sVinArg.rewind<<"\n";
     std::cout<<"}\n";
 
     std::cout<<"sArgs.sCompressionArg = {\n";
@@ -87,6 +91,6 @@ void print_parsed_args(AllArgs_t& sArgs){
 
 void test_parse_args(){
     AllArgs_t sArgs = {};
-    parse_args(0, sArgs);
+    parse_args("../args/sample.toml", 0, sArgs);
     print_parsed_args(sArgs);
 }
