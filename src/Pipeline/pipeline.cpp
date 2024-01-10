@@ -365,8 +365,6 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
 
     // img can be deleted only when both delivery lists are empty
 
-    // want the pool to be shared by both classes, because it's more convenience to push output to pool (because image data only malloced once)
-
     // for top-sort, only need no-delay nodes
     // after that, need delay info at all times
     // no-delay graph is a special case.
