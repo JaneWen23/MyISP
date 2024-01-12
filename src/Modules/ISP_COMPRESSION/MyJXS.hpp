@@ -13,6 +13,7 @@ typedef struct{
 } MArg_Compression_t;
 
 
+Hash_t default_compression_arg_hash();
 IMG_RTN_CODE isp_compression(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, void* pMyJXSArg); // this is forward + backward
 
 void test_my_jxs();

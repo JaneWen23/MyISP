@@ -10,6 +10,7 @@ typedef struct{
 } MArg_Vin_t;
 
 
+Hash_t default_vin_arg_hash();
 IMG_RTN_CODE isp_vin(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, void* pMArg_Vin);
 
 void test_hash();

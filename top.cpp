@@ -33,7 +33,8 @@ int main(){
     //test_toml();
     //test_parse_args();
     //test_hash();
-    test_toml_to_hash();
+    //test_toml_to_hash();
+    test_ccm_hash();
 
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";

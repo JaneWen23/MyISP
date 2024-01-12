@@ -4,6 +4,36 @@
 // forward is forward star-tetrix + dwt, 
 // and backward is idwt + backward star-tetrix
 
+Hash_t default_compression_arg_hash(){
+    int Wr = 0;
+    int Wb = 0;
+    Hash_t StarTetrixArg = {
+        {"Wr", Wr},
+        {"Wb", Wb}
+    };
+
+    int inImgPanelId = 0; // apply dwt to the whole 2D image
+    int outImgPanelId = 0;
+    const char* orient = get_dwt_orient_name(TWO_DIMENSIONAL);
+    int level = 1;
+    const char* wavelet = get_wavelet_name(LE_GALL_53);
+    const char* padding = get_padding_name(MIRROR);
+    Hash_t DWTArg = {
+        {"inImgPanelId", inImgPanelId},
+        {"outImgPanelId", outImgPanelId},
+        {"orient", orient},
+        {"level", level},
+        {"wavelet", wavelet},
+        {"padding", padding}
+    };
+
+    Hash_t hs = {
+        {"StarTetrixArg", StarTetrixArg},
+        {"DWTArg", DWTArg}
+    };
+    return hs;
+}
+
 IMG_RTN_CODE my_jxs_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pMyJXSArg){
     switch (pInImg->imageFormat){
         case RAW_RGGB:

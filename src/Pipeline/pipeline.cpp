@@ -372,6 +372,9 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){ // TODO: consider again, hash table o
 
 void Pipeline::init_arg_table(){
     // get init args (in hash table) from all involved modules (indicated by graph)
+    // for(){
+
+    // }
     // assemble to big hash table, and save it as private member
     // convert hash to toml table and dump toml table as base (to be employed in a func in parse.cpp).
 }

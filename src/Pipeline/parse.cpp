@@ -95,34 +95,6 @@ void test_parse_args(){
     print_parsed_args(sArgs);
 }
 
-void print_hash(Hash_t* pMyHash){
-    for (auto it = pMyHash->begin(); it != pMyHash->end(); ++it){
-        if ((*it).second.type() != typeid(Hash_t)){
-            std::cout<< "key = "<< (*it).first <<", val = ";
-            if ((*it).second.type() == typeid(int)){
-                std::cout<<std::any_cast<int>((*it).second)<<"\n";
-            }
-            else if ((*it).second.type() == typeid(std::string)){
-                std::cout<<std::any_cast<std::string>((*it).second)<<"\n";
-            }
-            else if ((*it).second.type() == typeid(const char*)){
-                std::cout<<std::any_cast<const char*>((*it).second)<<"\n";
-            }
-            else if ((*it).second.type() == typeid(bool)){
-                std::cout<<std::any_cast<bool>((*it).second)<<"\n";
-            }
-            else {
-                std::cout<<"\nerror: the type of value is not supported at key = "<< (*it).first <<", exited.\n";
-                exit(1);
-            }
-        }
-        else{
-            std::cout<< (*it).first<<": \n";
-            Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*it).second));
-            print_hash(pMySubHash);
-        }
-    }
-}
 
 void set_hash_from_tbl(toml::v3::table* pTbl, Hash_t* pMyHash){
     for (auto&& [k, v] : (*pTbl)){
