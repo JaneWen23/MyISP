@@ -329,7 +329,7 @@ void Pipeline::clear_imgs(){
     }
 }
 
-void Pipeline::run_pipe(AllArgs_t& sArgs){
+void Pipeline::run_pipe(AllArgs_t& sArgs){ // TODO: consider again, hash table or AllArgs...
     if (!_pipe.empty()){
         Pipe_t::iterator it;
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
@@ -370,11 +370,49 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){
     // no-delay graph is a special case.
     // and after top-sort, we discuss general case.
 
+void Pipeline::init_arg_table(){
+    // get init args (in hash table) from all involved modules (indicated by graph)
+    // assemble to big hash table, and save it as private member
+    // convert hash to toml table and dump toml table as base (to be employed in a func in parse.cpp).
+}
+
+void Pipeline::default_run_pipe(){
+    // in this case, no arg provided, so no need to specify frameInd.
+    // check if the default arg (in hash) is already generated, if not, just call init_args_table()
+    // use default args (hash) to run one frame.
+    // note: module with delay needs to ensure that initial frames are well-behaved, however, it is the module's responsibility
+}
 
 void Pipeline::frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum){
     for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
-        parse_args(_frameInd, sArgs); // already updated some args in Modules when pipe runs. this line is to override.
+        parse_args(_frameInd, sArgs);
+
+        // there should be a set of default isp args, this arg will define the default hash and default toml.
+        // if no toml file needed, the input should not be file name anymore, 
+        // while the hand-made init arg is needed (different than default arg).
+        // or, overload this function, args hash replaced by toml file name.
+        // use hash table to replace sArgs, then "hash to Args" to feed to run_pipe().
+
+        // cases are:
+        // 1, you have a hand-made init arg in toml, want to update by algo
+        // 2, you have a hand-made init arg in struct (or hash), want to update by algo (not recommended, if hand-made, then use toml)
+        // 3, you do not have any init arg and would like to use default arg, and update by algo
+        // 4, you have a series of frames arg in toml, want to update by toml
+
+        // problem:
+        // if you have hand-made arg, you possibly have it in struct, not in hash.
+        // but we want pipeline to receive hash, not struct
+        // so, you have to convert struct to hash then convert back, stupid.
+        // ===> case 2 is opt out
+        // ===> if no toml provided, there should be a base toml, corresponding to the default args
+        // ===> or, if no toml provided, program should dump the base toml according to the default args
+        // and use default args (in struct) as default input (but do not open 'default arg struct' as API)
+
+        // when update by algo, you want to update the hash, so that it's easier to track any 
+        // changes (due to the specific way to set value); what happens to the struct?
+
+
         run_pipe(sArgs); 
     }
     std::cout<<"\n======== all frames processed. ========\n\n";
@@ -418,7 +456,7 @@ void test_pipeline(){
 
     MArg_Dummy_t sDummyArg = {3};
 
-    AllArgs_t sArgs = {sVinArg, sCompressionArg, sCCMArg, sDummyArg};
+    AllArgs_t sArgs = {sVinArg, sCompressionArg, sCCMArg, sDummyArg}; // TODO: may remove AllArgs_t
     //======================================================
 
     int n = 9; // number of nodes
@@ -448,7 +486,6 @@ void test_pipeline(){
 
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
-    //myPipe.run_pipe(sArgs);
     myPipe.frames_run_pipe(sArgs, 0, 3);
 
 }

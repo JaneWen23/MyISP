@@ -19,7 +19,7 @@ typedef struct{
     MArg_Compression_t sCompressionArg;
     MArg_CCM_t sCCMArg;
     MArg_Dummy_t sDummyArg;
-} AllArgs_t; // TOML
+} AllArgs_t; // TOML // TODO: replace by hash table
 
 
 // Update 20231218
@@ -72,7 +72,7 @@ typedef struct{
 // may need an "instruction" in cfg file
 
 std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m);
-void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m);
+void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m); // TODO: rewrite hash table version
 
 
 IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy);

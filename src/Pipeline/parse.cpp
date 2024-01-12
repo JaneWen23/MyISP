@@ -95,8 +95,37 @@ void test_parse_args(){
     print_parsed_args(sArgs);
 }
 
-void dfs_hash_from_tbl(toml::v3::table* pSbTbl, Hash_t* pMyHash){
-    for (auto&& [k, v] : (*pSbTbl)){
+void print_hash(Hash_t* pMyHash){
+    for (auto it = pMyHash->begin(); it != pMyHash->end(); ++it){
+        if ((*it).second.type() != typeid(Hash_t)){
+            std::cout<< "key = "<< (*it).first <<", val = ";
+            if ((*it).second.type() == typeid(int)){
+                std::cout<<std::any_cast<int>((*it).second)<<"\n";
+            }
+            else if ((*it).second.type() == typeid(std::string)){
+                std::cout<<std::any_cast<std::string>((*it).second)<<"\n";
+            }
+            else if ((*it).second.type() == typeid(const char*)){
+                std::cout<<std::any_cast<const char*>((*it).second)<<"\n";
+            }
+            else if ((*it).second.type() == typeid(bool)){
+                std::cout<<std::any_cast<bool>((*it).second)<<"\n";
+            }
+            else {
+                std::cout<<"\nerror: the type of value is not supported at key = "<< (*it).first <<", exited.\n";
+                exit(1);
+            }
+        }
+        else{
+            std::cout<< (*it).first<<": \n";
+            Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*it).second));
+            print_hash(pMySubHash);
+        }
+    }
+}
+
+void set_hash_from_tbl(toml::v3::table* pTbl, Hash_t* pMyHash){
+    for (auto&& [k, v] : (*pTbl)){
         if (v.is_value()){
             std::string kStr = k.data();
             if ((*pMyHash).at(kStr).type() == typeid(int)){
@@ -119,26 +148,26 @@ void dfs_hash_from_tbl(toml::v3::table* pSbTbl, Hash_t* pMyHash){
         else{
             std::string kStr = k.data();
             Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*pMyHash).at(kStr)));
-            dfs_hash_from_tbl(v.as_table(), pMySubHash);
+            set_hash_from_tbl(v.as_table(), pMySubHash);
         }
     }
 }
 
-void dfs_tbl_from_hash(toml::v3::table* pSbTbl, Hash_t* pMyHash){
-    for (auto&& [k, v] : (*pSbTbl)){
+void set_tbl_from_hash(toml::v3::table* pTbl, Hash_t* pMyHash){
+    for (auto&& [k, v] : (*pTbl)){
         if (v.is_value()){
             std::string kStr = k.data();
             if ((*pMyHash).at(kStr).type() == typeid(int)){
-                (*pSbTbl).insert_or_assign(k, std::any_cast<int>((*pMyHash).at(kStr)));
+                (*pTbl).insert_or_assign(k, std::any_cast<int>((*pMyHash).at(kStr)));
             }
             else if ((*pMyHash).at(kStr).type() == typeid(std::string)){
-                (*pSbTbl).insert_or_assign(k, std::any_cast<std::string>((*pMyHash).at(kStr)));
+                (*pTbl).insert_or_assign(k, std::any_cast<std::string>((*pMyHash).at(kStr)));
             }
             else if ((*pMyHash).at(kStr).type() == typeid(const char*)){
-                (*pSbTbl).insert_or_assign(k, std::any_cast<const char*>((*pMyHash).at(kStr)));
+                (*pTbl).insert_or_assign(k, std::any_cast<const char*>((*pMyHash).at(kStr)));
             }
             else if ((*pMyHash).at(kStr).type() == typeid(bool)){
-                (*pSbTbl).insert_or_assign(k, std::any_cast<bool>((*pMyHash).at(kStr)));
+                (*pTbl).insert_or_assign(k, std::any_cast<bool>((*pMyHash).at(kStr)));
             }
             else {
                 std::cout<<"error: the type of value is not supported at key = "<<kStr<<", exited.\n";
@@ -147,7 +176,7 @@ void dfs_tbl_from_hash(toml::v3::table* pSbTbl, Hash_t* pMyHash){
         }
         else{
             Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*pMyHash).at(k.data())));
-            dfs_tbl_from_hash(v.as_table(), pMySubHash);
+            set_tbl_from_hash(v.as_table(), pMySubHash);
         }
     }
 }
@@ -158,9 +187,6 @@ void test_toml_to_hash(){
     toml::path the_path("sVinArg");
     auto pSbTbl = tbl[the_path].as_table();
 
-    std::cout<<(*pSbTbl).is_table()<<"\n";
-    std::cout<<(*pSbTbl).is_value()<<"\n";
-    std::cout<<(*pSbTbl)["rewind"].is_value()<<"\n";
       
     // (*pSbTbl).for_each([](const toml::key& key, auto&& val){
     //     std::cout << key << ": " << val << "\n";
@@ -168,7 +194,7 @@ void test_toml_to_hash(){
 
     Hash_t myHash; // a hash "template".
     Hash_t hs;
-    std::any path = "../data/dummy00.raw";
+    std::any path = "../data/dummy00.rgb";
     std::any frameInd = 0;
     std::any imageFormat = get_image_format_name(RGB);
     std::any width = 100;
@@ -185,21 +211,13 @@ void test_toml_to_hash(){
     bool rewind = true;
     myHash = {{"sAlgoVinArg", hs}, {"rewind", rewind}};
 
-    // dfs_hash_from_tbl(pSbTbl, &myHash);
-   
-    // std::cout<<std::any_cast<const char*>(std::any_cast<Hash_t>(myHash.at("sAlgoVinArg")).at("path"))<<"\n";
-    // std::cout<<std::any_cast<int>(std::any_cast<Hash_t>(myHash.at("sAlgoVinArg")).at("frameInd"))<<"\n";
-    // std::cout<<std::any_cast<const char*>(std::any_cast<Hash_t>(myHash.at("sAlgoVinArg")).at("imageFormat"))<<"\n";
-    // std::cout<<std::any_cast<int>(std::any_cast<Hash_t>(myHash.at("sAlgoVinArg")).at("width"))<<"\n";
-    // std::cout<<std::any_cast<int>(std::any_cast<Hash_t>(myHash.at("sAlgoVinArg")).at("height"))<<"\n";
-    // std::cout<<std::any_cast<int>(std::any_cast<Hash_t>(myHash.at("sAlgoVinArg")).at("bitDepth"))<<"\n";
-    // std::cout<<std::any_cast<int>(std::any_cast<Hash_t>(myHash.at("sAlgoVinArg")).at("alignment"))<<"\n";
-    // std::cout<<std::any_cast<bool>(myHash.at("rewind"))<<"\n";
+    set_hash_from_tbl(pSbTbl, &myHash);
+    print_hash(&myHash);
 
 
-    dfs_tbl_from_hash(pSbTbl, &myHash);
-    (*pSbTbl).for_each([](const toml::key& key, auto&& val){
-        std::cout << key << ": " << val << "\n";
-    });
+    // set_tbl_from_hash(pSbTbl, &myHash);
+    // (*pSbTbl).for_each([](const toml::key& key, auto&& val){
+    //     std::cout << key << ": " << val << "\n";
+    // });
 
 }

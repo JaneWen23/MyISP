@@ -59,7 +59,8 @@ class Pipeline{
         ~Pipeline();
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????
-        void run_pipe(AllArgs_t& sArgs); // run pipeline for a single frame
+        void init_arg_table();
+        void default_run_pipe();
         void frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum);
         void dump();
 
@@ -69,6 +70,7 @@ class Pipeline{
         void sign_out_from_pool(const Module_t& sModule); // after input img is used, remove module name from deliverTo list; if list is empty, destroy the img.
         void signature_output_img(const Module_t& sModule); // assemble the img and signature
         void run_module(const Module_t& sModule, void* pMArg);
+        void run_pipe(AllArgs_t& sArgs); // run pipeline for a single frame
         
     protected:
         MODULE_NAME* _sorted;
@@ -77,6 +79,7 @@ class Pipeline{
         int _frameInd = 0;
 
     private:
+        Hash_t _defaultArgHash;
         std::vector<PipeImg_t> _InImgPool;
         void clear_imgs();
         // TODO: add offline mode, load some offline img

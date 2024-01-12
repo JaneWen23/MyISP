@@ -46,7 +46,7 @@ std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module
 }
 
 
-void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m){
+void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m){ // TODO: may rewrite as hash table version, find sub hash from big hash, by key = module name
     switch (m){
         case DUMMY0:
         case DUMMY1:
