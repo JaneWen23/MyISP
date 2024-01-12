@@ -23,7 +23,7 @@ IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Vin
 }
 
 void test_hash(){
-    hash_t hs;
+    Hash_t hs;
     std::any path = "../data/rawData.raw";
     std::any frameInd = 0;
     std::any imageFormat = get_image_format_name(MONO);
@@ -48,24 +48,27 @@ void test_hash(){
     // std::cout << "bitDepth: " << std::any_cast<int>(hs.at("bitDepth")) << '\n';
     // std::cout << "alignment: " << std::any_cast<int>(hs.at("alignment")) << '\n';
 
-    ReadRawArg_t sReadRawArg = {
-        std::any_cast<const char*>(hs.at("path")), // why cannot any_cast<std::string>??????
-        std::any_cast<int>(hs.at("frameInd")),
-        get_image_format_from_name(std::any_cast<const char*>(hs.at("imageFormat"))),
-        std::any_cast<int>(hs.at("width")),
-        std::any_cast<int>(hs.at("height")),
-        std::any_cast<int>(hs.at("bitDepth")),
-        std::any_cast<int>(hs.at("alignment"))
-    };
+    // ReadRawArg_t sReadRawArg = {
+    //     std::any_cast<const char*>(hs.at("path")), // why cannot any_cast<std::string>??????
+    //     std::any_cast<int>(hs.at("frameInd")),
+    //     get_image_format_from_name(std::any_cast<const char*>(hs.at("imageFormat"))),
+    //     std::any_cast<int>(hs.at("width")),
+    //     std::any_cast<int>(hs.at("height")),
+    //     std::any_cast<int>(hs.at("bitDepth")),
+    //     std::any_cast<int>(hs.at("alignment"))
+    // };
 
-    hash_t shVin;
+    Hash_t hsVin;
     bool rewind = false;
-    shVin = {{"sReadRawArg", sReadRawArg}, {"rewind", rewind}};
+    hsVin =  {{"sReadRawArg", hs}, {"rewind", rewind}};
 
-    ReadRawArg_t s1 =  std::any_cast<ReadRawArg_t>(shVin.at("sReadRawArg"));
-    std::cout<< s1.path<<"\n";
-    std::cout<< std::any_cast<bool>(shVin.at("rewind")) <<"\n";
+    Hash_t s1 = std::any_cast<Hash_t>(hsVin.at("sReadRawArg"));
+    std::cout<< std::any_cast<int>(s1.at("bitDepth"))<<"\n";
+    std::cout<< std::any_cast<bool>(hsVin.at("rewind")) <<"\n";
 
-    hash_t shAll;
-    shAll.insert({"sVinArg", shVin});
+    Hash_t hsAll;
+    hsAll.insert({"sVinArg", hsVin});
+
+    Hash_t hs_2 = std::any_cast<Hash_t>(hsAll.at("sVinArg"));
+    std::cout<< std::any_cast<bool>(hs_2.at("rewind"))<<"\n";
 }

@@ -7,4 +7,5 @@
 
 void parse_args(const int frameInd, AllArgs_t& sArgs);
 void test_parse_args();
+void test_toml_to_hash();
 #endif

@@ -32,7 +32,8 @@ int main(){
     //test_pipeline();
     //test_toml();
     //test_parse_args();
-    test_hash();
+    //test_hash();
+    test_toml_to_hash();
 
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";

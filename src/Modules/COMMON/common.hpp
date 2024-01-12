@@ -3,7 +3,8 @@
 
 #include "../../Algos/Infra/ImgDef.hpp"
 #include <vector>
-
+#include <unordered_map>
+#include <any>
 
 typedef std::vector<Img_t*> ImgPtrs_t;
 // since a module can have one or more input images, store the img pointers in the vector.
@@ -30,7 +31,7 @@ typedef enum {
     ISP_RGB2YUV
 } MODULE_NAME;
 
-
+typedef std::unordered_map<std::string, std::any> Hash_t;
 
 const char* get_module_name(const MODULE_NAME m);
 
