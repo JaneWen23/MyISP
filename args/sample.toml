@@ -4,7 +4,7 @@ title = "ISP Config Sample"
 
 [sVinArg]
   rewind = false
-  [sVinArg.sAlgoVinArg]
+  [sVinArg.ReadRawArg]
     path = "../data/rawData.raw" # const char* path;
     frameInd = 0 # int frameInd; read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
     imageFormat = "RAW_RGGB" # IMAGE_FMT imageFormat
@@ -14,10 +14,10 @@ title = "ISP Config Sample"
     alignment = 1 # int alignment;
 
 [sCompressionArg]
-  [sCompressionArg.sStarTetrixArg]
+  [sCompressionArg.StarTetrixArg]
     Wr = 1 # int
     Wb = 2 # int
-  [sCompressionArg.sDWTArg]
+  [sCompressionArg.DWTArg]
     inImgPanelId = 0 # int inImgPanelId; apply dwt to the whole 2D image
     outImgPanelId = 0 # int outImgPanelId;
     orient = "TWO_DIMENSIONAL" # ORIENT orient;
@@ -26,10 +26,19 @@ title = "ISP Config Sample"
     padding = "MIRROR" # PADDING padding;
 
 [sCCMArg]
-  sAlgoCCMArg = [
-    [278, -10, -8],
-    [-12, 269, -8],
-    [-10, -3, 272]]
+  [CCMArg]
+    [colorMatRow1]
+      RR = 278
+      RG = -10
+      RB = -8
+    [colorMatRow2]
+      GR = -12
+      GG = 269
+      GB = -8
+    [colorMatRow3]
+      BR = -10
+      BG = -3
+      BB = 272
 
 [sDummyArg]
 data = 3

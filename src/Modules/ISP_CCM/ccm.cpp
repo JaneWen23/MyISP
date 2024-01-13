@@ -5,19 +5,19 @@ Hash_t default_ccm_arg_hash(){
     int colorMatRow2[3] = {-12, 269, -8};
     int colorMatRow3[3] = {-10, -3, 272};
     Hash_t Row1 = {
-        {"0", colorMatRow1[0]},
-        {"1", colorMatRow1[1]},
-        {"2", colorMatRow1[2]}
+        {"RR", colorMatRow1[0]},
+        {"RG", colorMatRow1[1]},
+        {"RB", colorMatRow1[2]}
     };
     Hash_t Row2 = {
-        {"0", colorMatRow2[0]},
-        {"1", colorMatRow2[1]},
-        {"2", colorMatRow2[2]}
+        {"GR", colorMatRow2[0]},
+        {"GG", colorMatRow2[1]},
+        {"GB", colorMatRow2[2]}
     };
     Hash_t Row3 = {
-        {"0", colorMatRow3[0]},
-        {"1", colorMatRow3[1]},
-        {"2", colorMatRow3[2]}
+        {"BR", colorMatRow3[0]},
+        {"BG", colorMatRow3[1]},
+        {"BB", colorMatRow3[2]}
     };
 
     Hash_t CCMArg = {
@@ -31,16 +31,19 @@ Hash_t default_ccm_arg_hash(){
 
 IMG_RTN_CODE isp_ccm(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_CCM){
     MArg_CCM_t* pMArg = (MArg_CCM_t*)pMArg_CCM;
+    CCMRunTimeArg_t sRunTimeArg = {
+        {pMArg->sCCMArg.colorMatRow1.RR, pMArg->sCCMArg.colorMatRow1.RG, pMArg->sCCMArg.colorMatRow1.RB},
+        {pMArg->sCCMArg.colorMatRow2.GR, pMArg->sCCMArg.colorMatRow2.GG, pMArg->sCCMArg.colorMatRow2.GB},
+        {pMArg->sCCMArg.colorMatRow3.BR, pMArg->sCCMArg.colorMatRow3.BG, pMArg->sCCMArg.colorMatRow3.BB}
+    };
+
     if (sInImgPtrs[0]->imageFormat != RGB){
         std::cout<<"error: ISP_CCM: input image not being RGB. exited.\n";
         exit(1);
     }
     safe_unsigned_to_signed_img(sInImgPtrs[0]); // ccm() is defined to be signed.
 
-    // TODO: may design MArg CCM elements to be all positive ==> negatives are in complement,
-    // and then convert them to the signed CCMArg.
-
-    ccm(sInImgPtrs[0], pOutImg, &(pMArg->sCCMArg));
+    ccm(sInImgPtrs[0], pOutImg, &sRunTimeArg);
     if (pOutImg->imageFormat != RGB){
         std::cout<<"error: ISP_CCM: output image not being RGB. exited.\n";
         exit(1);

@@ -4,7 +4,7 @@
 
 template<typename T>
 void ccm_value_manipulation(uint8_t* pColorMat, uint8_t** pColorMatRows, const void* pCCMArg){
-    CCMArg_t* pArg = (CCMArg_t*)pCCMArg;
+    CCMRunTimeArg_t* pArg = (CCMRunTimeArg_t*)pCCMArg;
     for (int j = 0; j < 3; ++j){
         *((T*)pColorMat + j) = (T)(*(pArg->colorMatRow1 + j));
     }
@@ -137,7 +137,7 @@ void test_ccm(){
                   alignment,
                   allocateImage);
 
-    const CCMArg_t CCMArg = {
+    const CCMRunTimeArg_t CCMArg = {
         {278, -12, -10},
         {-10, 269, -3},
         {-8, -8, 272},

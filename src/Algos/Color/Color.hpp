@@ -8,7 +8,7 @@ typedef struct {
     int colorMatRow1[3]; // data type here is only for storing the CCM values. does not affect actual data type in operation.
     int colorMatRow2[3]; // data type here is only for storing the CCM values. does not affect actual data type in operation.
     int colorMatRow3[3]; // data type here is only for storing the CCM values. does not affect actual data type in operation.
-} CCMArg_t;
+} CCMRunTimeArg_t;
 
 
 typedef struct {

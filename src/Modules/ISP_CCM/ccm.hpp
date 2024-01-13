@@ -5,6 +5,30 @@
 #include "../../Algos/Color/Color.hpp"
 
 typedef struct{
+    int RR;
+    int RG;
+    int RB;
+} ColorMatRow1_t;
+
+typedef struct{
+    int GR;
+    int GG;
+    int GB;
+} ColorMatRow2_t;
+
+typedef struct{
+    int BR;
+    int BG;
+    int BB;
+} ColorMatRow3_t;
+
+typedef struct{
+    ColorMatRow1_t colorMatRow1;
+    ColorMatRow2_t colorMatRow2;
+    ColorMatRow3_t colorMatRow3;
+} CCMArg_t;
+
+typedef struct{
     CCMArg_t sCCMArg;
 } MArg_CCM_t;
 
