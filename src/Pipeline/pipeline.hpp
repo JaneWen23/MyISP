@@ -59,7 +59,7 @@ class Pipeline{
         ~Pipeline();
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????
-        void init_arg_table();
+        void init_arg_hash();
         void default_run_pipe();
         void frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum);
         void dump();

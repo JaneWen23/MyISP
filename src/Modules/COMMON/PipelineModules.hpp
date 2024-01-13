@@ -71,7 +71,9 @@ typedef struct{
 // if two inputs: which one is main img, which one is additional img?
 // may need an "instruction" in cfg file
 
+Hash_t default_dummy_arg_hash();
 std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m);
+Hash_t get_default_arg_hash_for_module(const MODULE_NAME m);
 void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m); // TODO: rewrite hash table version
 
 

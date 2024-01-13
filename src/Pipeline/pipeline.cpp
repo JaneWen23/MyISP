@@ -212,6 +212,7 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, c
     if (needPrint){
         print_pipe(_pipe);
     }
+    init_arg_hash();
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint){
@@ -225,11 +226,27 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool nee
     if (needPrint){
         print_pipe(_pipe);
     }
+    init_arg_hash();
 }
 
 Pipeline::~Pipeline(){
     free(_sorted);
     _pipe.clear();
+}
+
+void Pipeline::init_arg_hash(){
+    // get default args (in hash table) from all involved modules (indicated by graph),
+    // assemble to big hash table, and save it to private member
+    for(auto it = _pipe.begin(); it!= _pipe.end(); ++it){
+        std::string moduleName = get_module_name((*it).module); // this is const char* to string
+        Hash_t tmpHash = get_default_arg_hash_for_module((*it).module);
+        _defaultArgHash.insert({moduleName, tmpHash});
+    }
+    
+    // convert hash to toml table and dump toml table as base (to be employed in a func in parse.cpp)
+    generate_toml_file_from_hash("../dump/base.toml", &_defaultArgHash);
+    std::cout<<"\ninfo:\nthe base config file for the pipeline is generated at 'dump/base.toml'.\n";
+    std::cout<<"you may copy it and modify the argument values to make your own config file,\nbut do NOT change the file structure.\n\n";
 }
 
 void Pipeline::move_output_to_pool(){
@@ -370,15 +387,6 @@ void Pipeline::run_pipe(AllArgs_t& sArgs){ // TODO: consider again, hash table o
     // no-delay graph is a special case.
     // and after top-sort, we discuss general case.
 
-void Pipeline::init_arg_table(){
-    // get init args (in hash table) from all involved modules (indicated by graph)
-    for(auto it = _pipe.begin(); it!= _pipe.end(); ++it){
-
-    }
-    // assemble to big hash table, and save it as private member
-    // convert hash to toml table and dump toml table as base (to be employed in a func in parse.cpp).
-}
-
 void Pipeline::default_run_pipe(){
     // in this case, no arg provided, so no need to specify frameInd.
     // check if the default arg (in hash) is already generated, if not, just call init_args_table()
@@ -389,7 +397,7 @@ void Pipeline::default_run_pipe(){
 void Pipeline::frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum){
     for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
-        parse_args(_frameInd, sArgs);
+        //parse_args(_frameInd, sArgs); // TODO: remove this
 
         // there should be a set of default isp args, this arg will define the default hash and default toml.
         // if no toml file needed, the input should not be file name anymore, 
@@ -470,7 +478,7 @@ void test_pipeline(){
     graph[2] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
     graph[1] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
     graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
-    graph[4] = {DUMMY4, {}};
+    graph[4] = {DUMMY4, {DUMMY6}};
     graph[5] = {DUMMY5, {DUMMY6}};
     graph[6] = {DUMMY6, {DUMMY8}};
     graph[7] = {DUMMY7, {DUMMY6}}; 
@@ -489,6 +497,6 @@ void test_pipeline(){
 
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
-    myPipe.frames_run_pipe(sArgs, 0, 3);
+    //myPipe.frames_run_pipe(sArgs, 0, 3);
 
 }
