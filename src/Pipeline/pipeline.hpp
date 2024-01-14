@@ -44,7 +44,7 @@ typedef struct Module_tag{
     MODULE_NAME module;
     std::vector<ModuleDelay_t> predWthDelay; // predecessor modules with indication of delay; a module is a "name" of a vertex
     std::vector<ModuleDelay_t> succWthDelay; // successor modules with indication of delay; a module is a "name" of a vertex 
-    std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> run_function;
+    std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*)> run_function;
 } Module_t; // "full", and is inferred from graphs and modules
 
 typedef std::vector<Module_t> Pipe_t;
@@ -61,7 +61,7 @@ class Pipeline{
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         void init_arg_hash();
         void default_run_pipe();
-        void frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum);
+        void frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum);
         void dump();
 
     protected:
@@ -69,8 +69,8 @@ class Pipeline{
         const ImgPtrs_t distribute_in_img_t(const Module_t& sModule); // distribute who is main img, who is additional img, ...
         void sign_out_from_pool(const Module_t& sModule); // after input img is used, remove module name from deliverTo list; if list is empty, destroy the img.
         void signature_output_img(const Module_t& sModule); // assemble the img and signature
-        void run_module(const Module_t& sModule, void* pMArg);
-        void run_pipe(AllArgs_t& sArgs); // run pipeline for a single frame
+        void run_module(const Module_t& sModule, Hash_t* pHs);
+        void run_pipe(Hash_t* pHsAll); // run pipeline for a single frame
         
     protected:
         MODULE_NAME* _sorted;

@@ -23,9 +23,9 @@ typedef struct{
 } ColorMatRow3_t;
 
 typedef struct{
-    ColorMatRow1_t colorMatRow1;
-    ColorMatRow2_t colorMatRow2;
-    ColorMatRow3_t colorMatRow3;
+    ColorMatRow1_t sColorMatRow1;
+    ColorMatRow2_t sColorMatRow2;
+    ColorMatRow3_t sColorMatRow3;
 } CCMArg_t;
 
 typedef struct{
@@ -33,7 +33,8 @@ typedef struct{
 } MArg_CCM_t;
 
 Hash_t default_ccm_arg_hash();
-IMG_RTN_CODE isp_ccm(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, void* pMArg_CCM);
+const MArg_CCM_t get_ccm_arg_struct_from_hash(Hash_t* pHs);
+IMG_RTN_CODE isp_ccm(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, Hash_t* pMArg_CCM);
 
 void test_ccm_hash();
 

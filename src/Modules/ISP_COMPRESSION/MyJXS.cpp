@@ -34,6 +34,27 @@ Hash_t default_compression_arg_hash(){
     return hs;
 }
 
+const MArg_Compression_t get_compression_arg_struct_from_hash(Hash_t* pHs){
+    Hash_t* pSubHs1 = std::any_cast<Hash_t>(&(*pHs).at("StarTetrixArg"));
+    StarTetrixArg_t sStarTetrixArg = {};
+    sStarTetrixArg.Wr = std::any_cast<int>((*pSubHs1).at("Wr"));
+    sStarTetrixArg.Wb = std::any_cast<int>((*pSubHs1).at("Wb"));
+
+    Hash_t* pSubHs2 = std::any_cast<Hash_t>(&(*pHs).at("DWTArg"));
+    DWTArg_t sDWTArg = {};
+    sDWTArg.inImgPanelId = std::any_cast<int>((*pSubHs2).at("inImgPanelId"));
+    sDWTArg.outImgPanelId = std::any_cast<int>((*pSubHs2).at("outImgPanelId"));
+    sDWTArg.orient = get_dwt_orient_from_name(std::any_cast<const char*>((*pSubHs2).at("orient")));
+    sDWTArg.level = std::any_cast<int>((*pSubHs2).at("level"));
+    sDWTArg.wavelet = get_wavelet_from_name(std::any_cast<const char*>((*pSubHs2).at("wavelet")));
+    sDWTArg.padding = get_padding_from_name(std::any_cast<const char*>((*pSubHs2).at("padding")));
+
+    return {
+        sStarTetrixArg,
+        sDWTArg
+    };
+}
+
 IMG_RTN_CODE my_jxs_forward(const Img_t* pInImg, Img_t* pOutImg, const void* pMyJXSArg){
     switch (pInImg->imageFormat){
         case RAW_RGGB:
@@ -96,12 +117,13 @@ IMG_RTN_CODE my_jxs_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pM
 }
 
 
-IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMyJXSArg){
+IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
+    MArg_Compression_t sMArg = get_compression_arg_struct_from_hash(pHs);
     safe_unsigned_to_signed_img(sInImgPtrs[0]);
 
     Img_t* pTmpImg = (Img_t*)malloc(sizeof(Img_t));
-    my_jxs_forward(sInImgPtrs[0], pTmpImg, pMyJXSArg);
-    my_jxs_backward(pTmpImg, pOutImg, pMyJXSArg);
+    my_jxs_forward(sInImgPtrs[0], pTmpImg, &sMArg);
+    my_jxs_backward(pTmpImg, pOutImg, &sMArg);
     destruct_img(&pTmpImg);
     // currently, the module execution will not update any arguments, i.e., pMyJXSArg will not be changed by this func.
     // there may be some adaptive parameters if perform a "real" compression algo (;TODO)
@@ -137,25 +159,7 @@ void test_my_jxs(){
 
     Img_t* pOutImg = (Img_t*)malloc(sizeof(Img_t));
 
-
-
-    StarTetrixArg_t sStarTetrixArg = {
-        1,
-        2
-    };
-
-    DWTArg_t sDWTArg = {
-        0, // int inImgPanelId; // apply dwt to the whole 2D image
-        0, // int outImgPanelId;
-        TWO_DIMENSIONAL, // ORIENT orient;
-        1, // int level;
-        LE_GALL_53, // WAVELET_NAME wavelet;
-        MIRROR // PADDING padding;
-    };
-
-    MArg_Compression_t* pMyJXSArg = (MArg_Compression_t*)malloc(sizeof(MArg_Compression_t));
-    pMyJXSArg->sStarTetrixArg = sStarTetrixArg;
-    pMyJXSArg->sDWTArg = sDWTArg;
+    Hash_t hs = default_compression_arg_hash();
 
     ImgPtrs_t sImgPtrs(1);
     sImgPtrs[0] = pInImg;
@@ -164,7 +168,7 @@ void test_my_jxs(){
     ROI_t viewROI = {0, 0, 0, pInImg->width, pInImg->height};
     view_image_data(pInImg, viewROI );
 
-    isp_compression(sImgPtrs, pOutImg, pMyJXSArg);
+    isp_compression(sImgPtrs, pOutImg, &hs);
 
     std::cout<<"pipe out:\n";
     ROI_t viewROI3 = {0, 0, 0, pOutImg->width, pOutImg->height};
@@ -173,5 +177,4 @@ void test_my_jxs(){
 
     destruct_img(&pInImg);
     destruct_img(&pOutImg);
-    free(pMyJXSArg);
 }

@@ -246,7 +246,8 @@ void Pipeline::init_arg_hash(){
     // convert hash to toml table and dump toml table as base (to be employed in a func in parse.cpp)
     generate_toml_file_from_hash("../dump/base.toml", &_defaultArgHash);
     std::cout<<"\ninfo:\nthe base config file for the pipeline is generated at 'dump/base.toml'.\n";
-    std::cout<<"you may copy it and modify the argument values to make your own config file,\nbut do NOT change the file structure.\n\n";
+    std::cout<<"you may copy it and modify the argument values to make your own config file,\n";
+    std::cout<<"but do NOT change the file structure or argument names.\n\n";
 }
 
 void Pipeline::move_output_to_pool(){
@@ -324,11 +325,11 @@ void Pipeline::signature_output_img(const Module_t& sModule){
     }
 }
 
-void Pipeline::run_module(const Module_t& sModule, void* pMArg){
+void Pipeline::run_module(const Module_t& sModule, Hash_t* pHs){
     std::cout<<"running module " << get_module_name(sModule.module) <<":\n";
     move_output_to_pool();
     ImgPtrs_t inPtrs = distribute_in_img_t(sModule);
-    sModule.run_function(inPtrs, &(_sOutPipeImg.img), pMArg);
+    sModule.run_function(inPtrs, &(_sOutPipeImg.img), pHs);
     sign_out_from_pool(sModule);
     signature_output_img(sModule);
 }
@@ -346,11 +347,11 @@ void Pipeline::clear_imgs(){
     }
 }
 
-void Pipeline::run_pipe(AllArgs_t& sArgs){ // TODO: consider again, hash table or AllArgs...
+void Pipeline::run_pipe(Hash_t* pHsAll){
     if (!_pipe.empty()){
         Pipe_t::iterator it;
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
-            run_module((*it), find_arg_for_func(sArgs, (*it).module));
+            run_module((*it), find_arg_hash_for_module(pHsAll, (*it).module));
 
             // TODO:  maybe dump?? "EOF end of frame"
             //dump();
@@ -392,9 +393,10 @@ void Pipeline::default_run_pipe(){
     // check if the default arg (in hash) is already generated, if not, just call init_args_table()
     // use default args (hash) to run one frame.
     // note: module with delay needs to ensure that initial frames are well-behaved, however, it is the module's responsibility
+    run_pipe(&_defaultArgHash);
 }
 
-void Pipeline::frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum){
+void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
     for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
         //parse_args(_frameInd, sArgs); // TODO: remove this
@@ -424,7 +426,7 @@ void Pipeline::frames_run_pipe(AllArgs_t& sArgs, int startFrameInd, int frameNum
         // changes (due to the specific way to set value); what happens to the struct?
 
 
-        run_pipe(sArgs); 
+        run_pipe(pHsAll);
     }
     std::cout<<"\n======== all frames processed. ========\n\n";
     clear_imgs();
@@ -498,5 +500,6 @@ void test_pipeline(){
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
     //myPipe.frames_run_pipe(sArgs, 0, 3);
+    myPipe.default_run_pipe();
 
 }

@@ -72,12 +72,12 @@ typedef struct{
 // may need an "instruction" in cfg file
 
 Hash_t default_dummy_arg_hash();
-std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m);
+std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*)> find_func_for_module(MODULE_NAME m);
 Hash_t get_default_arg_hash_for_module(const MODULE_NAME m);
-void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m); // TODO: rewrite hash table version
+Hash_t* find_arg_hash_for_module(Hash_t* pHsAll, const MODULE_NAME m);
 
 
-IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy);
+IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pMArg_Dummy);
 
 //Module_t generate_isp_module(PipeUnit_t& sPipeUnit);
 

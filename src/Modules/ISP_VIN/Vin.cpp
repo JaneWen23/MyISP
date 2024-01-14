@@ -28,22 +28,39 @@ Hash_t default_vin_arg_hash(){
     return hs;
 }
 
-IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Vin){
-    MArg_Vin_t* pMArg = (MArg_Vin_t*)pMArg_Vin;
+const MArg_Vin_t get_vin_arg_struct_from_hash(Hash_t* pHs){
+    Hash_t* pSubHs = std::any_cast<Hash_t>(&(*pHs).at("ReadRawArg"));
+    ReadRawArg_t sReadRawArg = {};
+    sReadRawArg.path = std::any_cast<std::string>((*pSubHs).at("ReadRawArg"));
+    sReadRawArg.frameInd = std::any_cast<int>((*pSubHs).at("ReadRawArg"));
+    sReadRawArg.imageFormat = get_image_format_from_name(std::any_cast<const char*>((*pSubHs).at("imageFormat")));
+    sReadRawArg.width = std::any_cast<int>((*pSubHs).at("width"));
+    sReadRawArg.height = std::any_cast<int>((*pSubHs).at("height"));
+    sReadRawArg.bitDepth = std::any_cast<int>((*pSubHs).at("bitDepth"));
+    sReadRawArg.alignment = std::any_cast<int>((*pSubHs).at("alignment"));
+
+    return{
+        sReadRawArg,
+        std::any_cast<bool>((*pHs).at("rewind"))
+    };
+}
+
+IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
+    MArg_Vin_t sMArg = get_vin_arg_struct_from_hash(pHs);
     // Input Img: don't care.
-    read_raw_to_img_t(pMArg->sReadRawArg.path.c_str(), // convert std::string to const char*
+    read_raw_to_img_t(sMArg.sReadRawArg.path.c_str(), // convert std::string to const char*
                        pOutImg,
-                       pMArg->sReadRawArg.imageFormat,
-                       pMArg->sReadRawArg.width,
-                       pMArg->sReadRawArg.height,
-                       pMArg->sReadRawArg.bitDepth,
-                       pMArg->sReadRawArg.alignment,
-                       pMArg->sReadRawArg.frameInd);
+                       sMArg.sReadRawArg.imageFormat,
+                       sMArg.sReadRawArg.width,
+                       sMArg.sReadRawArg.height,
+                       sMArg.sReadRawArg.bitDepth,
+                       sMArg.sReadRawArg.alignment,
+                       sMArg.sReadRawArg.frameInd);
 
     pOutImg->sign = UNSIGNED; // just to make sure that it is unsigned.
 
-    if (!(pMArg->rewind)){
-        pMArg->sReadRawArg.frameInd += 1;
+    if (!(sMArg.rewind)){
+        sMArg.sReadRawArg.frameInd += 1;
     }
     
     return SUCCEED;

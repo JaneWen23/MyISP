@@ -2,7 +2,7 @@
 
 
 
-std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module(MODULE_NAME m){
+std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*)> find_func_for_module(MODULE_NAME m){
     switch (m){
         case DUMMY0:
         case DUMMY1:
@@ -48,6 +48,12 @@ std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, void*)> find_func_for_module
 Hash_t default_dummy_arg_hash(){
     return {{"a", 3}};
 }
+MArg_Dummy_t get_dummy_arg_struct_from_hash(Hash_t* pHs){
+    int a = std::any_cast<int>((*pHs).at("a"));
+    return {
+        a
+    };
+}
 
 Hash_t get_default_arg_hash_for_module(const MODULE_NAME m){
     switch (m){
@@ -91,58 +97,27 @@ Hash_t get_default_arg_hash_for_module(const MODULE_NAME m){
     return {{"nan", 0}};
 }
 
-
-void* find_arg_for_func(const AllArgs_t& sArgs, const MODULE_NAME m){ // TODO: may rewrite as hash table version, find sub hash from big hash, by key = module name
-    switch (m){
-        case DUMMY0:
-        case DUMMY1:
-        case DUMMY2:
-        case DUMMY3:
-        case DUMMY4:
-        case DUMMY5:
-        case DUMMY6:
-        case DUMMY7:
-        case DUMMY8:{
-            return (void*)(&(sArgs.sDummyArg));
-        }
-        case ISP_VIN:{
-            return (void*)(&(sArgs.sVinArg));
-        }
-        case ISP_COMPRESSION:{
-            return (void*)(&(sArgs.sCompressionArg));
-        }
-        case ISP_BLC:{
-            break;
-        }
-        case ISP_DMS:{
-            break;
-        }
-        case ISP_WB:{
-            break;
-        }
-        case ISP_CCM:{
-            return (void*)(&(sArgs.sCCMArg));
-        }
-        case ISP_RGB2YUV:{
-            break;
-        }
-        default:{
-            std::cout<<"error: cannot find arguments for this function to run. exited.\n";
-            exit(1);
-        }
-    }
-    return NULL; // this is nonsense. just because it needs a return value.
+Hash_t* find_arg_hash_for_module(Hash_t* pHsAll, const MODULE_NAME m){
+    std::string moduleName = get_module_name(m);
+    Hash_t* pHs = std::any_cast<Hash_t>(&((*pHsAll).at(moduleName)));
+    return pHs;
 }
 
-IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, void* pMArg_Dummy){
-    std::cout<<"dummy module is running.\n";
+IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
+    MArg_Dummy_t sMArg = get_dummy_arg_struct_from_hash(pHs);
+    print_hash(pHs);
     std::cout<<"in img data p0 ptrs: ";
-    for (int i = 0; i < sInImgPtrs.size(); ++i){
-        if (sInImgPtrs[i] != NULL){
-            std::cout<< (void*)(sInImgPtrs[i]->pImageData[0])<< ", ";
-        }
-        else{
-            std::cout<< "NULL, ";
+    if (sInImgPtrs.size() == 0){
+        std::cout<<"N/A; ";
+    }
+    else{
+        for (int i = 0; i < sInImgPtrs.size(); ++i){
+            if (sInImgPtrs[i] != NULL){
+                std::cout<< (void*)(sInImgPtrs[i]->pImageData[0])<< ", ";
+            }
+            else{
+                std::cout<< "NULL, ";
+            }
         }
     }
 
