@@ -6,7 +6,6 @@
 
 
 void parse_args(const int frameInd);
-void generate_toml_file_from_hash(const char* fileName, Hash_t* pMyHash);
 
 void test_parse_args();
 void test_toml_to_hash();

@@ -401,9 +401,13 @@ void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
 
         // there should be a set of default isp args, this arg will define the default hash and default toml.
-        // if no toml file needed, the input should not be file name anymore, 
+        // if no toml file needed, the input should be hash, 
         // while the hand-made init arg is needed (different than default arg).
         // or, overload this function, args hash replaced by toml file name.
+        // when input is toml, we should make a copy of _defaultArgHash as a template, and apply "set hash from tbl",
+        // and then apply frames_run_pipe('hash version').
+        // when update by algo and when a frame is finished, dump the updated arg hash in toml (generate toml file from hash);
+        // when update by toml, do not need to dump arg (or you can switch on/off)
 
         // cases are:
         // 1, you have a hand-made init arg in toml, want to update by algo

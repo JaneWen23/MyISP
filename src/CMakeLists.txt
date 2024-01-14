@@ -21,6 +21,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Demo DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Modules/ISP_COMPRESSION DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Modules/ISP_VIN DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Modules/ISP_CCM DIR_PROJECT_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Modules/DUMMY DIR_PROJECT_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Modules/COMMON DIR_PROJECT_SRC)
 
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/Pipeline DIR_PROJECT_SRC)

@@ -5,14 +5,10 @@
 
 #include <functional>
 
-#include "../../Modules/ISP_VIN/Vin.hpp"
-#include "../../Modules/ISP_COMPRESSION/MyJXS.hpp"
-#include "../../Modules/ISP_CCM/ccm.hpp"
-
-typedef struct{
-    int a;
-} MArg_Dummy_t;
-
+#include "../ISP_VIN/Vin.hpp"
+#include "../ISP_COMPRESSION/MyJXS.hpp"
+#include "../ISP_CCM/ccm.hpp"
+#include "../DUMMY/dummy.hpp"
 
 
 // Update 20231218
@@ -23,7 +19,7 @@ typedef struct{
 // and a module output may be used by multiple modules
 // "module's function is different than Algo's function"
 // module's interface:
-// still generate one output Img_t (shared pointer), but input img is in list
+// still generate one output Img_t, but input img is in list
 // about the args: "module arg" may contain algo arg and more, for example, some adaptive args between two algos.
 // and the args should contain the items to be memorized, like, adaptive n-tap filter coefficients => n numbers should be in args.
 // modules should also take care of the adaptation of args during the running of stream,
@@ -47,7 +43,6 @@ typedef struct{
 // what algos can be packed into a module: algos in serial, or just the one algo;
 // two parallel algos should not be packed into one module, they should be two modules with proper names.
 // modules may not contain the info about next or last module
-// pipeline at construction: check in fmt of this module and out fmt of the last module. (what if two input formats?)
 
 // every output has to be clear that which module(s) will be using it.
 // and every output image should record the module name who made the output.
@@ -64,14 +59,10 @@ typedef struct{
 // if two inputs: which one is main img, which one is additional img?
 // may need an "instruction" in cfg file
 
-Hash_t default_dummy_arg_hash();
 std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*)> find_func_for_module(MODULE_NAME m);
 Hash_t get_default_arg_hash_for_module(const MODULE_NAME m);
 Hash_t* find_arg_hash_for_module(Hash_t* pHsAll, const MODULE_NAME m);
 
 
-IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pMArg_Dummy);
-
-//Module_t generate_isp_module(PipeUnit_t& sPipeUnit);
 
 #endif
