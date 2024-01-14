@@ -251,7 +251,7 @@ void Pipeline::init_arg_hash(){
 }
 
 void Pipeline::move_output_to_pool(){
-    // if no delivery (or no output at all), do nothing.
+    // if no delivery (or no output at all), do nothing. // TODO: problem: output is not null but no delivery, what to do?
     if ( ! _sOutPipeImg.sig.deliverTo.empty()){
         _InImgPool.push_back(_sOutPipeImg);
         for (int i = 0; i < MAX_NUM_P; ++i){
@@ -295,7 +295,7 @@ void remove_from_delivery_list(const ModuleDelay_t m, std::vector<ModuleDelay_t>
 
 void Pipeline::sign_out_from_pool(const Module_t& sModule){
     // after input img is used, remove module name from deliverTo list;
-    // if delay==0 AND list is empty, destroy the img.
+    // if the list is empty, destroy the img.
     int len = sModule.predWthDelay.size();
     for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
@@ -317,7 +317,7 @@ void Pipeline::sign_out_from_pool(const Module_t& sModule){
 }
 
 void Pipeline::signature_output_img(const Module_t& sModule){
-    // assemble the img and signature (img was set by module run_function)
+    // assemble the img and signature (img was set by module 'run_function')
     _sOutPipeImg.sig.madeBy.module = sModule.module;
     _sOutPipeImg.sig.madeBy.time = _frameInd;
     for (auto it = sModule.succWthDelay.begin(); it != sModule.succWthDelay.end(); ++it){
@@ -335,7 +335,7 @@ void Pipeline::run_module(const Module_t& sModule, Hash_t* pHs){
 }
 
 void Pipeline::clear_imgs(){
-    // this should be used after all frames are processed.
+    // this should be used only after all frames are processed.
     if (_InImgPool.size() > 0){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
             free_image_data(&(*it).img);
@@ -381,7 +381,7 @@ void Pipeline::run_pipe(Hash_t* pHsAll){
     // from node n0 to itself or node topsort-ed before n0: must delay >= 1 frame
     // from node n0 to any other node in the rest: can have no delay
 
-    // img can be deleted only when both delivery lists are empty
+    // img can be deleted only when delivery list is empty
 
     // for top-sort, only need no-delay nodes
     // after that, need delay info at all times
@@ -399,32 +399,24 @@ void Pipeline::default_run_pipe(){
 void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
     for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
-        //parse_args(_frameInd, sArgs); // TODO: remove this
 
         // there should be a set of default isp args, this arg will define the default hash and default toml.
         // if no toml file needed, the input should not be file name anymore, 
         // while the hand-made init arg is needed (different than default arg).
         // or, overload this function, args hash replaced by toml file name.
-        // use hash table to replace sArgs, then "hash to Args" to feed to run_pipe().
 
         // cases are:
         // 1, you have a hand-made init arg in toml, want to update by algo
-        // 2, you have a hand-made init arg in struct (or hash), want to update by algo (not recommended, if hand-made, then use toml)
+        // 2, you have a hand-made init arg in hash, want to update by algo (not recommended, if hand-made, then use toml)
         // 3, you do not have any init arg and would like to use default arg, and update by algo
-        // 4, you have a series of frames arg in toml, want to update by toml
+        // 4, you have a series of frames arg in toml, want to update by toml (use toml args every frame)
 
-        // problem:
-        // if you have hand-made arg, you possibly have it in struct, not in hash.
-        // but we want pipeline to receive hash, not struct
-        // so, you have to convert struct to hash then convert back, stupid.
         // ===> case 2 is opt out
-        // ===> if no toml provided, there should be a base toml, corresponding to the default args
-        // ===> or, if no toml provided, program should dump the base toml according to the default args
-        // and use default args (in struct) as default input (but do not open 'default arg struct' as API)
+        // ===> if no toml provided, program should dump the base toml according to the default args
+        // and use default args (in hash) as default input
 
         // when update by algo, you want to update the hash, so that it's easier to track any 
-        // changes (due to the specific way to set value); what happens to the struct?
-
+        // changes (due to the specific way to set value).
 
         run_pipe(pHsAll);
     }
@@ -433,44 +425,6 @@ void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
 }
 
 void test_pipeline(){
-    ReadRawArg_t sAlgoVinArg = {
-        "../data/rawData.raw", //const char* path;
-        0, //int frameInd; // read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
-        RAW_RGGB, //IMAGE_FMT imageFormat;
-        4256, //int width;
-        2848, //int height;
-        16, //int bitDepth;
-        1, //int alignment;
-    };
-    MArg_Vin_t sVinArg = {sAlgoVinArg, false};
-
-    StarTetrixArg_t sStarTetrixArg = {
-        1,
-        2
-    };
-
-    DWTArg_t sDWTArg = {
-        0, // int inImgPanelId; // apply dwt to the whole 2D image
-        0, // int outImgPanelId;
-        TWO_DIMENSIONAL, // ORIENT orient;
-        1, // int level;
-        LE_GALL_53, // WAVELET_NAME wavelet;
-        MIRROR // PADDING padding;
-    };
-    
-    MArg_Compression_t sCompressionArg = {sStarTetrixArg, sDWTArg};
-
-    CCMArg_t sAlgoCCMArg = {
-        {278, -10, -8},
-        {-12, 269, -8},
-        {-10, -3, 272},
-    };
-    MArg_CCM_t sCCMArg = {sAlgoCCMArg};
-
-    MArg_Dummy_t sDummyArg = {3};
-
-    AllArgs_t sArgs = {sVinArg, sCompressionArg, sCCMArg, sDummyArg}; // TODO: may remove AllArgs_t
-    //======================================================
 
     int n = 9; // number of nodes
 
@@ -499,7 +453,6 @@ void test_pipeline(){
 
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
-    //myPipe.frames_run_pipe(sArgs, 0, 3);
     myPipe.default_run_pipe();
 
 }

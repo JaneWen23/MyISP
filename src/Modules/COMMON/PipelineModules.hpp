@@ -13,13 +13,6 @@ typedef struct{
     int a;
 } MArg_Dummy_t;
 
-typedef struct{
-    // the integration of all module arguments (beginning with "MArg")
-    MArg_Vin_t sVinArg;
-    MArg_Compression_t sCompressionArg;
-    MArg_CCM_t sCCMArg;
-    MArg_Dummy_t sDummyArg;
-} AllArgs_t; // TOML // TODO: replace by hash table
 
 
 // Update 20231218
