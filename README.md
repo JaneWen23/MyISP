@@ -1,10 +1,16 @@
 # MyISP
 vscode + cmake
 
-Features
+Features:
 
-ImgDef
+算法级: 
 
-filter
+- 图像定义、滤波等标准操作做成可复用的API, 接口统一, 提高开发效率; 
+- 目前完成的算法包括: 可灵活配置滤波核的滤波操作, 小波变换(二代方法); Star-Tetrix变换; CCM等.
 
-C/C++ Notes
+模块级: 
+- 合理封装算法, 作为算法与pipeline的衔接, 也解除算法与pipeline的耦合, 降低维护难度.
+
+管线级: 
+- 支持配置DAG (有向无环图) 结构的pipeline, 支持带延迟的输入; 
+- 使用哈希表和TOML 配置文件, 适配可变的pipeline结构; 配置内容最小化, 尽量避免人为的输入错误
