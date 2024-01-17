@@ -31,8 +31,8 @@ Hash_t default_vin_arg_hash(){
 const MArg_Vin_t get_vin_arg_struct_from_hash(Hash_t* pHs){
     Hash_t* pSubHs = std::any_cast<Hash_t>(&(*pHs).at("ReadRawArg"));
     ReadRawArg_t sReadRawArg = {};
-    sReadRawArg.path = std::any_cast<std::string>((*pSubHs).at("ReadRawArg"));
-    sReadRawArg.frameInd = std::any_cast<int>((*pSubHs).at("ReadRawArg"));
+    sReadRawArg.path = std::any_cast<std::string>((*pSubHs).at("path"));
+    sReadRawArg.frameInd = std::any_cast<int>((*pSubHs).at("frameInd"));
     sReadRawArg.imageFormat = get_image_format_from_name(std::any_cast<const char*>((*pSubHs).at("imageFormat")));
     sReadRawArg.width = std::any_cast<int>((*pSubHs).at("width"));
     sReadRawArg.height = std::any_cast<int>((*pSubHs).at("height"));

@@ -18,14 +18,15 @@ int main(){
     // test_img_def();
 
     // test_graph();
-    test_pipeline();
+    // test_pipeline();
+    test_pipeline2();
     // test_toml();
     // test_parse_args();
     // test_hash();
-    // test_toml_to_hash();
+    //test_toml_to_hash();
     // test_ccm_hash();
     // test_hash_to_toml();
-
+    
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";
     return 0;

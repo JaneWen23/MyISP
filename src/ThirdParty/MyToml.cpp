@@ -43,7 +43,7 @@ void generate_toml_file_from_hash(const char* fileName, Hash_t* pMyHash){
     }
 }
 
-void set_hash_from_tbl(toml::v3::table* pTbl, Hash_t* pMyHash){
+void override_hash_from_tbl(toml::v3::table* pTbl, Hash_t* pMyHash){
     // this function works ONLY IF the tbl and the hash has the same structure!
     for (auto&& [k, v] : (*pTbl)){
         if (v.is_value()){
@@ -55,7 +55,7 @@ void set_hash_from_tbl(toml::v3::table* pTbl, Hash_t* pMyHash){
                 (*pMyHash).at(kStr) = v.value<std::string>().value();
             }
             else if ((*pMyHash).at(kStr).type() == typeid(const char*)){
-                (*pMyHash).at(kStr) = v.value<const char*>().value();
+                (*pMyHash).at(kStr) = v.value<std::string>().value(); // type cast as std::string to avoid the use-after-free problem
             }
             else if ((*pMyHash).at(kStr).type() == typeid(bool)){
                 (*pMyHash).at(kStr) = v.value<bool>().value();
@@ -68,11 +68,32 @@ void set_hash_from_tbl(toml::v3::table* pTbl, Hash_t* pMyHash){
         else{
             std::string kStr = k.data();
             Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*pMyHash).at(kStr)));
-            set_hash_from_tbl(v.as_table(), pMySubHash);
+            override_hash_from_tbl(v.as_table(), pMySubHash); 
         }
     }
 }
 
+void override_hash_from_toml_file(const char* filePath, Hash_t* pMyHash, const std::string rootKeyIndicator){
+    // this function is intended to be called under a specific condition:
+    // first, only one frame in cfg file, and
+    // second, pMyHash should have the same structure as sub table under the root key.
+    toml::table tbl = toml::parse_file(filePath);
+    if (tbl.size() != 1){
+        std::cout<<"error: only support ONE frame in toml config file. exited.\n";
+        exit(1);
+    }
+    // check validity: find if exact "root" key is in table.
+    auto it = tbl.begin();
+    std::string kStr = (*it).first.data();
+    if (kStr.find(rootKeyIndicator) != std::string::npos){
+        // pMyHash <==> sub table under the root key!!
+        override_hash_from_tbl(tbl.at(kStr).as_table(), pMyHash);
+    }
+    else{
+        std::cout<<"error: the provided config file does not have a valid root-level key, like "<< rootKeyIndicator<<"0. exited.\n";
+        exit(1);
+    }
+}
 
 void test_toml(){
     toml::table tbl = toml::parse_file( "../args/sample.toml" );

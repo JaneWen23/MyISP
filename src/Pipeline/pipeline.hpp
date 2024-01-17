@@ -11,7 +11,7 @@ typedef struct ModuleDelay_tag{
 
 typedef struct{
     MODULE_NAME module;
-    int time;
+    int timeStamp;
 } ModuleTime_t;
 
 typedef struct{
@@ -56,12 +56,15 @@ class Pipeline{
     public:
         Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, const Orders_t& orders, bool needPrint);
         Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint);
+        Pipeline(const Graph_t& graphNoDelay, bool needPrint);
         ~Pipeline();
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????
-        void init_arg_hash();
+        void generate_arg_cfg_template(int startFrameInd = 0, int frameNum = 1);
+        void make_arg_cfg_file_multi_frames(const char* refFilePath, int startFrameInd = 0, int frameNum = 1);
         void default_run_pipe();
         void frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum);
+        void frames_run_pipe(const char* filePath, int startFrameInd, int frameNum);
         void dump();
 
     protected:
@@ -79,14 +82,23 @@ class Pipeline{
         int _frameInd = 0;
 
     private:
-        Hash_t _defaultArgHash;
         std::vector<PipeImg_t> _InImgPool;
         void clear_imgs();
+        Hash_t _subHsOneFrame;
+        Hash_t get_sub_hash_one_frame_from_modules();
+        std::string _configFrameStr = "FRAME #";
+        std::string _baseCfgFilePath = "../args/base.toml";
+        std::string _baseCfgInfo = 
+            "\ninfo:\nthe base config file for the pipeline is generated at '" + _baseCfgFilePath + "'.\n"
+            "you may copy it and modify the argument values to make your own config file,\n"
+            "but do NOT change the file structure or argument names.\n\n"; 
+            // TODO: add title, date time, add comments as instruction (what to do if...)
         // TODO: add offline mode, load some offline img
         // TODO: const char* namePrefix ???
 
 };
 
 void test_pipeline();
+void test_pipeline2();
 
 #endif

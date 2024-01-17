@@ -1,9 +1,11 @@
 #include <iostream>
 #include "parse.hpp"
 
+
 void parse_args(const char* pathFile, const int frameInd){ //TODO: consider a series of frames' args
     toml::table tbl = toml::parse_file(pathFile);
 }
+
 
 
 // TODO: to be removed:
@@ -36,27 +38,10 @@ void parse_args(const char* pathFile, const int frameInd){ //TODO: consider a se
 //     }
 // }
 
-void test_hash_to_toml(){
-
-    MODULE_NAME mods[3] = {ISP_VIN, ISP_COMPRESSION, ISP_CCM};
-    Hash_t allArgsHash;
-    allArgsHash.insert({"ISP_VIN", get_default_arg_hash_for_module(mods[0])});
-    allArgsHash.insert({"ISP_COMPRESSION", get_default_arg_hash_for_module(mods[1])});
-    allArgsHash.insert({"ISP_CCM", get_default_arg_hash_for_module(mods[2])});
-    print_hash(&allArgsHash);
-
-    toml::v3::table tbl;
-    generate_tbl_from_hash(&tbl, &allArgsHash);
-
-    tbl.for_each([](const toml::key& key, auto&& val){
-        std::cout << key << ": " << val << "\n";
-    });
-
-    generate_toml_file_from_hash("../dump/base.toml", &allArgsHash);
-}
 
 void test_toml_to_hash(){
     toml::table tbl = toml::parse_file("../args/sample.toml");
+
 
     toml::path the_path("Vin");
     auto pSbTbl = tbl[the_path].as_table();

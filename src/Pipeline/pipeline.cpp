@@ -212,7 +212,7 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, c
     if (needPrint){
         print_pipe(_pipe);
     }
-    init_arg_hash();
+    _subHsOneFrame = get_sub_hash_one_frame_from_modules();
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint){
@@ -226,7 +226,21 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool nee
     if (needPrint){
         print_pipe(_pipe);
     }
-    init_arg_hash();
+    _subHsOneFrame = get_sub_hash_one_frame_from_modules();
+}
+
+Pipeline::Pipeline(const Graph_t& graphNoDelay, bool needPrint){
+    // initialize _sorted and _pipe according to number of nodes:
+    int n = graphNoDelay.size();
+    _sorted = (MODULE_NAME*)malloc( n * sizeof(MODULE_NAME));
+    _pipe = Pipe_t(n);
+    // generate pipeline from graph:
+    topological_sort(graphNoDelay, _sorted);
+    copy_graph_to_pipe(graphNoDelay, _sorted, _pipe);
+    if (needPrint){
+        print_pipe(_pipe);
+    }
+    _subHsOneFrame = get_sub_hash_one_frame_from_modules();
 }
 
 Pipeline::~Pipeline(){
@@ -234,24 +248,56 @@ Pipeline::~Pipeline(){
     _pipe.clear();
 }
 
-void Pipeline::init_arg_hash(){
-    // get default args (in hash table) from all involved modules (indicated by graph),
-    // assemble to big hash table, and save it to private member
+Hash_t Pipeline::get_sub_hash_one_frame_from_modules(){
+    Hash_t subHsOneFrame;
     for(auto it = _pipe.begin(); it!= _pipe.end(); ++it){
         std::string moduleName = get_module_name((*it).module); // this is const char* to string
         Hash_t tmpHash = get_default_arg_hash_for_module((*it).module);
-        _defaultArgHash.insert({moduleName, tmpHash});
+        subHsOneFrame.insert({moduleName, tmpHash});
     }
-    
+    return subHsOneFrame;
+}
+
+void Pipeline::generate_arg_cfg_template(int startFrameInd, int frameNum){
+    if (frameNum < 1){
+        std::cout<<"error: should generate config file for at least 1 frame, but got " << frameNum << " instead. exited.\n";
+        exit(1);
+    }
+    Hash_t argHash;
+    for (int frameInd = startFrameInd; frameInd < startFrameInd + frameNum; ++frameInd){
+        std::string rootKey = _configFrameStr + std::to_string(frameInd);
+        argHash.insert({rootKey, _subHsOneFrame});
+    }
     // convert hash to toml table and dump toml table as base (to be employed in a func in parse.cpp)
-    generate_toml_file_from_hash("../dump/base.toml", &_defaultArgHash);
-    std::cout<<"\ninfo:\nthe base config file for the pipeline is generated at 'dump/base.toml'.\n";
-    std::cout<<"you may copy it and modify the argument values to make your own config file,\n";
-    std::cout<<"but do NOT change the file structure or argument names.\n\n";
+    generate_toml_file_from_hash(_baseCfgFilePath.c_str(), &argHash);
+    std::cout<< _baseCfgInfo;
+}
+
+void Pipeline::make_arg_cfg_file_multi_frames(const char* refFilePath, int startFrameInd, int frameNum){
+    if (strcmp(refFilePath, _baseCfgFilePath.c_str()) == 0){
+        std::cout<<"error: the reference config file name is invalid. it cannot be the same as default config name. exited.\n";
+        exit(1);
+    }
+    if (frameNum < 1){
+        std::cout<<"error: should generate config file for at least 1 frame, but got " << frameNum << " instead. exited.\n";
+        exit(1);
+    }
+    // override tmpSubHs from toml file:
+    // only allows one frame in toml file; will duplicate its content to multiple frames.
+    Hash_t argHash;
+    Hash_t tmpSubHs = get_sub_hash_one_frame_from_modules();
+    override_hash_from_toml_file(refFilePath, &tmpSubHs, _configFrameStr);
+    for (int frameInd = startFrameInd; frameInd < startFrameInd + frameNum; ++frameInd){
+        std::string rootKey = _configFrameStr + std::to_string(frameInd);
+        argHash.insert({rootKey, tmpSubHs});
+    }
+    // convert hash to toml table and dump toml table as base
+    generate_toml_file_from_hash(_baseCfgFilePath.c_str(), &argHash);
+    std::cout<< _baseCfgInfo;
 }
 
 void Pipeline::move_output_to_pool(){
-    // if no delivery (or no output at all), do nothing. // TODO: problem: output is not null but no delivery, what to do?
+    // if no delivery (or no output at all), do nothing. // TODO: problem: output is not null but no delivery: do not allowed. add logic to return error.
     if ( ! _sOutPipeImg.sig.deliverTo.empty()){
         _InImgPool.push_back(_sOutPipeImg);
         for (int i = 0; i < MAX_NUM_P; ++i){
@@ -271,7 +317,7 @@ const ImgPtrs_t Pipeline::distribute_in_img_t(const Module_t& sModule){
     }
     for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
-            if ((*it).sig.madeBy.time + sModule.predWthDelay[i].delay == _frameInd){
+            if ((*it).sig.madeBy.timeStamp + sModule.predWthDelay[i].delay == _frameInd){
                 if ((*it).sig.madeBy.module == sModule.predWthDelay[i].module){
                     if (is_subset({sModule.module, sModule.predWthDelay[i].delay}, (*it).sig.deliverTo)){
                         imgPtrs[i] = &((*it).img); // assign img
@@ -299,7 +345,7 @@ void Pipeline::sign_out_from_pool(const Module_t& sModule){
     int len = sModule.predWthDelay.size();
     for (int i = 0; i < len; ++i){
         for (auto it = _InImgPool.begin(); it != _InImgPool.end(); ++it){
-            if ((*it).sig.madeBy.time + sModule.predWthDelay[i].delay == _frameInd){
+            if ((*it).sig.madeBy.timeStamp + sModule.predWthDelay[i].delay == _frameInd){
                 if ((*it).sig.madeBy.module == sModule.predWthDelay[i].module){
                     if (is_subset({sModule.module, sModule.predWthDelay[i].delay}, (*it).sig.deliverTo)){
                         remove_from_delivery_list({sModule.module, sModule.predWthDelay[i].delay}, (*it).sig.deliverTo);
@@ -319,7 +365,7 @@ void Pipeline::sign_out_from_pool(const Module_t& sModule){
 void Pipeline::signature_output_img(const Module_t& sModule){
     // assemble the img and signature (img was set by module 'run_function')
     _sOutPipeImg.sig.madeBy.module = sModule.module;
-    _sOutPipeImg.sig.madeBy.time = _frameInd;
+    _sOutPipeImg.sig.madeBy.timeStamp = _frameInd;
     for (auto it = sModule.succWthDelay.begin(); it != sModule.succWthDelay.end(); ++it){
         _sOutPipeImg.sig.deliverTo.push_back((*it));
     }
@@ -347,11 +393,11 @@ void Pipeline::clear_imgs(){
     }
 }
 
-void Pipeline::run_pipe(Hash_t* pHsAll){
+void Pipeline::run_pipe(Hash_t* pHsOneFrame){
     if (!_pipe.empty()){
         Pipe_t::iterator it;
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
-            run_module((*it), find_arg_hash_for_module(pHsAll, (*it).module));
+            run_module((*it), find_arg_hash_for_module(pHsOneFrame, (*it).module));
 
             // TODO:  maybe dump?? "EOF end of frame"
             //dump();
@@ -390,10 +436,14 @@ void Pipeline::run_pipe(Hash_t* pHsAll){
 
 void Pipeline::default_run_pipe(){
     // in this case, no arg provided, so no need to specify frameInd.
-    // check if the default arg (in hash) is already generated, if not, just call init_args_table()
     // use default args (hash) to run one frame.
     // note: module with delay needs to ensure that initial frames are well-behaved, however, it is the module's responsibility
-    run_pipe(&_defaultArgHash);
+    
+    std::cout<< "\n======== [default mode] running frame #0: ========\n\n";
+    Hash_t hs = get_sub_hash_one_frame_from_modules();
+    run_pipe(&hs);
+    std::cout<<"\n======== [default mode] all frames processed. ========\n\n";
+    clear_imgs();
 }
 
 void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
@@ -422,10 +472,15 @@ void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
         // when update by algo, you want to update the hash, so that it's easier to track any 
         // changes (due to the specific way to set value).
 
-        run_pipe(pHsAll);
+        run_pipe(pHsAll); // TODO: should be pHsOneFrame, like: Hash_t* pHs = std::any_cast<Hash_t>(&(_defaultArgHash.at("FRAME #0")));
     }
     std::cout<<"\n======== all frames processed. ========\n\n";
     clear_imgs();
+}
+
+void Pipeline::frames_run_pipe(const char* filePath, int startFrameInd, int frameNum){
+    // a series of frames' arg in one file
+
 }
 
 void test_pipeline(){
@@ -457,6 +512,24 @@ void test_pipeline(){
 
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
+    myPipe.default_run_pipe();
+
+}
+
+void test_pipeline2(){
+
+    int n = 2; // number of nodes
+
+    Graph_t graph(n);
+    
+    graph[0] = {ISP_VIN, {ISP_COMPRESSION}};
+    graph[1] = {ISP_COMPRESSION, { }};
+
+
+    Pipeline myPipe(graph, true);
+    myPipe.generate_arg_cfg_template();
+    //myPipe.make_arg_cfg_file_multi_frames("../args/base2.toml", 0, 3);
+
     myPipe.default_run_pipe();
 
 }
