@@ -212,7 +212,7 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, c
     if (needPrint){
         print_pipe(_pipe);
     }
-    _subHsOneFrame = get_sub_hash_one_frame_from_modules();
+    _hsOneFrame = get_hash_one_frame_from_modules();
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint){
@@ -226,7 +226,7 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool nee
     if (needPrint){
         print_pipe(_pipe);
     }
-    _subHsOneFrame = get_sub_hash_one_frame_from_modules();
+    _hsOneFrame = get_hash_one_frame_from_modules();
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, bool needPrint){
@@ -240,7 +240,7 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, bool needPrint){
     if (needPrint){
         print_pipe(_pipe);
     }
-    _subHsOneFrame = get_sub_hash_one_frame_from_modules();
+    _hsOneFrame = get_hash_one_frame_from_modules();
 }
 
 Pipeline::~Pipeline(){
@@ -248,7 +248,7 @@ Pipeline::~Pipeline(){
     _pipe.clear();
 }
 
-Hash_t Pipeline::get_sub_hash_one_frame_from_modules(){
+Hash_t Pipeline::get_hash_one_frame_from_modules(){
     Hash_t subHsOneFrame;
     for(auto it = _pipe.begin(); it!= _pipe.end(); ++it){
         std::string moduleName = get_module_name((*it).module); // this is const char* to string
@@ -263,38 +263,19 @@ void Pipeline::generate_arg_cfg_template(int startFrameInd, int frameNum){
         std::cout<<"error: should generate config file for at least 1 frame, but got " << frameNum << " instead. exited.\n";
         exit(1);
     }
-    Hash_t argHash;
-    for (int frameInd = startFrameInd; frameInd < startFrameInd + frameNum; ++frameInd){
+    Hash_t argHyperHash;
+    std::string rootKey0 = _configFrameStr + std::to_string(startFrameInd);
+    argHyperHash.insert({rootKey0, _hsOneFrame});
+    Hash_t emptyHs;
+    for (int frameInd = startFrameInd + 1; frameInd < startFrameInd + frameNum; ++frameInd){
         std::string rootKey = _configFrameStr + std::to_string(frameInd);
-        argHash.insert({rootKey, _subHsOneFrame});
+        argHyperHash.insert({rootKey, emptyHs});
     }
     // convert hash to toml table and dump toml table as base (to be employed in a func in parse.cpp)
-    generate_toml_file_from_hash(_baseCfgFilePath.c_str(), &argHash);
+    generate_toml_file_from_hash(_baseCfgFilePath.c_str(), &argHyperHash);
     std::cout<< _baseCfgInfo;
 }
 
-void Pipeline::make_arg_cfg_file_multi_frames(const char* refFilePath, int startFrameInd, int frameNum){
-    if (strcmp(refFilePath, _baseCfgFilePath.c_str()) == 0){
-        std::cout<<"error: the reference config file name is invalid. it cannot be the same as default config name. exited.\n";
-        exit(1);
-    }
-    if (frameNum < 1){
-        std::cout<<"error: should generate config file for at least 1 frame, but got " << frameNum << " instead. exited.\n";
-        exit(1);
-    }
-    // override tmpSubHs from toml file:
-    // only allows one frame in toml file; will duplicate its content to multiple frames.
-    Hash_t argHash;
-    Hash_t tmpSubHs = get_sub_hash_one_frame_from_modules();
-    override_hash_from_toml_file(refFilePath, &tmpSubHs, _configFrameStr);
-    for (int frameInd = startFrameInd; frameInd < startFrameInd + frameNum; ++frameInd){
-        std::string rootKey = _configFrameStr + std::to_string(frameInd);
-        argHash.insert({rootKey, tmpSubHs});
-    }
-    // convert hash to toml table and dump toml table as base
-    generate_toml_file_from_hash(_baseCfgFilePath.c_str(), &argHash);
-    std::cout<< _baseCfgInfo;
-}
 
 void Pipeline::move_output_to_pool(){
     // if no delivery (or no output at all), do nothing. // TODO: problem: output is not null but no delivery: do not allowed. add logic to return error.
@@ -378,6 +359,7 @@ void Pipeline::run_module(const Module_t& sModule, Hash_t* pHs){
     sModule.run_function(inPtrs, &(_sOutPipeImg.img), pHs);
     sign_out_from_pool(sModule);
     signature_output_img(sModule);
+    std::cout<< get_module_name(sModule.module) <<" Done.\n\n";
 }
 
 void Pipeline::clear_imgs(){
@@ -434,28 +416,26 @@ void Pipeline::run_pipe(Hash_t* pHsOneFrame){
     // no-delay graph is a special case.
     // and after top-sort, we discuss general case.
 
-void Pipeline::default_run_pipe(){
-    // in this case, no arg provided, so no need to specify frameInd.
-    // use default args (hash) to run one frame.
+void Pipeline::default_run_pipe(int frameNum){
+    // use default args (hash) to run frames.
     // note: module with delay needs to ensure that initial frames are well-behaved, however, it is the module's responsibility
-    
-    std::cout<< "\n======== [default mode] running frame #0: ========\n\n";
-    Hash_t hs = get_sub_hash_one_frame_from_modules();
-    run_pipe(&hs);
+    if (frameNum < 1){
+        std::cout<<"error: pipe should run for at least 1 frame, but got " << frameNum << " instead. exited.\n";
+        exit(1);
+    }
+    for (_frameInd = 0; _frameInd < frameNum; ++_frameInd){
+        std::cout<< "\n======== [default mode] running frame #"<< _frameInd <<": ========\n\n";
+        run_pipe(&_hsOneFrame); // TODO: update _hsOneFrame in the next frame, but how?
+    }
     std::cout<<"\n======== [default mode] all frames processed. ========\n\n";
     clear_imgs();
 }
 
-void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
-    for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
-        std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
-
-        // there should be a set of default isp args, this arg will define the default hash and default toml.
-        // if no toml file needed, the input should be hash, 
-        // while the hand-made init arg is needed (different than default arg).
-        // or, overload this function, args hash replaced by toml file name.
-        // when input is toml, we should make a copy of _defaultArgHash as a template, and apply "set hash from tbl",
-        // and then apply frames_run_pipe('hash version').
+void Pipeline::cfg_run_pipe(const char* filePath, int startFrameInd, int frameNum){
+    if (frameNum < 1){
+        std::cout<<"error: pipe should run for at least 1 frame, but got " << frameNum << " instead. exited.\n";
+        exit(1);
+    }
         // when update by algo and when a frame is finished, dump the updated arg hash in toml (generate toml file from hash);
         // when update by toml, do not need to dump arg (or you can switch on/off)
 
@@ -472,16 +452,28 @@ void Pipeline::frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum){
         // when update by algo, you want to update the hash, so that it's easier to track any 
         // changes (due to the specific way to set value).
 
-        run_pipe(pHsAll); // TODO: should be pHsOneFrame, like: Hash_t* pHs = std::any_cast<Hash_t>(&(_defaultArgHash.at("FRAME #0")));
+
+        // what to do now:
+        // 1) turn cfg file into hash (function realized in parse.cpp; toml tbl is not allowed to appear here)
+        // the hash should be stored as something like _hsOneFrame and will be updated (partially) by the next frame.
+        // what should be the hash looked like?
+        // want frame #0 to be in full args, frame #1 and more to be in 'difference args' only.
+        // and then override certain args in an existed hash.
+        // however, it is ALLOWED that all args are in frame #1 and more, even if they are not all updated.
+        // 2) pass the hash into run_pipe().
+    ParsedArgs parsedArgs(filePath);
+    Hash_t hsOneFrame = get_hash_one_frame_from_modules();
+    for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
+        std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
+        std::string rootKey = _configFrameStr + std::to_string(_frameInd);
+        parsedArgs.fetch_args_at_frame(rootKey, &hsOneFrame);
+        //print_hash(&hsOneFrame);
+        run_pipe(&hsOneFrame); 
     }
     std::cout<<"\n======== all frames processed. ========\n\n";
     clear_imgs();
 }
 
-void Pipeline::frames_run_pipe(const char* filePath, int startFrameInd, int frameNum){
-    // a series of frames' arg in one file
-
-}
 
 void test_pipeline(){
 
@@ -527,9 +519,9 @@ void test_pipeline2(){
 
 
     Pipeline myPipe(graph, true);
-    myPipe.generate_arg_cfg_template();
-    //myPipe.make_arg_cfg_file_multi_frames("../args/base2.toml", 0, 3);
+    //myPipe.generate_arg_cfg_template(0,4);
+    //myPipe.cfg_run_pipe("../args/base2_want.toml", 0, 2);
 
-    myPipe.default_run_pipe();
+    myPipe.default_run_pipe(2);
 
 }

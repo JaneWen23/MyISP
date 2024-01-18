@@ -61,10 +61,8 @@ class Pipeline{
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         void generate_arg_cfg_template(int startFrameInd = 0, int frameNum = 1);
-        void make_arg_cfg_file_multi_frames(const char* refFilePath, int startFrameInd = 0, int frameNum = 1);
-        void default_run_pipe();
-        void frames_run_pipe(Hash_t* pHsAll, int startFrameInd, int frameNum);
-        void frames_run_pipe(const char* filePath, int startFrameInd, int frameNum);
+        void default_run_pipe(int frameNum = 1);
+        void cfg_run_pipe(const char* filePath, int startFrameInd, int frameNum);
         void dump();
 
     protected:
@@ -84,8 +82,8 @@ class Pipeline{
     private:
         std::vector<PipeImg_t> _InImgPool;
         void clear_imgs();
-        Hash_t _subHsOneFrame;
-        Hash_t get_sub_hash_one_frame_from_modules();
+        Hash_t _hsOneFrame; // just hsOneFrame, not sub. hash + frameInd should be hyper, and should only appear in toml, or something to be converted to toml.
+        Hash_t get_hash_one_frame_from_modules();
         std::string _configFrameStr = "FRAME #";
         std::string _baseCfgFilePath = "../args/base.toml";
         std::string _baseCfgInfo = 

@@ -63,39 +63,39 @@ const char* get_image_format_name(const IMAGE_FMT imageFormat){
     }
 }
 
-const IMAGE_FMT get_image_format_from_name(const char* name){
+const IMAGE_FMT get_image_format_from_name(std::string name){
     // cannot use switch statement because it needs single integral value, non-array.
-    if (strcmp(name, "MONO")==0){
+    if (strcmp(name.c_str(), "MONO")==0){
         return MONO;
     }
-    if (strcmp(name, "RGB")==0){
+    if (strcmp(name.c_str(), "RGB")==0){
         return RGB;
     }
-    if (strcmp(name, "RAW_RGGB")==0){
+    if (strcmp(name.c_str(), "RAW_RGGB")==0){
         return RAW_RGGB;
     }
-    if (strcmp(name, "RAW_GRBG")==0){
+    if (strcmp(name.c_str(), "RAW_GRBG")==0){
         return RAW_GRBG;
     }
-    if (strcmp(name, "RAW_GBRG")==0){
+    if (strcmp(name.c_str(), "RAW_GBRG")==0){
         return RAW_GBRG;
     }
-    if (strcmp(name, "RAW_BGGR")==0){
+    if (strcmp(name.c_str(), "RAW_BGGR")==0){
         return RAW_BGGR;
     }
-    if (strcmp(name, "YUV420")==0){
+    if (strcmp(name.c_str(), "YUV420")==0){
         return YUV420;
     }
-    if (strcmp(name, "Y_C_C_D_RGGB")==0){
+    if (strcmp(name.c_str(), "Y_C_C_D_RGGB")==0){
         return Y_C_C_D_RGGB;
     }
-    if (strcmp(name, "Y_C_C_D_GRBG")==0){
+    if (strcmp(name.c_str(), "Y_C_C_D_GRBG")==0){
         return Y_C_C_D_GRBG;
     }
-    if (strcmp(name, "Y_C_C_D_GBRG")==0){
+    if (strcmp(name.c_str(), "Y_C_C_D_GBRG")==0){
         return Y_C_C_D_GBRG;
     }
-    if (strcmp(name, "Y_C_C_D_BGGR")==0){
+    if (strcmp(name.c_str(), "Y_C_C_D_BGGR")==0){
         return Y_C_C_D_BGGR;
     }
 

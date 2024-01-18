@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string>
 
 #define MAX_NUM_P 4 // max number of panels
 
@@ -55,7 +56,7 @@ typedef enum{
 
 
 const char* get_image_format_name(const IMAGE_FMT imageFormat); // not sure whether put it here or not
-const IMAGE_FMT get_image_format_from_name(const char* name);
+const IMAGE_FMT get_image_format_from_name(std::string name);
 IMG_RTN_CODE construct_img(Img_t* pImg, 
                             const IMAGE_FMT imageFormat,
                             const int width,

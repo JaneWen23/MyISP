@@ -29,7 +29,7 @@ typedef struct{
 } KernelCfg_t;
 
 const char* get_padding_name(const PADDING padding);
-const PADDING get_padding_from_name(const char* name);
+const PADDING get_padding_from_name(std::string name);
 IMG_RTN_CODE sliding_window(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg);
 IMG_RTN_CODE sliding_window_1x1(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg);
 IMG_RTN_CODE image_sampling(const Img_t* pInImg, const ROI_t& sInImgROI, Img_t* pOutImg, const ROI_t& sOutImgROI, const KernelCfg_t& sKernelCfg);

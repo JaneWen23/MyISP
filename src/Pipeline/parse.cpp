@@ -1,42 +1,39 @@
 #include <iostream>
 #include "parse.hpp"
 
-
-void parse_args(const char* pathFile, const int frameInd){ //TODO: consider a series of frames' args
+void parse_args(const char* pathFile, const int frameInd){
     toml::table tbl = toml::parse_file(pathFile);
 }
 
+ParsedArgs::ParsedArgs(const char* pathFile){
+    _tbl = toml::parse_file(pathFile);
+}
 
+ParsedArgs::~ParsedArgs(){
+    // nothing to do
+}
 
-// TODO: to be removed:
-// void set_tbl_from_hash(toml::v3::table* pTbl, Hash_t* pMyHash){
-//     // this function works ONLY IF the tbl and the hash has the same structure!
-//     for (auto&& [k, v] : (*pTbl)){
-//         if (v.is_value()){
-//             std::string kStr = k.data();
-//             if ((*pMyHash).at(kStr).type() == typeid(int)){
-//                 (*pTbl).insert_or_assign(k, std::any_cast<int>((*pMyHash).at(kStr)));
-//             }
-//             else if ((*pMyHash).at(kStr).type() == typeid(std::string)){
-//                 (*pTbl).insert_or_assign(k, std::any_cast<std::string>((*pMyHash).at(kStr)));
-//             }
-//             else if ((*pMyHash).at(kStr).type() == typeid(const char*)){
-//                 (*pTbl).insert_or_assign(k, std::any_cast<const char*>((*pMyHash).at(kStr)));
-//             }
-//             else if ((*pMyHash).at(kStr).type() == typeid(bool)){
-//                 (*pTbl).insert_or_assign(k, std::any_cast<bool>((*pMyHash).at(kStr)));
-//             }
-//             else {
-//                 std::cout<<"error: the type of value is not supported at key = "<<kStr<<", exited.\n";
-//                 exit(1);
-//             }
-//         }
-//         else{
-//             Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*pMyHash).at(k.data())));
-//             set_tbl_from_hash(v.as_table(), pMySubHash);
-//         }
-//     }
-// }
+int ParsedArgs::size(){
+    return _tbl.size();
+}
+
+void ParsedArgs::sort_root_keys(std::string rootKeyIndicator){ // not yet in use
+    for (auto it = _tbl.begin(); it != _tbl.end(); ++it){
+        std::string kStr = (*it).first.data();
+        if (kStr.find(rootKeyIndicator) != std::string::npos){
+            _sortedKeys.insert(kStr);
+        }
+        else{
+            std::cout<<"error: the provided config file contains invalid root-level key; should be like "<< rootKeyIndicator<<"0. exited.\n";
+            exit(1);
+        }
+    }
+}
+
+void ParsedArgs::fetch_args_at_frame(std::string rootKey, Hash_t* pHs){
+    // hash <==> sub table under the root key
+    override_hash_from_tbl(_tbl.at(rootKey).as_table(), pHs);
+}
 
 
 void test_toml_to_hash(){

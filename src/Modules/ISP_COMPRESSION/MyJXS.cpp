@@ -14,10 +14,10 @@ Hash_t default_compression_arg_hash(){
 
     int inImgPanelId = 0; // apply dwt to the whole 2D image
     int outImgPanelId = 0;
-    const char* orient = get_dwt_orient_name(TWO_DIMENSIONAL);
+    std::string orient = get_dwt_orient_name(TWO_DIMENSIONAL);
     int level = 1;
-    const char* wavelet = get_wavelet_name(LE_GALL_53);
-    const char* padding = get_padding_name(MIRROR);
+    std::string wavelet = get_wavelet_name(LE_GALL_53);
+    std::string padding = get_padding_name(MIRROR);
     Hash_t DWTArg = {
         {"inImgPanelId", inImgPanelId},
         {"outImgPanelId", outImgPanelId},
@@ -44,10 +44,10 @@ const MArg_Compression_t get_compression_arg_struct_from_hash(Hash_t* pHs){
     DWTArg_t sDWTArg = {};
     sDWTArg.inImgPanelId = std::any_cast<int>((*pSubHs2).at("inImgPanelId"));
     sDWTArg.outImgPanelId = std::any_cast<int>((*pSubHs2).at("outImgPanelId"));
-    sDWTArg.orient = get_dwt_orient_from_name(std::any_cast<const char*>((*pSubHs2).at("orient")));
+    sDWTArg.orient = get_dwt_orient_from_name(std::any_cast<std::string>((*pSubHs2).at("orient")));
     sDWTArg.level = std::any_cast<int>((*pSubHs2).at("level"));
-    sDWTArg.wavelet = get_wavelet_from_name(std::any_cast<const char*>((*pSubHs2).at("wavelet")));
-    sDWTArg.padding = get_padding_from_name(std::any_cast<const char*>((*pSubHs2).at("padding")));
+    sDWTArg.wavelet = get_wavelet_from_name(std::any_cast<std::string>((*pSubHs2).at("wavelet")));
+    sDWTArg.padding = get_padding_from_name(std::any_cast<std::string>((*pSubHs2).at("padding")));
 
     return {
         sStarTetrixArg,

@@ -19,14 +19,14 @@ const char* get_dwt_orient_name(const ORIENT orient){
     return "HORIZONTAL";
 }
 
-const ORIENT get_dwt_orient_from_name(const char* name){
-    if (strcmp(name, "HORIZONTAL") == 0){
+const ORIENT get_dwt_orient_from_name(std::string name){
+    if (strcmp(name.c_str(), "HORIZONTAL") == 0){
         return HORIZONTAL;
     }
-    if (strcmp(name, "VERTICAL") == 0){
+    if (strcmp(name.c_str(), "VERTICAL") == 0){
         return VERTICAL;
     }
-    if (strcmp(name, "TWO_DIMENSIONAL") == 0){
+    if (strcmp(name.c_str(), "TWO_DIMENSIONAL") == 0){
         return TWO_DIMENSIONAL;
     }
     return HORIZONTAL; // nonsense
@@ -41,8 +41,8 @@ const char* get_wavelet_name(const WAVELET_NAME wavelet){
     return "LE_GALL_53";
 }
 
-const WAVELET_NAME get_wavelet_from_name(const char* name){
-    if (strcmp(name, "LE_GALL_53") == 0){
+const WAVELET_NAME get_wavelet_from_name(std::string name){
+    if (strcmp(name.c_str(), "LE_GALL_53") == 0){
         return LE_GALL_53;
     }
     return LE_GALL_53; // nonsense

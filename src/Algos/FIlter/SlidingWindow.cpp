@@ -18,14 +18,14 @@ const char* get_padding_name(const PADDING padding){
     return "MIRROR";
 }
 
-const PADDING get_padding_from_name(const char* name){
-    if (strcmp(name, "ZEROPADDING") == 0){
+const PADDING get_padding_from_name(std::string name){
+    if (strcmp(name.c_str(), "ZEROPADDING") == 0){
         return ZEROPADDING;
     }
-    if (strcmp(name, "PERIODIC") == 0){
+    if (strcmp(name.c_str(), "PERIODIC") == 0){
         return PERIODIC;
     }
-    if (strcmp(name, "MIRROR") == 0){
+    if (strcmp(name.c_str(), "MIRROR") == 0){
         return MIRROR;
     }
     return MIRROR;
