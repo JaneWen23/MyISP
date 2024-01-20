@@ -117,7 +117,7 @@ IMG_RTN_CODE my_jxs_backward(const Img_t* pInImg, Img_t* pOutImg, const void* pM
 }
 
 
-IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
+IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs, bool updateArgs){
     MArg_Compression_t sMArg = get_compression_arg_struct_from_hash(pHs);
     safe_unsigned_to_signed_img(sInImgPtrs[0]);
 
@@ -128,6 +128,10 @@ IMG_RTN_CODE isp_compression(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t*
     // currently, the module execution will not update any arguments, i.e., pMyJXSArg will not be changed by this func.
     // there may be some adaptive parameters if perform a "real" compression algo (;TODO)
     // also, arguments may be changed by the provided arguments from toml latter.
+
+    if (updateArgs){
+        // TODO
+    }
     
     safe_signed_to_unsigned_img(pOutImg);
     return SUCCEED;
@@ -168,7 +172,7 @@ void test_my_jxs(){
     ROI_t viewROI = {0, 0, 0, pInImg->width, pInImg->height};
     view_image_data(pInImg, viewROI );
 
-    isp_compression(sImgPtrs, pOutImg, &hs);
+    isp_compression(sImgPtrs, pOutImg, &hs, false);
 
     std::cout<<"pipe out:\n";
     ROI_t viewROI3 = {0, 0, 0, pOutImg->width, pOutImg->height};

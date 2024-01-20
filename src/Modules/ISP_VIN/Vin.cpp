@@ -45,7 +45,7 @@ const MArg_Vin_t get_vin_arg_struct_from_hash(Hash_t* pHs){
     };
 }
 
-IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
+IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs, bool updateArgs){
     MArg_Vin_t sMArg = get_vin_arg_struct_from_hash(pHs);
     // Input Img: don't care.
     read_raw_to_img_t(sMArg.sReadRawArg.path.c_str(), // convert std::string to const char*
@@ -59,8 +59,11 @@ IMG_RTN_CODE isp_vin(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
 
     pOutImg->sign = UNSIGNED; // just to make sure that it is unsigned.
 
-    if (!(sMArg.rewind)){
-        sMArg.sReadRawArg.frameInd += 1;
+    // update arg hash by algorithm (if updateArgs == false, it means to use cfg for next frame's args)
+    if (updateArgs){
+        if (!(sMArg.rewind)){
+            set_hash_at_path(pHs, {"ReadRawArg", "frameInd"}, sMArg.sReadRawArg.frameInd + 1);
+        }
     }
     
     return SUCCEED;

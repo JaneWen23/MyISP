@@ -2,7 +2,7 @@
 #include "common.hpp"
 #include "../../Algos/Infra/RandImageGen.hpp"
 
-const char* get_module_name(const MODULE_NAME m){
+std::string get_module_name(const MODULE_NAME m){
     switch(m){
         case DUMMY0:{
             return "DUMMY0";
@@ -84,6 +84,18 @@ void print_hash(Hash_t* pMyHash){
             std::cout<< (*it).first<<": \n";
             Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*it).second));
             print_hash(pMySubHash);
+        }
+    }
+}
+
+void set_hash_at_path(Hash_t* pHs, std::vector<std::string> hsPath, std::any val){
+    Hash_t* p = pHs;
+    for (auto it = hsPath.begin(); it != hsPath.end(); ++it){
+        if (p->at(*it).type() != typeid(Hash_t)){
+            p->at(*it) = val;
+        }
+        else{
+            p = std::any_cast<Hash_t>(&(p->at(*it)));
         }
     }
 }

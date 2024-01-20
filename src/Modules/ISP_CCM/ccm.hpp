@@ -34,7 +34,7 @@ typedef struct{
 
 Hash_t default_ccm_arg_hash();
 const MArg_CCM_t get_ccm_arg_struct_from_hash(Hash_t* pHs);
-IMG_RTN_CODE isp_ccm(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, Hash_t* pMArg_CCM);
+IMG_RTN_CODE isp_ccm(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, Hash_t* pMArg_CCM, bool updateArgs);
 
 void test_ccm_hash();
 

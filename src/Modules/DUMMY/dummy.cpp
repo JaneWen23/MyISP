@@ -12,7 +12,7 @@ MArg_Dummy_t get_dummy_arg_struct_from_hash(Hash_t* pHs){
     };
 }
 
-IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
+IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs, bool updateArgs){
     MArg_Dummy_t sMArg = get_dummy_arg_struct_from_hash(pHs);
     print_hash(pHs);
     std::cout<<"in img data p0 ptrs: ";
@@ -46,6 +46,10 @@ IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
 
     std::cout<<"out img data p0 ptr: ";
     std::cout<< (void*)(pOutImg->pImageData[0])<< "\n";
+
+    if (updateArgs){
+        set_hash_at_path(pHs, {"a"}, sMArg.a + 1);
+    }
 
     return SUCCEED;
 }

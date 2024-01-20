@@ -61,7 +61,7 @@ const MArg_CCM_t get_ccm_arg_struct_from_hash(Hash_t* pHs){
     };
 }
 
-IMG_RTN_CODE isp_ccm(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
+IMG_RTN_CODE isp_ccm(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs, bool updateArgs){
     MArg_CCM_t sMArg = get_ccm_arg_struct_from_hash(pHs);
     CCMRunTimeArg_t sRunTimeArg = {
         {sMArg.sCCMArg.sColorMatRow1.RR, sMArg.sCCMArg.sColorMatRow1.RG, sMArg.sCCMArg.sColorMatRow1.RB},
@@ -83,8 +83,10 @@ IMG_RTN_CODE isp_ccm(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs){
     
     safe_signed_to_unsigned_img(pOutImg); // modules only allow unsigned data.
     
-    // TODO: add function to update the color matrix (to hash table)
-
+    if (updateArgs){
+        // TODO
+    }
+    
     return SUCCEED;
 }
 

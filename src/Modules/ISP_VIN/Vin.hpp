@@ -12,7 +12,7 @@ typedef struct{
 
 Hash_t default_vin_arg_hash();
 const MArg_Vin_t get_vin_arg_struct_from_hash(Hash_t* pHs);
-IMG_RTN_CODE isp_vin(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, Hash_t* pMArg_Vin);
+IMG_RTN_CODE isp_vin(const ImgPtrs_t sImgPtrs, Img_t* pOutImg, Hash_t* pMArg_Vin, bool updateArgs);
 
 void test_hash();
 

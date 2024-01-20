@@ -251,7 +251,7 @@ Pipeline::~Pipeline(){
 Hash_t Pipeline::get_hash_one_frame_from_modules(){
     Hash_t subHsOneFrame;
     for(auto it = _pipe.begin(); it!= _pipe.end(); ++it){
-        std::string moduleName = get_module_name((*it).module); // this is const char* to string
+        std::string moduleName = get_module_name((*it).module);
         Hash_t tmpHash = get_default_arg_hash_for_module((*it).module);
         subHsOneFrame.insert({moduleName, tmpHash});
     }
@@ -352,11 +352,11 @@ void Pipeline::signature_output_img(const Module_t& sModule){
     }
 }
 
-void Pipeline::run_module(const Module_t& sModule, Hash_t* pHs){
+void Pipeline::run_module(const Module_t& sModule, Hash_t* pHs, bool updateArgs){
     std::cout<<"running module " << get_module_name(sModule.module) <<":\n";
     move_output_to_pool();
     ImgPtrs_t inPtrs = distribute_in_img_t(sModule);
-    sModule.run_function(inPtrs, &(_sOutPipeImg.img), pHs);
+    sModule.run_function(inPtrs, &(_sOutPipeImg.img), pHs, updateArgs);
     sign_out_from_pool(sModule);
     signature_output_img(sModule);
     std::cout<< get_module_name(sModule.module) <<" Done.\n\n";
@@ -375,16 +375,17 @@ void Pipeline::clear_imgs(){
     }
 }
 
-void Pipeline::run_pipe(Hash_t* pHsOneFrame){
+void Pipeline::run_pipe(Hash_t* pHsOneFrame, bool updateArgs){
     if (!_pipe.empty()){
         Pipe_t::iterator it;
         for (it = _pipe.begin(); it != _pipe.end(); ++it){
-            run_module((*it), find_arg_hash_for_module(pHsOneFrame, (*it).module));
+            run_module((*it), find_arg_hash_for_module(pHsOneFrame, (*it).module), updateArgs);
 
             // TODO:  maybe dump?? "EOF end of frame"
             //dump();
         }
         // maybe dump some log here??
+
         if (_sOutPipeImg.sig.deliverTo.empty()){
             free_image_data(&(_sOutPipeImg.img));
         }
@@ -423,9 +424,10 @@ void Pipeline::default_run_pipe(int frameNum){
         std::cout<<"error: pipe should run for at least 1 frame, but got " << frameNum << " instead. exited.\n";
         exit(1);
     }
+    Hash_t hsOneFrame = get_hash_one_frame_from_modules();
     for (_frameInd = 0; _frameInd < frameNum; ++_frameInd){
         std::cout<< "\n======== [default mode] running frame #"<< _frameInd <<": ========\n\n";
-        run_pipe(&_hsOneFrame); // TODO: update _hsOneFrame in the next frame, but how?
+        run_pipe(&hsOneFrame, true);
     }
     std::cout<<"\n======== [default mode] all frames processed. ========\n\n";
     clear_imgs();
@@ -462,13 +464,38 @@ void Pipeline::cfg_run_pipe(const char* filePath, int startFrameInd, int frameNu
         // however, it is ALLOWED that all args are in frame #1 and more, even if they are not all updated.
         // 2) pass the hash into run_pipe().
     ParsedArgs parsedArgs(filePath);
+    int cfgSize = parsedArgs.size();
+    if (cfgSize < frameNum){
+        std::cout<< "\n\ninfo from cfg_run_pipe():\nthe config file defines args for "<< cfgSize <<" frame(s),";
+        std::cout<< " but pipe is asked to run "<< frameNum <<" frames;\n";
+        std::cout<< "so, pipe will use automatically updated args after "<< cfgSize <<" frame(s).\n";
+    }
     Hash_t hsOneFrame = get_hash_one_frame_from_modules();
-    for(_frameInd = startFrameInd; _frameInd < startFrameInd + frameNum; ++_frameInd){
+    // run frames where args are read from cfg:
+    for(_frameInd = startFrameInd; _frameInd < startFrameInd + cfgSize; ++_frameInd){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
         std::string rootKey = _configFrameStr + std::to_string(_frameInd);
         parsedArgs.fetch_args_at_frame(rootKey, &hsOneFrame);
-        //print_hash(&hsOneFrame);
-        run_pipe(&hsOneFrame); 
+        if (cfgSize >= frameNum){
+            // in this case, just read arg from cfg, never update args:
+            run_pipe(&hsOneFrame, false);
+        }
+        else{ // i.e. cfgSize < frameNum
+            if(_frameInd < startFrameInd + cfgSize - 1){
+                // before the last frame defined in cfg, we just should read args from cfg and do not update:
+                run_pipe(&hsOneFrame, false);
+            }
+            else{ // i.e. _frameInd == startFrameInd + cfgSize - 1
+                // at the last frame defined in cfg, we need to update args for the next frame to use:
+                run_pipe(&hsOneFrame, true);
+            }
+        }
+    }
+    // run frames where args are updated automatically:
+    for(_frameInd = startFrameInd + cfgSize; _frameInd < startFrameInd + frameNum; ++_frameInd){
+        std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
+        std::string rootKey = _configFrameStr + std::to_string(_frameInd);
+        run_pipe(&hsOneFrame, true); 
     }
     std::cout<<"\n======== all frames processed. ========\n\n";
     clear_imgs();
@@ -504,18 +531,21 @@ void test_pipeline(){
 
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
-    myPipe.default_run_pipe();
+    //myPipe.default_run_pipe(3);
+    myPipe.cfg_run_pipe("../args/dummyCfg.toml", 0, 2);
 
 }
 
 void test_pipeline2(){
 
-    int n = 2; // number of nodes
+    int n = 1; // number of nodes
 
     Graph_t graph(n);
+
+    graph[0] = {ISP_VIN, {}};
     
-    graph[0] = {ISP_VIN, {ISP_COMPRESSION}};
-    graph[1] = {ISP_COMPRESSION, { }};
+    //graph[0] = {ISP_VIN, {ISP_COMPRESSION}};
+    //graph[1] = {ISP_COMPRESSION, { }};
 
 
     Pipeline myPipe(graph, true);

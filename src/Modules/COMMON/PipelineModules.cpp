@@ -2,7 +2,7 @@
 
 
 
-std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*)> find_func_for_module(MODULE_NAME m){
+std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*, bool)> find_func_for_module(MODULE_NAME m){
     switch (m){
         case DUMMY0:
         case DUMMY1:

@@ -32,8 +32,8 @@ typedef enum {
 } MODULE_NAME;
 
 typedef std::unordered_map<std::string, std::any> Hash_t;
-
-const char* get_module_name(const MODULE_NAME m);
+std::string get_module_name(const MODULE_NAME m);
 void print_hash(Hash_t* pMyHash);
+void set_hash_at_path(Hash_t* pHs, std::vector<std::string> hsPath, std::any val);
 
 #endif

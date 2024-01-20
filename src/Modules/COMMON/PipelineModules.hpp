@@ -59,7 +59,7 @@
 // if two inputs: which one is main img, which one is additional img?
 // may need an "instruction" in cfg file
 
-std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*)> find_func_for_module(MODULE_NAME m);
+std::function<IMG_RTN_CODE(const ImgPtrs_t, Img_t*, Hash_t*, bool)> find_func_for_module(MODULE_NAME m);
 Hash_t get_default_arg_hash_for_module(const MODULE_NAME m);
 Hash_t* find_arg_hash_for_module(Hash_t* pHsAll, const MODULE_NAME m);
 
