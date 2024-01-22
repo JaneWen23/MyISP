@@ -1,93 +1,75 @@
 #include "graph.hpp"
 #include <iostream>
+#include <unordered_set>
 
-bool is_subset(const MODULE_NAME* a, int l_a, const MODULE_NAME* b, int l_b){
-    // check if a is subset of b.
-    // this is naive way, for convenience.
-    bool ans = false;
-    for (int i = 0; i < l_a; ++i){
-        for (int j = 0; j < l_b; ++j){
-            if (b[j] == a[i]){
-                ans = true;
-                break;
-            }
-            ans = false;
-        }
-        if (!ans) break;
-    }
-    return ans;
-}
 
-bool is_subset(const std::vector<MODULE_NAME>& a, const std::vector<MODULE_NAME>& b){
-    // check if a is subset of b.
-    // this is naive way, for convenience.
-    bool ans = false;
-    for (auto ia = a.begin(); ia != a.end(); ++ia){
-        for (auto ib = b.begin(); ib != b.end(); ++ib){
-            if ( (*ia) == (*ib)){
-                ans = true;
-                break;
-            }
-            ans = false;
-        }
-        if (!ans) break;
-    }
-    return ans;
-}
-
-// bool is_subset(const MODULE_NAME& a, const std::vector<MODULE_NAME>& b){ // not in use
-//     // check if a is subset of b.
-//     // this is naive way, for convenience.
-//     for (auto ib = b.begin(); ib != b.end(); ++ib){
-//         if ( a == (*ib)){
-//             return true;
+// bool is_subset(const std::vector<MODULE_NAME>& a, const std::vector<MODULE_NAME>& b){  // not yet in use
+//     // check if a is subset of b (do not consider duplicate values)
+//     std::unordered_set<MODULE_NAME> usetA; // unordered set from "a"
+//     for (auto ia = a.begin(); ia != a.end(); ++ia){
+//         if (usetA.count(*ia) == 0){
+//             usetA.insert(*ia);
 //         }
 //     }
-//     return false;
+//     std::unordered_set<MODULE_NAME> usetB; // unordered set from "b"
+//     for (auto ib = b.begin(); ib != b.end(); ++ib){
+//         if (usetB.count(*ib) == 0){
+//             usetB.insert(*ib);
+//         }
+//     }
+//     // check if elements in a is also in b:
+//     for (auto it = usetA.begin(); it != usetB.end(); ++it){
+//         if (usetB.count(*it) == 0){
+//             return false;
+//         }
+//     }
+//     return true;
 // }
+
 
 bool is_graph_valid(const Graph_t& graph){
     // only check basic rules of a directed graph. does NOT guarantee to be acyclic.
-    const int n = graph.size();
-    MODULE_NAME definedVtx[n]; // variable-sized, should not initialize.
-    for (int i = 0; i < n; ++i){
-        definedVtx[i] = graph[i].module;
-    }
-    
-    // check if there are repeated vertices:
-    std::sort(definedVtx, definedVtx + n);
-    for (int i = 1; i < n; ++i){
-        if (definedVtx[i-1] == definedVtx[i]){
-            std::cout<<"invalid graph: there are repeated vertices.\n";
+    std::unordered_set<MODULE_NAME> definedVtx;
+    for(auto it = graph.begin(); it != graph.end(); ++it){
+        // check if there are duplicate vertices:
+        if (definedVtx.count((*it).module) == 0){
+            definedVtx.insert((*it).module);
+        }
+        else{
+            std::cout<<"invalid graph: detected duplicate vertex: "<< get_module_name((*it).module)<<".\n";
             return false;
         }
     }
 
-    for (int i = 0; i < n; ++i){
-        int l = graph[i].succModules.size();
-        if (l > 0){
-            MODULE_NAME node[l];
-            for (int j = 0; j < l; ++j){
-                node[j] = graph[i].succModules[j];
-                // check if there is edge from and to the same vertex:
-                if (graph[i].module == node[j]){
-                    std::cout<<"invalid graph: there exists an edge from and to the same vertex.\n";
+    for (int i = 0; i < graph.size(); ++i){
+        if (graph[i].succModules.size() > 0){
+            std::unordered_set<MODULE_NAME> succVtx;
+            for (auto it = graph[i].succModules.begin(); it != graph[i].succModules.end(); ++it){
+                // check if there are duplicate edges:
+                if (succVtx.count(*it) == 0){
+                    succVtx.insert((*it));
+                }
+                else{
+                    std::cout<<"invalid graph: detected duplicate edge: from "<< get_module_name(graph[i].module) <<
+                    " to "<< get_module_name(*it) <<".\n";
                     return false;
                 }
             }
-            // check if there are repeated edges:
-            std::sort(node, node + l);
-            for (int k = 1; k < l; ++k){
-                if (node[k-1] == node[k]){
-                    std::cout<<"invalid graph: there are repeated edges.\n";
-                    return false;
-                }
-            }
-            // check if there is edge connecting to undefined vertex:
-            // i.e. all elements in node[] should be in definedVtx[].
-            if ( ! is_subset(node, l, definedVtx, n)){
-                std::cout<<"invalid graph: there exists an edge connecting to undefined vertex.\n";
+
+            // check if there exists vertex connected to itself:
+            if (succVtx.count(graph[i].module) != 0){
+                std::cout<<"invalid graph: detected an edge from and to the same vertex: " <<
+                get_module_name(graph[i].module) <<".\n";
                 return false;
+            }
+
+            // check if there is edge connecting to undefined vertex:
+            for (auto it = succVtx.begin(); it != succVtx.end(); ++it){
+                if (definedVtx.count(*it) != 1){
+                    std::cout<<"invalid graph: detected an edge from "<< get_module_name(graph[i].module) <<
+                    " connecting to "<< get_module_name(*it) <<", which is not defined.\n";
+                    return false;
+                }
             }
         }
     }
@@ -113,16 +95,12 @@ void print_graph(Graph_t& graph){
     }
 }
 
-const std::map<MODULE_NAME, int> make_module_vertex_map(const Graph_t& graph){
-    std::map<MODULE_NAME, int> mvMap;
+const std::unordered_map<MODULE_NAME, int> make_module_vertex_map(const Graph_t& graph){
+    std::unordered_map<MODULE_NAME, int> mvMap;
     for (int i = 0; i < graph.size(); ++i){
         mvMap.insert(std::pair<MODULE_NAME, int>(graph[i].module, i));
     }
     return mvMap;
-}
-
-const int find_index_for_module(const MODULE_NAME m, const std::map<MODULE_NAME, int>& mvMap){
-    return mvMap.find(m)->second;
 }
 
 
@@ -132,17 +110,17 @@ typedef enum{
     VISITED
 } VISIT_STATUS; // this is only for dfs topological sort
 
-bool dfs_topsort(const MODULE_NAME u, const Graph_t& graph, VISIT_STATUS* vStatus, const std::map<MODULE_NAME, int>& mvMap, MODULE_NAME* sorted, int* ind){
+bool dfs_topsort(const MODULE_NAME u, const Graph_t& graph, VISIT_STATUS* vStatus, const std::unordered_map<MODULE_NAME, int>& mvMap, MODULE_NAME* sorted, int* ind){
     // topological sort vertices of directed acyclic graph, using DFS. this is not the only way.
-    vStatus[find_index_for_module(u, mvMap)] = VISITING;
-    Adjacency_t node = graph[find_index_for_module(u, mvMap)];
+    vStatus[mvMap.at(u)] = VISITING;
+    Adjacency_t node = graph[mvMap.at(u)];
     for (int j = 0; j < node.succModules.size(); ++j){
         MODULE_NAME v = node.succModules[j];
-        if (vStatus[find_index_for_module(v, mvMap)] == VISITING){
+        if (vStatus[mvMap.at(v)] == VISITING){
             // in this case, dfs tries to visit some predecessor. it means cycle exists, cannot topsort.
             return false;
         }
-        if (vStatus[find_index_for_module(v, mvMap)] == UNVISITED){
+        if (vStatus[mvMap.at(v)] == UNVISITED){
             if ( ! dfs_topsort(v, graph, vStatus, mvMap, sorted, ind)){
                 return false; // if the recursion returns false, the current "stack" should also return false.
                 // if do not return false, it will go to the next lines and return true eventually.
@@ -151,7 +129,7 @@ bool dfs_topsort(const MODULE_NAME u, const Graph_t& graph, VISIT_STATUS* vStatu
     }
 
     // only if no "false", can the program go to here:
-    vStatus[find_index_for_module(u, mvMap)] = VISITED;
+    vStatus[mvMap.at(u)] = VISITED;
     sorted[*ind] = u;
     (*ind)--;
     return true;
@@ -173,7 +151,7 @@ void topological_sort(const Graph_t& graph, MODULE_NAME* sorted){
         return;
     }
 
-    std::map<MODULE_NAME, int> mvMap = make_module_vertex_map(graph);
+    std::unordered_map<MODULE_NAME, int> mvMap = make_module_vertex_map(graph);
 
     VISIT_STATUS vStatus[n];
     for (int i = 0; i < n; ++i){
@@ -217,8 +195,8 @@ void test_graph(){
     Graph_t graph(n);
     
     graph[0] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
-    graph[2] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
-    graph[1] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    graph[1] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    graph[2] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
     graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
     graph[4] = {DUMMY4, {DUMMY6}};
     graph[5] = {DUMMY5, {DUMMY6}};
@@ -231,8 +209,4 @@ void test_graph(){
     MODULE_NAME sorted[n];
     topological_sort(graph, sorted);
     print_sorted_nodes(sorted, n);
-
-    std::vector<MODULE_NAME> a = {DUMMY1, DUMMY2};
-    std::vector<MODULE_NAME> b = {DUMMY1, DUMMY2, DUMMY3};
-    std::cout<<"is subset: "<<is_subset(b, a)<<"\n";
 }

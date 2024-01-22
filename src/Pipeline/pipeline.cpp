@@ -1,5 +1,4 @@
 #include "pipeline.hpp"
-#include <algorithm>
 #include <iostream>
 #include "parse.hpp"
 
@@ -74,7 +73,7 @@ void copy_no_delay_to_delayed(const std::vector<MODULE_NAME>& noDelay, std::vect
 }
 
 void copy_graph_to_pipe(const Graph_t& graphNoDelay, const MODULE_NAME* sorted, Pipe_t& pipe){
-    std::map<MODULE_NAME, int> mvMap = make_module_vertex_map(graphNoDelay);
+    std::unordered_map<MODULE_NAME, int> mvMap = make_module_vertex_map(graphNoDelay);
     const int n = graphNoDelay.size();
     if (n < 1){
         std::cout<<"error: pipe is not created with a proper length. exited.\n";
@@ -83,7 +82,7 @@ void copy_graph_to_pipe(const Graph_t& graphNoDelay, const MODULE_NAME* sorted, 
     for (int i = 0; i < n; ++i){
         // copy the module name and the successor modules:
         pipe[i].module = sorted[i];
-        int ii = find_index_for_module(sorted[i], mvMap);
+        int ii = mvMap.at(sorted[i]);
         copy_no_delay_to_delayed(graphNoDelay[ii].succModules, pipe[i].succWthDelay);
         // then "insert" predecessor modules:
         for (int jj = 0; jj < graphNoDelay[ii].succModules.size(); ++jj){
@@ -278,7 +277,7 @@ void Pipeline::generate_arg_cfg_template(int startFrameInd, int frameNum){
 
 
 void Pipeline::move_output_to_pool(){
-    // if no delivery (or no output at all), do nothing. // TODO: problem: output is not null but no delivery: do not allowed. add logic to return error.
+    // if no delivery (or no output at all), do nothing. // TODO: problem: output is not null but no delivery: not allowed. add logic to return error.
     if ( ! _sOutPipeImg.sig.deliverTo.empty()){
         _InImgPool.push_back(_sOutPipeImg);
         for (int i = 0; i < MAX_NUM_P; ++i){

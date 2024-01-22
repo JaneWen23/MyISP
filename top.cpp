@@ -17,8 +17,8 @@ int main(){
 
     // test_img_def();
 
-    // test_graph();
-    test_pipeline();
+    test_graph();
+    // test_pipeline();
     // test_pipeline2();
     // test_toml();
     // test_parse_args();
