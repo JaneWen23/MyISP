@@ -129,12 +129,12 @@ DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output;
 
 ### 有向无环图带历史帧的 pipeline
 
-(这个图是自动生成的, 貌似没法调整)
 ```mermaid
   flowchart LR;
   DUMMY8_at_t-->DUMMY8_at_t+1
   DUMMY1_at_t-->DUMMY2_at_t+1
   DUMMY1_at_t+1-->DUMMY2_at_t+2
+  DUMMY1_at_t-->DUMMY2_at_t+2
 
     subgraph time = t
     direction LR
