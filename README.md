@@ -134,7 +134,7 @@ DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output;
   flowchart LR;
   DUMMY8_at_t-->DUMMY8_at_t+1
   DUMMY1_at_t-->DUMMY2_at_t+1
-  DUMMY1_at_t-->DUMMY2_at_t+2
+  DUMMY1_at_t+1-->DUMMY2_at_t+2
 
     subgraph time = t
     direction LR
