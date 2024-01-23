@@ -129,52 +129,52 @@ DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output;
 
 ```mermaid
   flowchart LR;
-  DUMMY8_at_t-->DUMMY8_at_t+1
-  DUMMY8_at_t+1-->DUMMY8_at_t+2
-  DUMMY1_at_t-->DUMMY2_at_t+1
-  DUMMY1_at_t+1-->DUMMY2_at_t+2
-  DUMMY1_at_t-->DUMMY2_at_t+2
+  DUMMY8_at_t=0-->DUMMY8_at_t=1
+  DUMMY8_at_t=1-->DUMMY8_at_t=2
+  DUMMY1_at_t=0-->DUMMY2_at_t=1
+  DUMMY1_at_t=1-->DUMMY2_at_t=2
+  DUMMY1_at_t=0-->DUMMY2_at_t=2
 
-    subgraph time = t
+    subgraph time t = 0
     direction LR
-    DUMMY0_at_t-->DUMMY1_at_t;
-    DUMMY0_at_t-->DUMMY2_at_t;
-    DUMMY1_at_t-->DUMMY3_at_t;
-    DUMMY2_at_t-->DUMMY3_at_t;
-    DUMMY3_at_t-->DUMMY4_at_t;
-    DUMMY3_at_t-->DUMMY5_at_t;
-    DUMMY4_at_t-->DUMMY6_at_t;
-    DUMMY5_at_t-->DUMMY6_at_t;
-    DUMMY7_at_t-->DUMMY6_at_t;
-    DUMMY6_at_t-->DUMMY8_at_t;
+    DUMMY0_at_t=0-->DUMMY1_at_t=0;
+    DUMMY0_at_t=0-->DUMMY2_at_t=0;
+    DUMMY1_at_t=0-->DUMMY3_at_t=0;
+    DUMMY2_at_t=0-->DUMMY3_at_t=0;
+    DUMMY3_at_t=0-->DUMMY4_at_t=0;
+    DUMMY3_at_t=0-->DUMMY5_at_t=0;
+    DUMMY4_at_t=0-->DUMMY6_at_t=0;
+    DUMMY5_at_t=0-->DUMMY6_at_t=0;
+    DUMMY7_at_t=0-->DUMMY6_at_t=0;
+    DUMMY6_at_t=0-->DUMMY8_at_t=0;
     end
 
-    subgraph time = t + 1
+    subgraph time t = 1
     direction LR
-    DUMMY0_at_t+1-->DUMMY1_at_t+1;
-    DUMMY0_at_t+1-->DUMMY2_at_t+1;
-    DUMMY1_at_t+1-->DUMMY3_at_t+1;
-    DUMMY2_at_t+1-->DUMMY3_at_t+1;
-    DUMMY3_at_t+1-->DUMMY4_at_t+1;
-    DUMMY3_at_t+1-->DUMMY5_at_t+1;
-    DUMMY4_at_t+1-->DUMMY6_at_t+1;
-    DUMMY5_at_t+1-->DUMMY6_at_t+1;
-    DUMMY7_at_t+1-->DUMMY6_at_t+1;
-    DUMMY6_at_t+1-->DUMMY8_at_t+1;
+    DUMMY0_at_t=1-->DUMMY1_at_t=1;
+    DUMMY0_at_t=1-->DUMMY2_at_t=1;
+    DUMMY1_at_t=1-->DUMMY3_at_t=1;
+    DUMMY2_at_t=1-->DUMMY3_at_t=1;
+    DUMMY3_at_t=1-->DUMMY4_at_t=1;
+    DUMMY3_at_t=1-->DUMMY5_at_t=1;
+    DUMMY4_at_t=1-->DUMMY6_at_t=1;
+    DUMMY5_at_t=1-->DUMMY6_at_t=1;
+    DUMMY7_at_t=1-->DUMMY6_at_t=1;
+    DUMMY6_at_t=1-->DUMMY8_at_t=1;
     end
 
-    subgraph time = t + 2
+    subgraph time t = 2
     direction LR
-    DUMMY0_at_t+2-->DUMMY1_at_t+2;
-    DUMMY0_at_t+2-->DUMMY2_at_t+2;
-    DUMMY1_at_t+2-->DUMMY3_at_t+2;
-    DUMMY2_at_t+2-->DUMMY3_at_t+2;
-    DUMMY3_at_t+2-->DUMMY4_at_t+2;
-    DUMMY3_at_t+2-->DUMMY5_at_t+2;
-    DUMMY4_at_t+2-->DUMMY6_at_t+2;
-    DUMMY5_at_t+2-->DUMMY6_at_t+2;
-    DUMMY7_at_t+2-->DUMMY6_at_t+2;
-    DUMMY6_at_t+2-->DUMMY8_at_t+2;
+    DUMMY0_at_t=2-->DUMMY1_at_t=2;
+    DUMMY0_at_t=2-->DUMMY2_at_t=2;
+    DUMMY1_at_t=2-->DUMMY3_at_t=2;
+    DUMMY2_at_t=2-->DUMMY3_at_t=2;
+    DUMMY3_at_t=2-->DUMMY4_at_t=2;
+    DUMMY3_at_t=2-->DUMMY5_at_t=2;
+    DUMMY4_at_t=2-->DUMMY6_at_t=2;
+    DUMMY5_at_t=2-->DUMMY6_at_t=2;
+    DUMMY7_at_t=2-->DUMMY6_at_t=2;
+    DUMMY6_at_t=2-->DUMMY8_at_t=2;
     end
 
 ```
