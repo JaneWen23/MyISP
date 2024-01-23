@@ -34,7 +34,11 @@
 
 ### 最简单的级联 pipeline:
 
-DUMMY0 --> DUMMY1 --> DUMMY2
+```mermaid
+graph LR;
+    DUMMY0-->DUMMY1;
+    DUMMY1-->DUMMY2;
+```
 
 用代码的语言描述其拓扑结构:
 ```cpp
@@ -64,8 +68,17 @@ DUMMY2:   takes input(s) from: DUMMY1,   dose not deliver output;
 ### 纯有向无环图 pipeline:
 
 ```mermaid
-graph LR
-A[fx]->B[yj]
+graph LR;
+    DUMMY0-->DUMMY1;
+    DUMMY0-->DUMMY2;
+    DUMMY1-->DUMMY3;
+    DUMMY2-->DUMMY3;
+    DUMMY3-->DUMMY4;
+    DUMMY3-->DUMMY5;
+    DUMMY4-->DUMMY6;
+    DUMMY5-->DUMMY6;
+    DUMMY7-->DUMMY6;
+    DUMMY6-->DUMMY8;
 ```
 
 用代码的语言描述其拓扑结构:
@@ -116,7 +129,56 @@ DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output;
 
 ### 有向无环图带历史帧的 pipeline
 
-(插入图片)
+(这个图是自动生成的, 貌似没法调整)
+```mermaid
+  flowchart LR;
+  DUMMY8_at_t-->DUMMY8_at_t+1
+  DUMMY1_at_t-->DUMMY2_at_t+1
+  DUMMY1_at_t-->DUMMY2_at_t+2
+
+    subgraph time = t
+    direction LR
+    DUMMY0_at_t-->DUMMY1_at_t;
+    DUMMY0_at_t-->DUMMY2_at_t;
+    DUMMY1_at_t-->DUMMY3_at_t;
+    DUMMY2_at_t-->DUMMY3_at_t;
+    DUMMY3_at_t-->DUMMY4_at_t;
+    DUMMY3_at_t-->DUMMY5_at_t;
+    DUMMY4_at_t-->DUMMY6_at_t;
+    DUMMY5_at_t-->DUMMY6_at_t;
+    DUMMY7_at_t-->DUMMY6_at_t;
+    DUMMY6_at_t-->DUMMY8_at_t;
+    end
+
+    subgraph time = t + 1
+    direction LR
+    DUMMY0_at_t+1-->DUMMY1_at_t+1;
+    DUMMY0_at_t+1-->DUMMY2_at_t+1;
+    DUMMY1_at_t+1-->DUMMY3_at_t+1;
+    DUMMY2_at_t+1-->DUMMY3_at_t+1;
+    DUMMY3_at_t+1-->DUMMY4_at_t+1;
+    DUMMY3_at_t+1-->DUMMY5_at_t+1;
+    DUMMY4_at_t+1-->DUMMY6_at_t+1;
+    DUMMY5_at_t+1-->DUMMY6_at_t+1;
+    DUMMY7_at_t+1-->DUMMY6_at_t+1;
+    DUMMY6_at_t+1-->DUMMY8_at_t+1;
+    end
+
+    subgraph time = t + 2
+    direction LR
+    DUMMY0_at_t+2-->DUMMY1_at_t+2;
+    DUMMY0_at_t+2-->DUMMY2_at_t+2;
+    DUMMY1_at_t+2-->DUMMY3_at_t+2;
+    DUMMY2_at_t+2-->DUMMY3_at_t+2;
+    DUMMY3_at_t+2-->DUMMY4_at_t+2;
+    DUMMY3_at_t+2-->DUMMY5_at_t+2;
+    DUMMY4_at_t+2-->DUMMY6_at_t+2;
+    DUMMY5_at_t+2-->DUMMY6_at_t+2;
+    DUMMY7_at_t+2-->DUMMY6_at_t+2;
+    DUMMY6_at_t+2-->DUMMY8_at_t+2;
+    end
+
+```
 
 用代码的语言描述其拓扑结构:
 
