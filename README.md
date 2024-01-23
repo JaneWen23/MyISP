@@ -34,12 +34,12 @@
 
 ### 最简单的级联 pipeline:
 
-(插入图片)
+DUMMY0 --> DUMMY1 --> DUMMY2
 
 用代码的语言描述其拓扑结构:
 ```cpp
 // 只需要描述第一个维度
-int n = 9; // number of nodes
+int n = 3; // number of nodes
 Graph_t graph(n);
 
 graph[0] = {DUMMY0, {DUMMY1}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1
@@ -52,12 +52,21 @@ graph[2] = {DUMMY2, {}};
 ```cpp
 Pipeline myPipe(graph, true); // true 表示要打印信息
 ```
+terminal 输出:
 
-(插入图片)
+```
+pipe:
+DUMMY0:   needs no input;   delivers output to: DUMMY1, 
+DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY2, 
+DUMMY2:   takes input(s) from: DUMMY1,   dose not deliver output; 
+```
 
 ### 纯有向无环图 pipeline:
 
-(插入图片)
+```mermaid
+graph LR
+A[fx]->B[yj]
+```
 
 用代码的语言描述其拓扑结构:
 
@@ -82,8 +91,8 @@ graph[8] = {DUMMY8, {}};
 Orders_t orders;
 orders.push_back({DUMMY3, {{DUMMY1}, {DUMMY2}}}); // mind the syntax! {DUMMY1} is actually {DUMMY1, 0}, the 0 is default and therefore omitted.
 orders.push_back({DUMMY6, {{DUMMY4}, {DUMMY5}, {DUMMY7}}});
-orders.push_back({DUMMY8, {{DUMMY6}, {DUMMY8}}});
-orders.push_back({DUMMY2, {{DUMMY0}, {DUMMY1}, {DUMMY1}}});
+orders.push_back({DUMMY8, {{DUMMY6}}});
+orders.push_back({DUMMY2, {{DUMMY0}}});
 ```
 
 用此拓扑结构初始化 pipeline 并打印信息:
@@ -91,9 +100,19 @@ orders.push_back({DUMMY2, {{DUMMY0}, {DUMMY1}, {DUMMY1}}});
 ```cpp
 Pipeline myPipe(graph, orders, true); // true 表示要打印信息
 ```
-
-(插入图片)
-
+terminal 输出:
+```
+pipe:
+DUMMY7:   needs no input;   delivers output to: DUMMY6, 
+DUMMY0:   needs no input;   delivers output to: DUMMY1, DUMMY2, 
+DUMMY2:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, 
+DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, 
+DUMMY3:   takes input(s) from: DUMMY1, DUMMY2,   delivers output to: DUMMY4, DUMMY5, 
+DUMMY5:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
+DUMMY4:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
+DUMMY6:   takes input(s) from: DUMMY4, DUMMY5, DUMMY7,   delivers output to: DUMMY8, 
+DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output; 
+```
 
 ### 有向无环图带历史帧的 pipeline
 
@@ -134,5 +153,16 @@ orders.push_back({DUMMY2, {{DUMMY0 }, {DUMMY1, 1}, {DUMMY1, 2}}});
 ```cpp
 Pipeline myPipe(graph, delayGraph, orders, true); // true 表示要打印信息
 ```
-
-(插入图片)
+terminal 输出:
+```
+pipe:
+DUMMY7:   needs no input;   delivers output to: DUMMY6, 
+DUMMY0:   needs no input;   delivers output to: DUMMY1, DUMMY2, 
+DUMMY2:   takes input(s) from: DUMMY0, DUMMY1(last frame), DUMMY1(last 2nd frame),   delivers output to: DUMMY3, 
+DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, DUMMY2(next frame), DUMMY2(next 2nd frame), 
+DUMMY3:   takes input(s) from: DUMMY1, DUMMY2,   delivers output to: DUMMY4, DUMMY5, 
+DUMMY5:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
+DUMMY4:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
+DUMMY6:   takes input(s) from: DUMMY4, DUMMY5, DUMMY7,   delivers output to: DUMMY8, 
+DUMMY8:   takes input(s) from: DUMMY6, DUMMY8(last frame),   delivers output to: DUMMY8(next frame), 
+```

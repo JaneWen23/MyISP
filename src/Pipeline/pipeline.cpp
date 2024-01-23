@@ -531,7 +531,7 @@ void test_pipeline(){
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
     //myPipe.default_run_pipe(3);
-    myPipe.cfg_run_pipe("../args/dummyCfg.toml", 0, 2);
+    // myPipe.cfg_run_pipe("../args/dummyCfg.toml", 0, 2);
 
 }
 
@@ -552,5 +552,33 @@ void test_pipeline2(){
     //myPipe.cfg_run_pipe("../args/base2_want.toml", 0, 2);
 
     myPipe.default_run_pipe(2);
+
+}
+
+void test_pipeline3(){
+    int n = 9; // number of nodes
+    Graph_t graph(n);
+
+    graph[0] = {DUMMY0, {DUMMY1, DUMMY2}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1, and from DUMMY0 to DUMMY2
+    graph[1] = {DUMMY1, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY3
+    graph[2] = {DUMMY2, {DUMMY3}}; // the directed edges are implicitly shown as from DUMMY2 to DUMMY3
+    graph[3] = {DUMMY3, {DUMMY4, DUMMY5}}; // and so on ...
+    graph[4] = {DUMMY4, {DUMMY6}};
+    graph[5] = {DUMMY5, {DUMMY6}};
+    graph[6] = {DUMMY6, {DUMMY8}};
+    graph[7] = {DUMMY7, {DUMMY6}}; 
+    graph[8] = {DUMMY8, {}};
+
+    Orders_t orders;
+    orders.push_back({DUMMY3, {{DUMMY1}, {DUMMY2}}}); // mind the syntax! {DUMMY1} is actually {DUMMY1, 0}, the 0 is default and therefore omitted.
+    orders.push_back({DUMMY6, {{DUMMY4}, {DUMMY5}, {DUMMY7}}});
+    orders.push_back({DUMMY8, {{DUMMY6}}});
+    orders.push_back({DUMMY2, {{DUMMY0}}});
+
+    Pipeline myPipe(graph, orders, true);
+    //myPipe.generate_arg_cfg_template(0,4);
+    //myPipe.cfg_run_pipe("../args/base2_want.toml", 0, 2);
+
+    //myPipe.default_run_pipe(2);
 
 }
