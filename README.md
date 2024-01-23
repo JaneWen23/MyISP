@@ -104,8 +104,6 @@ graph[8] = {DUMMY8, {}};
 Orders_t orders;
 orders.push_back({DUMMY3, {{DUMMY1}, {DUMMY2}}}); // mind the syntax! {DUMMY1} is actually {DUMMY1, 0}, the 0 is default and therefore omitted.
 orders.push_back({DUMMY6, {{DUMMY4}, {DUMMY5}, {DUMMY7}}});
-orders.push_back({DUMMY8, {{DUMMY6}}});
-orders.push_back({DUMMY2, {{DUMMY0}}});
 ```
 
 用此拓扑结构初始化 pipeline 并打印信息:
