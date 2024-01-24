@@ -99,5 +99,6 @@ class Pipeline{
 void test_pipeline();
 void test_pipeline2();
 void test_pipeline3();
+void test_pipeline4();
 
 #endif
