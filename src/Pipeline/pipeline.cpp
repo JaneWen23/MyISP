@@ -248,25 +248,25 @@ Pipeline::~Pipeline(){
 }
 
 Hash_t Pipeline::get_hash_one_frame_from_modules(){
-    Hash_t subHsOneFrame;
+    Hash_t hsOneFrame;
     for(auto it = _pipe.begin(); it!= _pipe.end(); ++it){
         std::string moduleName = get_module_name((*it).module);
         Hash_t tmpHash = get_default_arg_hash_for_module((*it).module);
-        subHsOneFrame.insert({moduleName, tmpHash});
+        hsOneFrame.insert({moduleName, tmpHash});
     }
-    return subHsOneFrame;
+    return hsOneFrame;
 }
 
-void Pipeline::generate_arg_cfg_template(int startFrameInd, int frameNum){
+void Pipeline::generate_arg_cfg_template(int frameNum){
     if (frameNum < 1){
         std::cout<<"error: should generate config file for at least 1 frame, but got " << frameNum << " instead. exited.\n";
         exit(1);
     }
     Hash_t argHyperHash;
-    std::string rootKey0 = _configFrameStr + std::to_string(startFrameInd);
+    std::string rootKey0 = _configFrameStr + std::to_string(0);
     argHyperHash.insert({rootKey0, _hsOneFrame});
     Hash_t emptyHs;
-    for (int frameInd = startFrameInd + 1; frameInd < startFrameInd + frameNum; ++frameInd){
+    for (int frameInd = 1; frameInd < frameNum; ++frameInd){
         std::string rootKey = _configFrameStr + std::to_string(frameInd);
         argHyperHash.insert({rootKey, emptyHs});
     }
@@ -432,10 +432,15 @@ void Pipeline::default_run_pipe(int frameNum){
     clear_imgs();
 }
 
-void Pipeline::cfg_run_pipe(const char* filePath, int startFrameInd, int frameNum){
+void Pipeline::cfg_run_pipe(const char* filePath, int frameNum){
     if (frameNum < 1){
         std::cout<<"error: pipe should run for at least 1 frame, but got " << frameNum << " instead. exited.\n";
         exit(1);
+    }
+    if (strcmp(filePath, _baseCfgFilePath.c_str()) == 0){
+        std::cout<<"\nwarning: config file name is the same as default. "
+        "if you really mean to use default arguments, consider call default_run_pipe() instead; "
+        "otherwise, use another name for your config file.\n\n";
     }
         // when update by algo and when a frame is finished, dump the updated arg hash in toml (generate toml file from hash);
         // when update by toml, do not need to dump arg (or you can switch on/off)
@@ -471,7 +476,7 @@ void Pipeline::cfg_run_pipe(const char* filePath, int startFrameInd, int frameNu
     }
     Hash_t hsOneFrame = get_hash_one_frame_from_modules();
     // run frames where args are read from cfg:
-    for(_frameInd = startFrameInd; _frameInd < startFrameInd + cfgSize; ++_frameInd){
+    for(_frameInd = 0; _frameInd <  cfgSize; ++_frameInd){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
         std::string rootKey = _configFrameStr + std::to_string(_frameInd);
         parsedArgs.fetch_args_at_frame(rootKey, &hsOneFrame);
@@ -480,18 +485,18 @@ void Pipeline::cfg_run_pipe(const char* filePath, int startFrameInd, int frameNu
             run_pipe(&hsOneFrame, false);
         }
         else{ // i.e. cfgSize < frameNum
-            if(_frameInd < startFrameInd + cfgSize - 1){
+            if(_frameInd < cfgSize - 1){
                 // before the last frame defined in cfg, we just should read args from cfg and do not update:
                 run_pipe(&hsOneFrame, false);
             }
-            else{ // i.e. _frameInd == startFrameInd + cfgSize - 1
+            else{ // i.e. _frameInd == cfgSize - 1
                 // at the last frame defined in cfg, we need to update args for the next frame to use:
                 run_pipe(&hsOneFrame, true);
             }
         }
     }
     // run frames where args are updated automatically:
-    for(_frameInd = startFrameInd + cfgSize; _frameInd < startFrameInd + frameNum; ++_frameInd){
+    for(_frameInd = cfgSize; _frameInd < frameNum; ++_frameInd){
         std::cout<<"\n======== running frame #"<< _frameInd <<": ========\n\n";
         std::string rootKey = _configFrameStr + std::to_string(_frameInd);
         run_pipe(&hsOneFrame, true); 
@@ -531,7 +536,7 @@ void test_pipeline(){
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
     //myPipe.default_run_pipe(3);
-    // myPipe.cfg_run_pipe("../args/dummyCfg.toml", 0, 2);
+    // myPipe.cfg_run_pipe("../args/dummyCfg.toml", 2);
 
 }
 
@@ -549,7 +554,7 @@ void test_pipeline2(){
 
     Pipeline myPipe(graph, true);
     //myPipe.generate_arg_cfg_template(0,4);
-    //myPipe.cfg_run_pipe("../args/base2_want.toml", 0, 2);
+    //myPipe.cfg_run_pipe("../args/base2_want.toml", 2);
 
     myPipe.default_run_pipe(2);
 
@@ -575,7 +580,7 @@ void test_pipeline3(){
 
     Pipeline myPipe(graph, orders, true);
     //myPipe.generate_arg_cfg_template(0,4);
-    //myPipe.cfg_run_pipe("../args/base2_want.toml", 0, 2);
+    //myPipe.cfg_run_pipe("../args/base2_want.toml", 2);
 
     //myPipe.default_run_pipe(2);
 
@@ -605,6 +610,6 @@ void test_pipeline4(){
     Pipeline myPipe(graph, delayGraph, orders, true);
     //Pipeline myPipe(graph, orders, true);
     //myPipe.default_run_pipe(3);
-    // myPipe.cfg_run_pipe("../args/dummyCfg.toml", 0, 2);
+    myPipe.cfg_run_pipe("../args/dummyCfg.toml", 3);
 
 }

@@ -2,9 +2,9 @@
 
 title = "ISP Config Sample"
 
-[Vin]
+['FRAME #0'.Vin]
   rewind = false
-  [Vin.ReadRawArg]
+  ['FRAME #0'.Vin.ReadRawArg]
     path = "../data/rawData.raw" # const char* path;
     frameInd = 0 # int frameInd; read i-th frame, i >= 0, WILL BE UPDATED IN THE RUN-TIME; if rewind = true, this will not be updated
     imageFormat = "RAW_RGGB" # IMAGE_FMT imageFormat
@@ -13,11 +13,11 @@ title = "ISP Config Sample"
     bitDepth = 16 # int bitDepth;
     alignment = 1 # int alignment;
 
-[Compression]
-  [Compression.StarTetrixArg]
+['FRAME #0'.Compression]
+  ['FRAME #0'.Compression.StarTetrixArg]
     Wr = 1 # int
     Wb = 2 # int
-  [Compression.DWTArg]
+  ['FRAME #0'.Compression.DWTArg]
     inImgPanelId = 0 # int inImgPanelId; apply dwt to the whole 2D image
     outImgPanelId = 0 # int outImgPanelId;
     orient = "TWO_DIMENSIONAL" # ORIENT orient;
@@ -25,22 +25,22 @@ title = "ISP Config Sample"
     wavelet = "LE_GALL_53" # WAVELET_NAME wavelet;
     padding = "MIRROR" # PADDING padding;
 
-[CCM]
-  [CCM.CCMArg]
-    [CCM.CCMArg.colorMatRow1]
+['FRAME #0'.CCM]
+  ['FRAME #0'.CCM.CCMArg]
+    ['FRAME #0'.CCM.CCMArg.colorMatRow1]
       RR = 278
       RG = -10
       RB = -8
-    [CCM.CCMArg.colorMatRow2]
+    ['FRAME #0'.CCM.CCMArg.colorMatRow2]
       GR = -12
       GG = 269
       GB = -8
-    [CCM.CCMArg.colorMatRow3]
+    ['FRAME #0'.CCM.CCMArg.colorMatRow3]
       BR = -10
       BG = -3
       BB = 272
 
-[Dummy]
+['FRAME #0'.Dummy]
 data = 3
 
     

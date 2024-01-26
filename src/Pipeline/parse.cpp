@@ -39,30 +39,10 @@ void ParsedArgs::fetch_args_at_frame(std::string rootKey, Hash_t* pHs){
 void test_toml_to_hash(){
     toml::table tbl = toml::parse_file("../args/sample.toml");
 
+    auto pSbTbl = tbl["FRAME #0"].as_table();
 
-    toml::path the_path("Vin");
-    auto pSbTbl = tbl[the_path].as_table();
-
-      
-    // (*pSbTbl).for_each([](const toml::key& key, auto&& val){
-    //     std::cout << key << ": " << val << "\n";
-    // });
-
-    Hash_t myHash; // a hash "template". the "largest" hash.
-
-    Hash_t hs = default_vin_arg_hash();
-    Hash_t hs2 = default_ccm_arg_hash();
-    Hash_t hs3 = default_compression_arg_hash();
-
-    myHash = {{"Vin", hs}, {"Compression", hs3}, {"CCM", hs2}};
-
-    //set_hash_from_tbl(pSbTbl, &myHash);
-    print_hash(&myHash);
-
-
-    // set_tbl_from_hash(pSbTbl, &myHash);
-    // (*pSbTbl).for_each([](const toml::key& key, auto&& val){
-    //     std::cout << key << ": " << val << "\n";
-    // });
+    (*pSbTbl).for_each([](const toml::key& key, auto&& val){
+        std::cout << key << ": " << val << "\n";
+    });
 
 }
