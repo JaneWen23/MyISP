@@ -20,8 +20,9 @@ int main(){
     // test_graph();
     // test_pipeline();
     // test_pipeline2();
-    test_pipeline4();
+    // test_pipeline4();
     // test_toml();
+    test_toml2();
     // test_parse_args();
     // test_hash();
     // test_toml_to_hash();

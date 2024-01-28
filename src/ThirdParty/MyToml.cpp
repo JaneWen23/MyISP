@@ -91,11 +91,6 @@ void override_hash_from_tbl(toml::v3::table* pTbl, Hash_t* pMyHash){
 
 void test_toml(){
     toml::table tbl = toml::parse_file( "../args/sample.toml" );
-    std::cout << tbl["Vin"]["rewind"] << "\n";
-    std::cout << tbl["Vin"]["ReadRawArg"] << "\n";
-    std::cout << tbl["CCM"]["ReadRawArg"][0] << "\n";
-    std::cout << tbl["CCM"]["ReadRawArg"][1] << "\n";
-    std::cout << tbl["CCM"]["ReadRawArg"][2] << "\n";
     std::cout << tbl << "\n";
 
     std::ofstream out("../dump/out.toml");
@@ -104,4 +99,67 @@ void test_toml(){
         out.close();
     }
 
+}
+
+void test_toml2(){
+    toml::table tbl2 = toml::parse_file( "../pipeCfg/pipeCfgDummy2.toml" );
+    // std::cout << tbl2 << "\n";
+    // std::ofstream out2("../dump/outPipeCfg2.toml");
+    // if (out2.is_open()){
+    //     out2<<tbl2;
+    //     out2.close();
+    // }
+
+    // check if a specific key is in the table:
+    std::cout<<tbl2.contains("graphNoDelay")<<"\n";
+    std::cout<<tbl2.contains("delayGraph")<<"\n";
+    std::cout<<tbl2.contains("orders")<<"\n";
+    std::cout<<tbl2.contains("aaa")<<"\n";
+
+    //toml::v3::array* pA = tbl2["graphNoDelay"].as_array();
+    //toml::array& arr = *tbl2.get_as<toml::array>("graphNoDelay");
+
+    // graph:
+    std::cout<<"graph:\n";
+    for(int i = 0; i <(*tbl2["graphNoDelay"].as_array()).size(); ++i){
+        std::string tmp = tbl2["graphNoDelay"][i][0].value<std::string>().value();
+        std::cout<<"module: "<<tmp<<", ";
+        std::cout<<"succNoDelay: ";
+        for(int j = 0; j <(*tbl2["graphNoDelay"][i][1].as_array()).size(); ++j){
+            std::cout<<tbl2["graphNoDelay"][i][1][j].value<std::string>().value()<<", ";
+        }
+        std::cout<<"\n";
+    }
+    std::cout<<"\n";
+        
+    // delay_graph:
+    std::cout<<"delayGraph:\n";
+    for(int i = 0; i < (*tbl2["delayGraph"].as_array()).size(); ++i){
+        std::string tmp = tbl2["delayGraph"][i][0].value<std::string>().value();
+        std::cout<<"module: "<<tmp<<", ";
+        std::cout<<"succWithDelay: ";
+        for(int j = 0; j <(*tbl2["delayGraph"][i][1].as_array()).size(); ++j){
+            std::cout<<tbl2["delayGraph"][i][1][j][0].value<std::string>().value()<<", ";
+            std::cout<<tbl2["delayGraph"][i][1][j][1].value<int>().value()<<", ";
+        }
+        std::cout<<"\n";
+    }
+    std::cout<<"\n";
+
+    // orders:
+    std::cout<<"orders:\n";
+    for(int i = 0; i < (*tbl2["orders"].as_array()).size(); ++i){
+        std::string tmp = tbl2["orders"][i][0].value<std::string>().value();
+        std::cout<<"module: "<<tmp<<", ";
+        std::cout<<"input in order: ";
+        for(int j = 0; j <(*tbl2["orders"][i][1].as_array()).size(); ++j){
+            std::cout<<tbl2["orders"][i][1][j][0].value<std::string>().value()<<", ";
+            if((*tbl2["orders"][i][1][j].as_array()).size() == 2){
+                std::cout<<tbl2["orders"][i][1][j][1].value<int>().value()<<", ";
+            }
+        }
+        std::cout<<"\n";
+    }
+    std::cout<<"\n";
+   
 }
