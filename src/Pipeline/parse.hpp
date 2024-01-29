@@ -23,11 +23,13 @@ class ParsedPipe{
     public:
         ParsedPipe(const char* file);
         ~ParsedPipe();
-        Graph_t get_graph_no_delay();
-        DelayGraph_t get_graph_with_delay();
-        Orders_t get_input_orders();
+        std::unordered_map<std::string, bool> get_info() const;
+        Graph_t get_graph_no_delay() const;
+        DelayGraph_t get_graph_with_delay() const;
+        Orders_t get_input_orders() const;
     private:
         toml::v3::table _tbl;
+        std::unordered_map<std::string, bool> _info;
 };
 
 void test_parse_args();

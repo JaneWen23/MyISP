@@ -1,0 +1,96 @@
+   
+graphNoDelay = [
+    # EVERY node in pipe should be defined here:
+    [
+        'DUMMY0',  # a node in the pipe topology
+        ['DUMMY1', 'DUMMY2']  # the no-delay-successors of this node
+        # it means that 
+    ],
+    [
+        'DUMMY1',
+        ['DUMMY3']   
+    ],
+    [
+        'DUMMY2',
+        ['DUMMY3']
+    ],
+    [
+        'DUMMY3',
+        ['DUMMY4', 'DUMMY5']
+    ],
+    [
+        'DUMMY4',
+        ['DUMMY6']
+    ],
+    [
+        'DUMMY5',
+        ['DUMMY6']
+    ],
+    [
+        'DUMMY6',
+        ['DUMMY8']
+    ],
+    [
+        'DUMMY7',
+        ['DUMMY6']
+    ],
+    [
+        'DUMMY8',
+        ['']       # if no module, just enter an empty string. do not leave it blank.
+    ]
+]
+
+delayGraph = [
+    # only the nodes whose output will be used in the next frame(s) need to be defined here:
+    [
+        'DUMMY1', # a node in the pipe topology, whose output will be used in the next frame
+        [
+            ['DUMMY2', 1],  # syntax being [MODULE, DELAY],
+            ['DUMMY2', 2]   # meaning node's output is be used by MODULE after being delayed DELAY frame(s).
+            # in this example, output from DUMMY1 is be used by DUMMY2 after being delayed 1 frame and 2 frames.
+        ]
+    ],
+    [
+        'DUMMY8',
+        [
+            ['DUMMY8', 1]
+        ]
+        # in this example, the output from DUMMY8 is be used by itself after being 1 frame delayed.
+    ]
+]
+
+
+orders = [
+    # only the nodes that take more than one input need to be defined here;
+    # the order of inputs is defined by algorithm argument lists -- you may refer to the code.
+    [
+        'DUMMY3',  # a node that takes more than one input
+        [
+            ['DUMMY1'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay.
+            ['DUMMY2']  # it means the second input of DUMMY3 is DUMMY2's output without frame-delay.
+        ]
+    ],
+    [
+        'DUMMY6',
+        [
+            ['DUMMY4'],
+            ['DUMMY5'],
+            ['DUMMY7']
+        ]
+    ],
+    [
+        'DUMMY8',
+        [
+            ['DUMMY6'],
+            ['DUMMY8', 1]
+        ]
+    ],
+    [
+        'DUMMY2',
+        [
+            ['DUMMY0'], # it means the first input of DUMMY2 is DUMMY0's output without frame-delay.
+            ['DUMMY1', 1], # it means the second input of DUMMY2 is DUMMY1's output being 1 frame delayed.
+            ['DUMMY1', 2] # it means the third input of DUMMY2 is DUMMY1's output being 2 frames delayed.
+        ]
+    ]
+]

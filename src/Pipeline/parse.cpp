@@ -39,14 +39,39 @@ void ParsedArgs::fetch_args_at_frame(std::string rootKey, Hash_t* pHs){
 
 ParsedPipe::ParsedPipe(const char* file){
     _tbl = toml::parse_file(file);
+    if(_tbl.contains("graphNoDelay")){
+        _info.insert({"graphNoDelay", true});
+    }
+    else{
+        _info.insert({"graphNoDelay", false});
+    }
+
+    if(_tbl.contains("delayGraph")){
+        _info.insert({"delayGraph", true});
+    }
+    else{
+        _info.insert({"delayGraph", false});
+    }
+
+    if(_tbl.contains("orders")){
+        _info.insert({"orders", true});
+    }
+    else{
+        _info.insert({"orders", false});
+    }
 }
 
 ParsedPipe::~ParsedPipe(){
     // do nothing
 }
 
-Graph_t ParsedPipe::get_graph_no_delay(){
-    if( ! _tbl.contains("graphNoDelay")){
+// returns info about what kind of graphs the cfg has
+std::unordered_map<std::string, bool> ParsedPipe::get_info() const{
+    return _info;
+}
+
+Graph_t ParsedPipe::get_graph_no_delay() const{
+    if( ! _info.at("graphNoDelay")){
         std::cout<<"error: the parsed pipeline config does not contain 'graphNoDelay'. exited.\n";
         exit(1);
     }
@@ -65,8 +90,8 @@ Graph_t ParsedPipe::get_graph_no_delay(){
     return graph;
 }
 
-DelayGraph_t ParsedPipe::get_graph_with_delay(){
-    if( ! _tbl.contains("delayGraph")){
+DelayGraph_t ParsedPipe::get_graph_with_delay() const{
+    if( ! _info.at("delayGraph")){
         std::cout<<"error: the parsed pipeline config does not contain 'delayGraph'. exited.\n";
         exit(1);
     }
@@ -84,8 +109,8 @@ DelayGraph_t ParsedPipe::get_graph_with_delay(){
     return delayGraph;
 }
 
-Orders_t ParsedPipe::get_input_orders(){
-    if( ! _tbl.contains("orders")){
+Orders_t ParsedPipe::get_input_orders() const{
+    if( ! _info.at("orders")){
         std::cout<<"error: the parsed pipeline config does not contain 'orders'. exited.\n";
         exit(1);
     }
@@ -120,7 +145,10 @@ void test_toml_to_hash(){
 
 void test_parsed_pipe(){
     ParsedPipe myParsedPipe("../pipeCfg/pipeCfgDummy2.toml");
-    Graph_t graph = myParsedPipe.get_graph_no_delay();
-    DelayGraph_t delayGraph = myParsedPipe.get_graph_with_delay();
-    Orders_t orders = myParsedPipe.get_input_orders();
+    // Graph_t graph = myParsedPipe.get_graph_no_delay();
+    // DelayGraph_t delayGraph = myParsedPipe.get_graph_with_delay();
+    // Orders_t orders = myParsedPipe.get_input_orders();
+    std::cout<< myParsedPipe.get_info().at("graphNoDelay")<<", ";
+    std::cout<< myParsedPipe.get_info().at("delayGraph")<<", ";
+    std::cout<< myParsedPipe.get_info().at("orders")<<"\n ";
 }

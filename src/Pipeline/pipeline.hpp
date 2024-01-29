@@ -32,9 +32,10 @@ void print_pipe(const Pipe_t& pipe);
 
 class Pipeline{
     public:
-        Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, const Orders_t& orders, bool needPrint);
+        Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& delayGraph, const Orders_t& orders, bool needPrint);
         Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint);
         Pipeline(const Graph_t& graphNoDelay, bool needPrint);
+        Pipeline(const char* file, bool needPrint);
         ~Pipeline();
         // TODO: add func to check in_fmt, out_fmt, in_bitDepth, out_bitDepth????
         // TODO: run-time log of in_fmt, out_fmt, in_bitDepth, out_bitDepth????

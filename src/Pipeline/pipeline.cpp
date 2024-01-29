@@ -200,7 +200,7 @@ void print_pipe(const Pipe_t& pipe){
 }
 
 
-Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t delayGraph, const Orders_t& orders, bool needPrint){
+Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& delayGraph, const Orders_t& orders, bool needPrint){
     // initialize _sorted and _pipe according to number of nodes:
     int n = graphNoDelay.size();
     _sorted = (MODULE_NAME*)malloc( n * sizeof(MODULE_NAME));
@@ -240,6 +240,26 @@ Pipeline::Pipeline(const Graph_t& graphNoDelay, bool needPrint){
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
+}
+
+Pipeline::Pipeline(const char* file, bool needPrint){
+    ParsedPipe parsedPipe(file);
+    bool hasGraphNoDelay = parsedPipe.get_info().at("graphNoDelay");
+    bool hasDelayGraph = parsedPipe.get_info().at("delayGraph");
+    bool hasOrders = parsedPipe.get_info().at("orders");
+    if(hasGraphNoDelay && hasDelayGraph && hasOrders){
+        new (this)Pipeline(parsedPipe.get_graph_no_delay(), parsedPipe.get_graph_with_delay(), parsedPipe.get_input_orders(), needPrint);
+    }
+    else if(hasGraphNoDelay && (!hasDelayGraph) && hasOrders){
+        new (this)Pipeline(parsedPipe.get_graph_no_delay(), parsedPipe.get_input_orders(), needPrint);
+    }
+    else if(hasGraphNoDelay && (!hasDelayGraph) && (!hasOrders)){
+        new (this)Pipeline(parsedPipe.get_graph_no_delay(), needPrint);
+    }
+    else{
+        std::cout<<"error: the pipe config file is not able to define a pipeline. exited.\n";
+        exit(1);
+    }
 }
 
 Pipeline::~Pipeline(){
@@ -615,10 +635,12 @@ void test_pipeline4(){
 }
 
 void test_pipeline_config(){
-    ParsedPipe myParsedPipe("../pipeCfg/pipeCfgDummy2.toml");
-    Graph_t graph = myParsedPipe.get_graph_no_delay();
-    DelayGraph_t delayGraph = myParsedPipe.get_graph_with_delay();
-    Orders_t orders = myParsedPipe.get_input_orders();
+    // ParsedPipe myParsedPipe("../pipeCfg/pipeCfgDummy2.toml");
+    // Graph_t graph = myParsedPipe.get_graph_no_delay();
+    // DelayGraph_t delayGraph = myParsedPipe.get_graph_with_delay();
+    // Orders_t orders = myParsedPipe.get_input_orders();
 
-    Pipeline myPipe(graph, delayGraph, orders, true);
+    //Pipeline myPipe(graph, delayGraph, orders, true);
+
+    Pipeline myPipe2("../pipeCfg/pipeCfgDummy3.toml", true);
 }
