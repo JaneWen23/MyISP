@@ -59,6 +59,58 @@ std::string get_module_name(const MODULE_NAME m){
     return "";
 }
 
+MODULE_NAME get_module_from_name(std::string name){
+    if (strcmp(name.c_str(), "DUMMY0") == 0){
+        return DUMMY0;
+    }
+    if (strcmp(name.c_str(), "DUMMY1") == 0){
+        return DUMMY1;
+    }
+    if (strcmp(name.c_str(), "DUMMY2") == 0){
+        return DUMMY2;
+    }
+    if (strcmp(name.c_str(), "DUMMY3") == 0){
+        return DUMMY3;
+    }
+    if (strcmp(name.c_str(), "DUMMY4") == 0){
+        return DUMMY4;
+    }
+    if (strcmp(name.c_str(), "DUMMY5") == 0){
+        return DUMMY5;
+    }
+    if (strcmp(name.c_str(), "DUMMY6") == 0){
+        return DUMMY6;
+    }
+    if (strcmp(name.c_str(), "DUMMY7") == 0){
+        return DUMMY7;
+    }
+    if (strcmp(name.c_str(), "DUMMY8") == 0){
+        return DUMMY8;
+    }
+    if (strcmp(name.c_str(), "ISP_VIN") == 0){
+        return ISP_VIN;
+    }
+    if (strcmp(name.c_str(), "ISP_COMPRESSION") == 0){
+        return ISP_COMPRESSION;
+    }
+    if (strcmp(name.c_str(), "ISP_BLC") == 0){
+        return ISP_BLC;
+    }
+    if (strcmp(name.c_str(), "ISP_DMS") == 0){
+        return ISP_DMS;
+    }
+    if (strcmp(name.c_str(), "ISP_WB") == 0){
+        return ISP_WB;
+    }
+    if (strcmp(name.c_str(), "ISP_CCM") == 0){
+        return ISP_CCM;
+    }
+    if (strcmp(name.c_str(), "ISP_RGB2YUV") == 0){
+        return ISP_RGB2YUV;
+    }
+    return DUMMY0; // nonsense
+}
+
 void print_hash(Hash_t* pMyHash){
     for (auto it = pMyHash->begin(); it != pMyHash->end(); ++it){
         if ((*it).second.type() != typeid(Hash_t)){

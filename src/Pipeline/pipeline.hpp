@@ -1,13 +1,7 @@
 #ifndef _PIPELINE_H
 #define _PIPELINE_H
 
-#include "../Modules/COMMON/PipelineModules.hpp" // TODO: just want an integral of all modules. can be anoher file or file name.
-#include "graph.hpp"
-
-typedef struct ModuleDelay_tag{
-    MODULE_NAME module;
-    int delay = 0;
-} ModuleDelay_t;
+#include "PipeCommon.hpp"
 
 typedef struct{
     MODULE_NAME module;
@@ -23,22 +17,6 @@ typedef struct{
     Img_t img;
     Signature_t sig;
 } PipeImg_t;
-
-typedef struct{
-    MODULE_NAME module;
-    std::vector<ModuleDelay_t> inputInOrder;
-} InputOrder_t; // is needed only when module is with two or more inputs
-
-typedef std::vector<InputOrder_t> Orders_t; // only stores the info of modules with two or more inputs; TOML;
-
-
-typedef struct{
-    MODULE_NAME module;
-    std::vector<ModuleDelay_t> succWthDelay;
-} DelayAdjacency_t;
-
-typedef std::vector<DelayAdjacency_t> DelayGraph_t;
-
 
 typedef struct Module_tag{
     MODULE_NAME module;
@@ -100,5 +78,6 @@ void test_pipeline();
 void test_pipeline2();
 void test_pipeline3();
 void test_pipeline4();
+void test_pipeline_config();
 
 #endif

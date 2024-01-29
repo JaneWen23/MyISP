@@ -613,3 +613,12 @@ void test_pipeline4(){
     myPipe.cfg_run_pipe("../args/dummyCfg.toml", 3);
 
 }
+
+void test_pipeline_config(){
+    ParsedPipe myParsedPipe("../pipeCfg/pipeCfgDummy2.toml");
+    Graph_t graph = myParsedPipe.get_graph_no_delay();
+    DelayGraph_t delayGraph = myParsedPipe.get_graph_with_delay();
+    Orders_t orders = myParsedPipe.get_input_orders();
+
+    Pipeline myPipe(graph, delayGraph, orders, true);
+}

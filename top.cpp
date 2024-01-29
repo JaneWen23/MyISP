@@ -22,12 +22,14 @@ int main(){
     // test_pipeline2();
     // test_pipeline4();
     // test_toml();
-    test_toml2();
+    // test_toml2();
     // test_parse_args();
     // test_hash();
     // test_toml_to_hash();
     // test_ccm_hash();
     // test_hash_to_toml();
+    // test_parsed_pipe();
+    test_pipeline_config();
     
     std::cout<<"hello world!!\n";
     std::cout<<"hello Cpp!!\n";

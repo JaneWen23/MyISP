@@ -3,12 +3,13 @@
 
 #include "../ThirdParty/MyToml.hpp"
 #include "../Modules/COMMON/PipelineModules.hpp"
+#include "PipeCommon.hpp"
 #include <set>
 
 
 class ParsedArgs{ // this class is to wrap up the toml table. do not want pipeline.cpp to deal with toml table directly.
     public:
-        ParsedArgs(const char* pathFile);
+        ParsedArgs(const char* file);
         ~ParsedArgs();
         int size();
         void sort_root_keys(std::string rootKeyIndicator);
@@ -18,7 +19,19 @@ class ParsedArgs{ // this class is to wrap up the toml table. do not want pipeli
         std::set<std::string> _sortedKeys;
 };
 
+class ParsedPipe{
+    public:
+        ParsedPipe(const char* file);
+        ~ParsedPipe();
+        Graph_t get_graph_no_delay();
+        DelayGraph_t get_graph_with_delay();
+        Orders_t get_input_orders();
+    private:
+        toml::v3::table _tbl;
+};
+
 void test_parse_args();
 void test_toml_to_hash();
 void test_hash_to_toml();
+void test_parsed_pipe();
 #endif
