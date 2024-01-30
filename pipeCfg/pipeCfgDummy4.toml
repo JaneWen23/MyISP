@@ -47,8 +47,8 @@ delayGraph = [
         'DUMMY1', # a node in the pipe topology, whose output will be used in the next frame
         [
             ['DUMMY2', 1],  # syntax being [MODULE, DELAY],
-            ['DUMMY2', 2]   # meaning node's output is be used by MODULE after being delayed DELAY frame(s).
-            # in this example, output from DUMMY1 is be used by DUMMY2 after being delayed 1 frame and 2 frames.
+            ['DUMMY2', 2]   # meaning node's output is to be used by MODULE after being delayed DELAY frame(s).
+            # in this example, output from DUMMY1 is to be used by DUMMY2 after being delayed 1 frame and 2 frames.
         ]
     ],
     [

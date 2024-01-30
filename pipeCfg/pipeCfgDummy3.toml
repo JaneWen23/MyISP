@@ -26,7 +26,7 @@ delayGraph = [
         [
             ['DUMMY2', 1],  # syntax being [MODULE, DELAY]
         ]
-        # in this example, output from DUMMY1 is be used by DUMMY2 after being delayed 1 frame.
+        # in this example, output from DUMMY1 is to be used by DUMMY2 after being delayed 1 frame.
     ],
     [
         'DUMMY3',
@@ -49,7 +49,7 @@ orders = [
         ]
     ],
     [
-        'DUMMY6',
+        'DUMMY3',
         [
             ['DUMMY1'],
             ['DUMMY2'],
