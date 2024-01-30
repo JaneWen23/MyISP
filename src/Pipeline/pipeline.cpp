@@ -43,17 +43,23 @@ void reorder_predecessors(const Orders_t& orders, Pipe_t& pipe){
     // if both are true, replace predecessors with cfg-provided,
     // if not, report an error and exit.
     for (auto it = orders.begin(); it != orders.end(); ++it){
+        bool isDone = false;
         for(auto ip = pipe.begin(); ip != pipe.end(); ++ip){
-            if ((*ip).module == (*it).module){
+            if ((*ip).module == (*it).module){ // ip is subset of it, and it is subset of ip
                 if (is_subset((*it).inputInOrder, (*ip).predWthDelay) && is_subset((*ip).predWthDelay, (*it).inputInOrder)){
                     (*ip).predWthDelay = (*it).inputInOrder;
+                    isDone = true;
+                    break;
                 }
                 else{
                     std::cout<<"error: the provided predecessors of "<< get_module_name((*it).module) << " do not match with the graph. exited.\n";
                     exit(1);
                 }
-                break;
             }
+        }
+        if ( ! isDone){
+            std::cout<<"error: "<< get_module_name((*it).module) <<" from 'orders' is not defined in the pipeline. exited.\n";
+            exit(1);
         }
     }
 }
@@ -653,7 +659,7 @@ void test_pipeline_config(){
 
     //Pipeline myPipe(graph, delayGraph, orders, true);
 
-    //Pipeline myPipe2("../pipeCfg/pipeCfgDummy3.toml", true);
+    Pipeline myPipe2("../pipeCfg/pipeCfgDummy3.toml", true);
     //Pipeline myPipe2("../pipeCfg/pipeCfgDummy1.toml", true);
-    Pipeline myPipe2("../pipeCfg/pipeCfgDummy2.toml", true);
+    //Pipeline myPipe2("../pipeCfg/pipeCfgDummy2.toml", true);
 }
