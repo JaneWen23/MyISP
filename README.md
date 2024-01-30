@@ -152,7 +152,9 @@ orders = [
     [
         'DUMMY3',  # a node that takes more than one input
         [
-            ['DUMMY1'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay. (为什么单个模块名字也写成数组: 因为这个数组后续还可以有别的元素, 你们或许能猜到 “别的元素” 指的是帧延迟, 不过现在用不到, 不必在意)
+            ['DUMMY1'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay.
+            # 为什么单个模块名字也写成数组:
+            # 因为这个数组后续还可以有别的元素, 你们或许能猜到 “别的元素” 指的是帧延迟, 不过现在用不到, 不必在意
             ['DUMMY2']  # it means the second input of DUMMY3 is DUMMY2's output without frame-delay.
         ]
     ],
@@ -245,11 +247,11 @@ orders.push_back({DUMMY3, {{DUMMY1 }, {DUMMY2 }, {DUMMY3, 1}}}); //表示 DUMMY3
 orders.push_back({DUMMY2, {{DUMMY0 }, {DUMMY1, 1}}}); // 表示 DUMMY2 的2个输入按顺序分别来自: DUMMY0(本帧), DUMMY1(1帧之前)
 ``` -->
 
-在 .toml 文件里我们用一个名为 `graphNoDelay` 的数组和一个名为 `delayGraph` 的数组, 加上一个名为 `orders` 的数组描述这结构.
+在 .toml 文件里我们用一个名为 `graphNoDelay` 的数、一个名为 `delayGraph` 的数组, 和一个名为 `orders` 的数组描述这结构.
 
 与前两种情况不同的是, 这里有了 延迟1帧 的输入/输出, 所以在 `graphNoDelay` 的基础上, 有了一个新的数组 `delayGraph`, 用来表示有延迟的输入/输出关系.
 
-我们把这个图分为两部分, 一是不含帧延迟的部分 (xx颜色), 用 `graphNoDelay` 配置, 另一个是仅含帧延迟的部分 (xx颜色), 用 `delayGraph` 配置.
+我们把这个图分为两部分, 一是不含帧延迟的部分, 用 `graphNoDelay` 配置, 另一个是仅含帧延迟的部分, 用 `delayGraph` 配置.
 
 `graphNoDelay` 跟之前的例子的配置方法一样, 这里不再赘述;  
 `delayGraph` 这样配置:
@@ -264,6 +266,7 @@ delayGraph = [
         [
             ['DUMMY2', 1],  # syntax being [MODULE, DELAY]
         ]
+        # in this example, output from DUMMY1 is be used by DUMMY2 after being delayed 1 frame.
     ],
     [
         'DUMMY3',
@@ -284,8 +287,10 @@ orders = [
     [
         'DUMMY2',  # a node that takes more than one input
         [
-            ['DUMMY0'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay. 没有帧延迟, 就不写
-            ['DUMMY1', 1]  # it means the second input of DUMMY3 is DUMMY2's output with 1 frame delayed. 有帧延迟, 就写在后面
+            ['DUMMY0'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay.
+            # 没有帧延迟, 就不写
+            ['DUMMY1', 1]  # it means the second input of DUMMY3 is DUMMY2's output with 1 frame delayed.
+            # 有帧延迟, 就写在后面
         ]
     ],
     [
@@ -303,6 +308,8 @@ orders = [
 
 ```cpp
 Pipeline myPipe("../pipeCfg/pipeCfgDummy3.toml", true); // true 表示要打印信息
+```
+
 运行后, terminal 输出:
 ```
 pipe:
