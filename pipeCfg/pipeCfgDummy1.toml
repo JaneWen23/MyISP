@@ -1,0 +1,17 @@
+   
+graphNoDelay = [
+    # EVERY node in pipe should be defined here:
+    [
+        'DUMMY0',  # a node in the pipe topology
+        ['DUMMY1']  # the no-delay-successors of this node
+        # it means that 
+    ],
+    [
+        'DUMMY1',
+        ['DUMMY2']   
+    ],
+    [
+        'DUMMY2',
+        ['']
+    ]
+]

@@ -53,12 +53,15 @@ class Pipeline{
         void run_pipe(Hash_t* pHsAll, bool updateArgs); // run pipeline for a single frame
         
     protected:
-        MODULE_NAME* _sorted;
         Pipe_t _pipe;
         PipeImg_t _sOutPipeImg;
         int _frameInd = 0;
 
     private:
+        MODULE_NAME* _sorted;
+        void set_pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& delayGraph, const Orders_t& orders, bool needPrint);
+        void set_pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint);
+        void set_pipeline(const Graph_t& graphNoDelay, bool needPrint);
         std::vector<PipeImg_t> _InImgPool;
         void clear_imgs();
         Hash_t _hsOneFrame; // just hsOneFrame, not sub. hash + frameInd should be hyper, and should only appear in toml, or something to be converted to toml.

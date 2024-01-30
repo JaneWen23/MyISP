@@ -1,0 +1,62 @@
+   
+graphNoDelay = [
+    # EVERY node in pipe should be defined here:
+    [
+        'DUMMY0',  # a node in the pipe topology
+        ['DUMMY1', 'DUMMY2']  # the no-delay-successors of this node
+        # it means that 
+    ],
+    [
+        'DUMMY1',
+        ['DUMMY3']   
+    ],
+    [
+        'DUMMY2',
+        ['DUMMY3']
+    ],
+    [
+        'DUMMY3',
+        ['DUMMY4', 'DUMMY5']
+    ],
+    [
+        'DUMMY4',
+        ['DUMMY6']
+    ],
+    [
+        'DUMMY5',
+        ['DUMMY6']
+    ],
+    [
+        'DUMMY6',
+        ['DUMMY8']
+    ],
+    [
+        'DUMMY7',
+        ['DUMMY6']
+    ],
+    [
+        'DUMMY8',
+        ['']       # if no module, just enter an empty string. do not leave it blank.
+    ]
+]
+
+
+orders = [
+    # only the nodes that take more than one input need to be defined here;
+    # the order of inputs is defined by algorithm argument lists -- you may refer to the code.
+    [
+        'DUMMY3',  # a node that takes more than one input
+        [
+            ['DUMMY1'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay.
+            ['DUMMY2']  # it means the second input of DUMMY3 is DUMMY2's output without frame-delay.
+        ]
+    ],
+    [
+        'DUMMY6',
+        [
+            ['DUMMY4'],
+            ['DUMMY5'],
+            ['DUMMY7']
+        ]
+    ]
+]
