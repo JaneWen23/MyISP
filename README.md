@@ -20,7 +20,6 @@
 
 ### 如何配置 pipeline:
 
-***(“通过 config 文件定义 pipeline 拓扑结构” 的功能刚刚做好 :tada: 抽空更新这边的使用说明)***
 
 <!-- 首先我们思考一下 pipeline 是由哪些东西定义的:
 
@@ -34,6 +33,8 @@
 
 并不是所有的 pipeline 都有复杂的结构, 简单的 pipeline 不需要写全所有三个维度来定义. 下面举例说明: -->
 
+配置文件是 .toml 格式的, 了解 TOML 的语法可以看他们的[官网](https://toml.io/en/v1.0.0)
+
 假设我们的 pipeline 由各个模块组成, 名字分别为 DUMMY0, DUMMY1, DUMMY2, ..., 根据 pipeline 的结构的复杂程度, 可分为以下 3 种:
 
 #### 第一种: 最简单的级联
@@ -44,7 +45,7 @@ graph LR;
     DUMMY1-->DUMMY2;
 ```
 
-用代码的语言描述其拓扑结构:
+<!-- 用代码的语言描述其拓扑结构:
 ```cpp
 int n = 3; // number of nodes
 Graph_t graph(n);
@@ -52,12 +53,36 @@ Graph_t graph(n);
 graph[0] = {DUMMY0, {DUMMY1}}; // the directed edges are implicitly shown as from DUMMY0 to DUMMY1
 graph[1] = {DUMMY1, {DUMMY2}}; // the directed edges are implicitly shown as from DUMMY1 to DUMMY2
 graph[2] = {DUMMY2, {}}; 
+``` -->
+在 .toml 文件里我们用一个名为 `graphNoDelay` 的数组描述这结构.  
+`graphNoDelay` 的每一个元素仍是数组, 长度为2, 其中:
+- 第一个元素为模块 (或者叫节点) 的名字, 
+- 第二个元素是 长度大于等于1 的数组, 每个元素为这个模块(节点)的后继模块的名字. 如果没有后继, 就写一个空字符串 `''`, 不要什么都不写.  
+
+pipeline 的每一个模块都要像这样定义 (即, [模块名, [后继模块名]]), **不分先后** 地列写在 `graphNoDelay` 数组之中, 用逗号隔开. 实际上 `graphNoDelay` 就是图的 “邻接表” 定义方法.
+
+```toml
+graphNoDelay = [
+    # EVERY node in pipe should be defined here:
+    [   # 缩进不是必须的, 只是为了好看
+        'DUMMY0',  # a node in the pipe topology
+        ['DUMMY1']  # the no-delay-successors of this node
+    ],
+    [
+        'DUMMY1',
+        ['DUMMY2']   
+    ],
+    [
+        'DUMMY2',
+        [''] # if no successor module, just enter an empty string. do not leave it blank.
+    ]
+]
 ```
 
-用此拓扑结构初始化 pipeline 并打印信息:
+这个例子放在了 [pipeCfg/pipeCfgDummy1.toml](pipeCfg/pipeCfgDummy1.toml), 用此拓扑结构初始化 pipeline 并打印信息:
 
 ```cpp
-Pipeline myPipe(graph, true); // true 表示要打印信息
+Pipeline myPipe("../pipeCfg/pipeCfgDummy1.toml", true); // true 表示要打印信息
 ```
 运行后, terminal 输出:
 
@@ -84,7 +109,7 @@ graph LR;
     DUMMY6-->DUMMY8;
 ```
 
-用代码的语言描述其拓扑结构:
+<!-- 用代码的语言描述其拓扑结构:
 
 ```cpp
 
@@ -106,13 +131,46 @@ graph[8] = {DUMMY8, {}};
 Orders_t orders;
 orders.push_back({DUMMY3, {{DUMMY1}, {DUMMY2}}}); // mind the syntax! {DUMMY1} is actually {DUMMY1, 0}, the 0 is default and therefore omitted.
 orders.push_back({DUMMY6, {{DUMMY4}, {DUMMY5}, {DUMMY7}}});
+``` -->
+
+在 .toml 文件里我们用一个名为 `graphNoDelay` 的数组和一个名为 `orders` 的数组描述这结构.  
+
+`graphNoDelay` 如上个例子所介绍;  
+为什么需要 `orders`, 举个例子: 如果某个模块, 它需要两路输入信号 (比如 DUMMY3, 需要 DUMMY1 和 DUMMY2 两路输出作为输入), 由于算法接口的参列表是定死的, 我们就需要数据传到 DUMMY3 的时候, 第一路给参列表的第一个, 第二路给参列表的第二个, 以此来保证 DUMMY3 的参列表接收到正确的数据.  
+
+因此, `orders` 定义的是第一路、第二路,..., 数据分别来自哪些模块. 不需要定义所有的模块 (节点), 仅在 “一个模块有多于 1 路输入” 的情况下需要写.
+
+`orders` 的每个元素是长度为 2 的数组,
+- 该数组第一个元素是模块名, 
+- 第二个元素是长度大于等于1的数组, 其内**按参列表先后顺序**列出该模块的输入来自哪些模块; 值得注意的是, 这些元素仍然是以数组形式出现的, 但目前不必在意, 记住就好.
+
+
+```toml
+orders = [
+    # only the nodes that take more than one input need to be defined here;
+    # the order of inputs is defined by algorithm argument lists -- you may refer to the code.
+    [
+        'DUMMY3',  # a node that takes more than one input
+        [
+            ['DUMMY1'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay. (为什么单个模块名字也写成数组: 因为这个数组后续还可以有别的元素, 你们或许能猜到 “别的元素” 指的是帧延迟, 不过现在用不到, 不必在意)
+            ['DUMMY2']  # it means the second input of DUMMY3 is DUMMY2's output without frame-delay.
+        ]
+    ],
+    [
+        'DUMMY6',
+        [
+            ['DUMMY4'],
+            ['DUMMY5'],
+            ['DUMMY7']
+        ]
+    ]
+]
 ```
 
-用此拓扑结构初始化 pipeline 并打印信息:
+这个例子完整的配置文件在 [pipeCfg/pipeCfgDummy2.toml](pipeCfg/pipeCfgDummy2.toml), 用此拓扑结构初始化 pipeline 并打印信息:
 
 ```cpp
-// graph 是刚才的邻接表, orders 是刚才的输入图像的接收顺序, true 表示要打印信息:
-Pipeline myPipe(graph, orders, true);
+Pipeline myPipe("../pipeCfg/pipeCfgDummy2.toml", true); // true 表示要打印信息
 ```
 运行后, terminal 输出:
 ```
@@ -165,7 +223,7 @@ DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output;
 
 ```
 
-用代码的语言描述其拓扑结构:
+<!-- 用代码的语言描述其拓扑结构:
 
 ```cpp
 int n = 4; // number of nodes
@@ -185,13 +243,66 @@ delayGraph.push_back({DUMMY1, {{DUMMY2, 1}}}); // 表示 DUMMY1 的输出要给�
 Orders_t orders;
 orders.push_back({DUMMY3, {{DUMMY1 }, {DUMMY2 }, {DUMMY3, 1}}}); //表示 DUMMY3 的 3个输入按顺序分别来自: DUMMY1(本帧), DUMMY2(本帧), DUMMY3(1帧之前)
 orders.push_back({DUMMY2, {{DUMMY0 }, {DUMMY1, 1}}}); // 表示 DUMMY2 的2个输入按顺序分别来自: DUMMY0(本帧), DUMMY1(1帧之前)
+``` -->
+
+在 .toml 文件里我们用一个名为 `graphNoDelay` 的数组和一个名为 `delayGraph` 的数组, 加上一个名为 `orders` 的数组描述这结构.
+
+与前两种情况不同的是, 这里有了 延迟1帧 的输入/输出, 所以在 `graphNoDelay` 的基础上, 有了一个新的数组 `delayGraph`, 用来表示有延迟的输入/输出关系.
+
+我们把这个图分为两部分, 一是不含帧延迟的部分 (xx颜色), 用 `graphNoDelay` 配置, 另一个是仅含帧延迟的部分 (xx颜色), 用 `delayGraph` 配置.
+
+`graphNoDelay` 跟之前的例子的配置方法一样, 这里不再赘述;  
+`delayGraph` 这样配置:
+- 每一个元素是长度为2的数组, 其中第一个元素是模块名, 
+- 第二个元素是一个长度为大于等于 1 的数组, 每一个元素表示该模块的后继模块, 以及每个后继模块各是延迟了多少帧的.
+
+```toml
+delayGraph = [
+    # only the nodes whose output will be used in the next frame(s) need to be defined here:
+    [
+        'DUMMY1', # a node in the pipe topology, whose output will be used in the next frame
+        [
+            ['DUMMY2', 1],  # syntax being [MODULE, DELAY]
+        ]
+    ],
+    [
+        'DUMMY3',
+        [
+            ['DUMMY3', 1]
+        ]
+        # in this example, the output from DUMMY8 is be used by itself after being 1 frame delayed.
+    ]
+]
 ```
 
-用此拓扑结构初始化 pipeline 并打印信息:
+此外, `orders` 也要加入延迟的信息(在“参列表的输入来自哪些模块” 的部分加上 “延迟多少帧”), 此例子的 `orders` 配置如下所示:
+
+```toml
+orders = [
+    # only the nodes that take more than one input need to be defined here;
+    # the order of inputs is defined by algorithm argument lists -- you may refer to the code.
+    [
+        'DUMMY2',  # a node that takes more than one input
+        [
+            ['DUMMY0'], # it means the first input of DUMMY3 is DUMMY1's output without frame-delay. 没有帧延迟, 就不写
+            ['DUMMY1', 1]  # it means the second input of DUMMY3 is DUMMY2's output with 1 frame delayed. 有帧延迟, 就写在后面
+        ]
+    ],
+    [
+        'DUMMY6',
+        [
+            ['DUMMY1'],
+            ['DUMMY2'],
+            ['DUMMY3', 1]
+        ]
+    ]
+]
+```
+
+这个例子完整的配置文件在 [pipeCfg/pipeCfgDummy3.toml](pipeCfg/pipeCfgDummy3.toml), 用此拓扑结构初始化 pipeline 并打印信息:
 
 ```cpp
-Pipeline myPipe(graph, delayGraph, orders, true); // true 表示要打印信息
-```
+Pipeline myPipe("../pipeCfg/pipeCfgDummy3.toml", true); // true 表示要打印信息
 运行后, terminal 输出:
 ```
 pipe:

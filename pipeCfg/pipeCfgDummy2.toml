@@ -4,7 +4,6 @@ graphNoDelay = [
     [
         'DUMMY0',  # a node in the pipe topology
         ['DUMMY1', 'DUMMY2']  # the no-delay-successors of this node
-        # it means that 
     ],
     [
         'DUMMY1',
@@ -36,7 +35,7 @@ graphNoDelay = [
     ],
     [
         'DUMMY8',
-        ['']       # if no module, just enter an empty string. do not leave it blank.
+        ['']       # if no successor module, just enter an empty string. do not leave it blank.
     ]
 ]
 
