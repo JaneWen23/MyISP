@@ -88,10 +88,13 @@ Pipeline myPipe("../pipeCfg/pipeCfgDummy1.toml", true); // true 表示要打印�
 
 ```
 pipe:
-DUMMY0:   needs no input;   delivers output to: DUMMY1, 
-DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY2, 
-DUMMY2:   takes input(s) from: DUMMY1,   dose not deliver output; 
+1) DUMMY0:   needs no input;   delivers output to: DUMMY1, 
+2) DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY2, 
+3) DUMMY2:   takes input(s) from: DUMMY1,   dose not deliver output; 
 ```
+可以看到序号 “1) 2) 3)” 对应的是模块的执行顺序. 其实 pipeline 会根据 `graphNoDelay` 将所有的模块进行拓扑排序, 保证每个模块执行的时候, 它的前置模块 (即它依赖的模块) 已经执行完了.
+
+另外就是, 由于模块执行顺序是拓扑排序后的顺序, 此 pipeline 是**单线程**的, 不可同时运行 2 个模块.
 
 #### 第二种: 有向无环图
 
@@ -177,17 +180,17 @@ Pipeline myPipe("../pipeCfg/pipeCfgDummy2.toml", true); // true 表示要打印�
 运行后, terminal 输出:
 ```
 pipe:
-DUMMY7:   needs no input;   delivers output to: DUMMY6, 
-DUMMY0:   needs no input;   delivers output to: DUMMY1, DUMMY2, 
-DUMMY2:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, 
-DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, 
-DUMMY3:   takes input(s) from: DUMMY1, DUMMY2,   delivers output to: DUMMY4, DUMMY5, 
-DUMMY5:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
-DUMMY4:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
-DUMMY6:   takes input(s) from: DUMMY4, DUMMY5, DUMMY7,   delivers output to: DUMMY8, 
-DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output; 
+1) DUMMY7:   needs no input;   delivers output to: DUMMY6, 
+2) DUMMY0:   needs no input;   delivers output to: DUMMY1, DUMMY2, 
+3) DUMMY2:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, 
+4) DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, 
+5) DUMMY3:   takes input(s) from: DUMMY1, DUMMY2,   delivers output to: DUMMY4, DUMMY5, 
+6) DUMMY5:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
+7) DUMMY4:   takes input(s) from: DUMMY3,   delivers output to: DUMMY6, 
+8) DUMMY6:   takes input(s) from: DUMMY4, DUMMY5, DUMMY7,   delivers output to: DUMMY8, 
+9) DUMMY8:   takes input(s) from: DUMMY6,   dose not deliver output; 
 ```
-
+我们可以看到模块的排序是拓扑排序; 顺便提一下, 拓扑排序一般存在多个可行的顺序, 如果你手动排的序和电脑排的不一样, 并不代表电脑是错的.
 
 #### 第三种: 有向无环图+历史帧
 
@@ -313,13 +316,13 @@ Pipeline myPipe("../pipeCfg/pipeCfgDummy3.toml", true); // true 表示要打印�
 运行后, terminal 输出:
 ```
 pipe:
-DUMMY0:   needs no input;   delivers output to: DUMMY1, DUMMY2, 
-DUMMY2:   takes input(s) from: DUMMY0, DUMMY1(last frame),   delivers output to: DUMMY3, 
-DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, DUMMY2(next frame), 
-DUMMY3:   takes input(s) from: DUMMY1, DUMMY2, DUMMY3(last frame),   delivers output to: DUMMY3(next frame), 
+1) DUMMY0:   needs no input;   delivers output to: DUMMY1, DUMMY2, 
+2) DUMMY2:   takes input(s) from: DUMMY0, DUMMY1(last frame),   delivers output to: DUMMY3, 
+3) DUMMY1:   takes input(s) from: DUMMY0,   delivers output to: DUMMY3, DUMMY2(next frame), 
+4) DUMMY3:   takes input(s) from: DUMMY1, DUMMY2, DUMMY3(last frame),   delivers output to: DUMMY3(next frame), 
 ```
 
-
+顺便提一下, 拓扑排序与帧延迟毫无关系, 因为一帧过去了, 所有的模块都执行过一次了, 下一帧的任何模块都可以得到历史帧的任何模块的输出数据. 就是说, 拓扑排序只关心 `graphNoDelay`, 不关心 `delayGraph`. 这也是为什么我要将这两个图分开.
 
 ### 如何配置算法参数
 
@@ -332,7 +335,7 @@ DUMMY3:   takes input(s) from: DUMMY1, DUMMY2, DUMMY3(last frame),   delivers ou
 - 配置文件需要定义至少 1 帧的参数;  
 - 帧号总是从 0 开始计, 帧号用`'FRAME #x'` 表示, 例如`'FRAME #0'`;  
 - 帧号、模块名字以及结构体名字, 用 `.` 连接, 用方括号 `[ ]` 括起来; 参数变量名和变量的值另起一行写, 可以有缩进, 但不是必须的;   
-- 只有第一帧 (frame 0) 的参数需要写全, 第二帧 (frame 1) 及以后只需要写 “相对上一帧的变化” 部分.
+- 只有第一帧 (frame 0) 的参数需要写全, 第二帧 (frame 1) 及以后只需要写 “相对上一帧的变化” 部分. 如果没变化(跟上一帧的参数完全一样), 也要写上帧号, 否则程序会认为没有定义该帧.
 
 举例说明:
 
@@ -386,6 +389,10 @@ DUMMY3:   takes input(s) from: DUMMY1, DUMMY2, DUMMY3(last frame),   delivers ou
 
 ['FRAME #2'.MODULE1.STRUCT1]
     arg2 = 2
+
+['FRAME #3']
+# 这一帧下面没有参数, 表示使用和上一帧完全一样的参数.
+# 即便没有要更新的参数, 也不要不写帧号, 不写会被认为没有 FRAME #3.
 ```
 
 
