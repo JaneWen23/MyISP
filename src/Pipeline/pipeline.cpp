@@ -148,8 +148,10 @@ void make_pipe_with_delay(const Orders_t& orders, const Graph_t& graphNoDelay, c
 
 void print_pipe(const Pipe_t& pipe){
     std::cout<<"pipe:\n";
+    int i = 0;
     for(auto it = pipe.begin(); it != pipe.end(); ++it){
-        std::cout << get_module_name((*it).module)<<": ";
+        i += 1;
+        std::cout << i << ") "<< get_module_name((*it).module)<<": ";
         int lp = ((*it).predWthDelay).size();
         if (lp == 0){
             std::cout<< "  needs no input; ";
@@ -201,7 +203,7 @@ void print_pipe(const Pipe_t& pipe){
                 }
             }
         }
-        std::cout<<"\n";
+        std::cout<<"\n\n";
     }
 }
 
@@ -217,6 +219,7 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& del
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
+    print_hash(&_hsOneFrame, "default args:");
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& delayGraph, const Orders_t& orders, bool needPrint){
@@ -235,6 +238,7 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, const Orders_t& orders,
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
+    print_hash(&_hsOneFrame, "default args:");
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint){
@@ -253,6 +257,7 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, bool needPrint){
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
+    print_hash(&_hsOneFrame, "default args:");
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, bool needPrint){
@@ -579,21 +584,19 @@ void test_pipeline(){
 
 void test_pipeline2(){
 
-    int n = 1; // number of nodes
+    int n = 2; // number of nodes
 
     Graph_t graph(n);
-
-    graph[0] = {ISP_VIN, {}};
     
-    //graph[0] = {ISP_VIN, {ISP_COMPRESSION}};
-    //graph[1] = {ISP_COMPRESSION, { }};
+    graph[0] = {ISP_VIN, {ISP_COMPRESSION}};
+    graph[1] = {ISP_COMPRESSION, { }};
 
 
     Pipeline myPipe(graph, true);
     //myPipe.generate_arg_cfg_template(0,4);
     //myPipe.cfg_run_pipe("../args/base2_want.toml", 2);
 
-    myPipe.default_run_pipe(2);
+    //myPipe.default_run_pipe(2);
 
 }
 

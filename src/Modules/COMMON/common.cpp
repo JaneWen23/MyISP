@@ -111,18 +111,16 @@ MODULE_NAME get_module_from_name(std::string name){
     return DUMMY0; // nonsense
 }
 
-void print_hash(Hash_t* pMyHash){
+void dfs_print_hash(Hash_t* pMyHash, std::string spaces){
+    spaces += "  ";
     for (auto it = pMyHash->begin(); it != pMyHash->end(); ++it){
         if ((*it).second.type() != typeid(Hash_t)){
-            std::cout<< " '"<< (*it).first <<"' = ";
+            std::cout<< spaces + "'"<< (*it).first <<"' = ";
             if ((*it).second.type() == typeid(int)){
                 std::cout<<std::any_cast<int>((*it).second)<<"\n";
             }
             else if ((*it).second.type() == typeid(std::string)){
                 std::cout<<std::any_cast<std::string>((*it).second)<<"\n";
-            }
-            else if ((*it).second.type() == typeid(const char*)){
-                std::cout<<std::any_cast<const char*>((*it).second)<<"\n";
             }
             else if ((*it).second.type() == typeid(bool)){
                 std::cout<<std::any_cast<bool>((*it).second)<<"\n";
@@ -133,11 +131,16 @@ void print_hash(Hash_t* pMyHash){
             }
         }
         else{
-            std::cout<< (*it).first<<": \n";
+            std::cout<< spaces + (*it).first<<": \n";
             Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*it).second));
-            print_hash(pMySubHash);
+            dfs_print_hash(pMySubHash, spaces);
         }
     }
+}
+
+void print_hash(Hash_t* pMyHash, const char* title){
+    std::cout<< title <<"\n";
+    dfs_print_hash(pMyHash, "");
 }
 
 void set_hash_at_path(Hash_t* pHs, std::vector<std::string> hsPath, std::any val){
