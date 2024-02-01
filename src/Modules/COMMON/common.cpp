@@ -111,11 +111,11 @@ MODULE_NAME get_module_from_name(std::string name){
     return DUMMY0; // nonsense
 }
 
-void dfs_print_hash(Hash_t* pMyHash, std::string spaces){
-    spaces += "  ";
+void dfs_print_hash(Hash_t* pMyHash, std::string indentation){
+    indentation  += "  ";
     for (auto it = pMyHash->begin(); it != pMyHash->end(); ++it){
         if ((*it).second.type() != typeid(Hash_t)){
-            std::cout<< spaces + "'"<< (*it).first <<"' = ";
+            std::cout<< indentation + "'"<< (*it).first <<"' = ";
             if ((*it).second.type() == typeid(int)){
                 std::cout<<std::any_cast<int>((*it).second)<<"\n";
             }
@@ -131,9 +131,9 @@ void dfs_print_hash(Hash_t* pMyHash, std::string spaces){
             }
         }
         else{
-            std::cout<< spaces + (*it).first<<": \n";
+            std::cout<< indentation + (*it).first<<": \n";
             Hash_t* pMySubHash = std::any_cast<Hash_t>(&((*it).second));
-            dfs_print_hash(pMySubHash, spaces);
+            dfs_print_hash(pMySubHash, indentation);
         }
     }
 }

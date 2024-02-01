@@ -203,8 +203,9 @@ void print_pipe(const Pipe_t& pipe){
                 }
             }
         }
-        std::cout<<"\n\n";
+        std::cout<<"\n";
     }
+    std::cout<<"\n";
 }
 
 void Pipeline::set_pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& delayGraph, const Orders_t& orders, bool needPrint){
@@ -219,7 +220,8 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& del
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
-    print_hash(&_hsOneFrame, "default args:");
+    std::cout<< cfgDoneInfo;
+    //print_hash(&_hsOneFrame, "default args:");
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& delayGraph, const Orders_t& orders, bool needPrint){
@@ -238,7 +240,8 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, const Orders_t& orders,
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
-    print_hash(&_hsOneFrame, "default args:");
+    std::cout<< cfgDoneInfo;
+    //print_hash(&_hsOneFrame, "default args:");
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, const Orders_t& orders, bool needPrint){
@@ -257,7 +260,8 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, bool needPrint){
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
-    print_hash(&_hsOneFrame, "default args:");
+    std::cout<< cfgDoneInfo;
+    //print_hash(&_hsOneFrame, "default args:");
 }
 
 Pipeline::Pipeline(const Graph_t& graphNoDelay, bool needPrint){
