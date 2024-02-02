@@ -49,6 +49,15 @@ IMG_RTN_CODE isp_dummy(const ImgPtrs_t sInImgPtrs, Img_t* pOutImg, Hash_t* pHs, 
 
     if (updateArgs){
         set_hash_at_path(pHs, {"a"}, sMArg.a + 1);
+        // TODO:
+        // problem: you may need to set another module's args,
+        // for example, you want white balance module to pass the Wb and Wr to compression module.
+        // (thus, it is NOT possible to forbid such cross-module arg passing.)
+        // the problem is that modules do not know each other,
+        // and it is the pipeline that glues them together.
+        // is it appropriate to make a stream for the arg update between the modules in one frame???
+        // is there any possibility that the arg should take its effect with >1 frame delays, like 2 frames????
+
     }
 
     return SUCCEED;

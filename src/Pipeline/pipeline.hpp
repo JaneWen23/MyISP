@@ -66,7 +66,7 @@ class Pipeline{
         void clear_imgs();
         Hash_t _hsOneFrame; // just hsOneFrame, not sub. hash + frameInd should be hyper, and should only appear in toml, or something to be converted to toml.
         Hash_t get_hash_one_frame_from_modules();
-        std::string cfgDoneInfo = "========== pipeline configuration is done. ==========\n\n";
+        std::string _cfgDoneInfo = "========== pipeline configuration is done. ==========\n\n";
         std::string _configFrameStr = "FRAME #";
         std::string _baseCfgFilePath = "../args/base.toml";
         std::string _baseCfgInfo = 

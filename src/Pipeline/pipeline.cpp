@@ -220,7 +220,7 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, const DelayGraph_t& del
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
-    std::cout<< cfgDoneInfo;
+    std::cout<< _cfgDoneInfo;
     //print_hash(&_hsOneFrame, "default args:");
 }
 
@@ -240,7 +240,7 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, const Orders_t& orders,
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
-    std::cout<< cfgDoneInfo;
+    std::cout<< _cfgDoneInfo;
     //print_hash(&_hsOneFrame, "default args:");
 }
 
@@ -260,7 +260,7 @@ void Pipeline::set_pipeline(const Graph_t& graphNoDelay, bool needPrint){
         print_pipe(_pipe);
     }
     _hsOneFrame = get_hash_one_frame_from_modules();
-    std::cout<< cfgDoneInfo;
+    std::cout<< _cfgDoneInfo;
     //print_hash(&_hsOneFrame, "default args:");
 }
 
